@@ -20,6 +20,8 @@ android {
     packaging { resources.excludes += setOf("META-INF/INDEX.LIST", "META-INF/io.netty.versions.properties") }
 }
 dependencies {
+    debugImplementation(project(":terminal-view"))
+    debugImplementation("androidx.drawerlayout:drawerlayout:1.2.0")
     implementation(project(":guest-protocol"))
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")

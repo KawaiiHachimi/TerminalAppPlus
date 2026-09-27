@@ -87,3 +87,21 @@ AOSP 来源、参考项目及移植边界见 [docs/UPSTREAM.md](docs/UPSTREAM.md
 保留原始 Apache 2.0 版权声明和 NOTICE。
 
 原版基线与分步移植提交说明见 [docs/HISTORY.md](docs/HISTORY.md)。
+
+## 实验分支：AVF 原生控制台
+
+`codex/feat-direct-console` 在 debug 构建中提供独立的控制台实验入口，
+用 AVF 输入输出流连接来宾串口，不依赖 ttyd。常规终端入口保持原样。
+实验步骤与实机结果见 [DIRECT-CONSOLE.md](docs/experiments/DIRECT-CONSOLE.md)。
+
+### Credit
+
+- [Termux](https://github.com/termux/termux-app)：实验界面的 `terminal-emulator`
+  与 `terminal-view`，提供 ANSI 解析、终端渲染、键盘输入及文本选择。
+  固定来源提交为 `8629e632fcb95da272221be327db653fb24befe9`。
+- [Android Terminal Emulator](https://github.com/jackpal/Android-Terminal-Emulator)：
+  Termux 组件中的上游基础代码。
+- [Podroid](https://github.com/ExTV/Podroid)：AVF 控制台流连接方案参考；
+  本分支直接使用 Termux 官方组件，没有复制 Podroid 的 UI 或桥接实现。
+
+第三方许可及本地调整见 [third_party/termux/README.md](third_party/termux/README.md)。
