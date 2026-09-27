@@ -97,6 +97,12 @@ class ConsoleProbeActivity : Activity() {
             insets
         }
         val drawer = androidx.drawerlayout.widget.DrawerLayout(this)
+        drawer.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
+            val height = (180 * resources.displayMetrics.density).toInt()
+            val width = (24 * resources.displayMetrics.density).toInt()
+            val middle = view.height / 2
+            view.systemGestureExclusionRects = listOf(android.graphics.Rect(0, middle - height / 2, width, middle + height / 2))
+        }
         drawer.addView(container, androidx.drawerlayout.widget.DrawerLayout.LayoutParams(-1, -1))
         val menu = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
@@ -123,6 +129,9 @@ class ConsoleProbeActivity : Activity() {
         }
         menuAction("实验室：BusyBox / hvc0") { switchProbe(false, false) }
         menuAction("实验室：U-Boot + Debian") { switchProbe(true, true) }
+        menuAction("实验室：当前 VM 屏幕（只读）") {
+            startActivity(android.content.Intent(this, VmScreenProbeActivity::class.java))
+        }
         menuAction("粘贴") { client.onPasteTextFromClipboard(session) }
         menuAction("打开键盘") { terminal.requestFocus(); client.onSingleTapUp(android.view.MotionEvent.obtain(0, 0, 0, 0f, 0f, 0)) }
         menuAction("返回 ttyd 终端") {
