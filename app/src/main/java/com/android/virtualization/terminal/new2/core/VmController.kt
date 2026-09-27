@@ -65,6 +65,7 @@ import kotlinx.coroutines.launch
 object VmController {
     private val TAG = "VmController"
 
+    private var terminalBridge: AndroidToVmBridge? = null
     private lateinit var context: Context
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _vmState = LoggingMutableStateFlow<VmState>(MutableStateFlow(VmState.Ready), TAG)
@@ -168,13 +169,13 @@ object VmController {
         }
     }
 
-    fun start() {
-        if (_vmState.value is VmState.Running || _vmState.value is VmState.Starting) return
+    @Synchronized fun start() {
+        if (_vmState.value is VmState.Running || _vmState.value is VmState.Starting || _vmState.value is VmState.Stopping) return
+        _vmState.value = VmState.Starting
 
         val intent = Intent(context, VmService::class.java)
         context.startForegroundService(intent)
         repositoryScope.launch {
-            _vmState.value = VmState.Starting
             try {
                 val image = InstalledImage.getDefault(context)
                 val json = ConfigJson.from(context, image.configPath)
@@ -223,6 +224,7 @@ object VmController {
 
                 try {
                     vmm.get(vmName)?.let { // Clean up existing VM if it's not stopped
+                        it.clearCallback()
                         if (it.status != VirtualMachine.STATUS_STOPPED) {
                             Log.e(TAG, "stopping vm because it is not stopped")
                             it.stop()
@@ -236,7 +238,8 @@ object VmController {
 
                 val vm = vmm.create(vmName, config)
                 virtualMachine = vm
-                Logger.setup(context, vm, Executors.newSingleThreadExecutor())
+                com.android.virtualization.terminal.ForwarderHost.attach(vm)
+                Logger.setup(context, vm, Executors.newFixedThreadPool(2))
 
                 val callback =
                     object : VirtualMachineCallback {
@@ -253,6 +256,9 @@ object VmController {
                         }
 
                         override fun onStopped(vm: VirtualMachine, reason: Int) {
+                            if (virtualMachine !== vm) return
+                            terminalBridge?.stop()
+                            terminalBridge = null
                             Log.i("VmController", "VM stopped. reason: $reason")
                             if (
                                 reason == VirtualMachineCallback.STOP_REASON_SHUTDOWN ||
@@ -301,7 +307,9 @@ object VmController {
 
                 if (canUseTtydOverVsock()) {
                     Log.i(TAG, "Connect to ttyd using vsock")
-                    val bridge = AndroidToVmBridge(virtualMachine!!.cid)
+                    terminalBridge?.stop()
+                    val bridge = AndroidToVmBridge(virtualMachine!!)
+                    terminalBridge = bridge
                     val port = bridge.start()
                     if (port == null) {
                         Log.e(TAG, "Failed to start bridge")

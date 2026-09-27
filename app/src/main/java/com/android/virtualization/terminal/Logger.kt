@@ -128,9 +128,9 @@ internal object Logger {
     @Throws(IOException::class)
     private fun writeToLogd(input: InputStream?, tag: String?) {
         val reader = BufferedReader(InputStreamReader(input))
-        reader
-            .useLines { lines -> lines.takeWhile { !Thread.interrupted() } }
-            .forEach { Log.d(tag, it) }
+        reader.useLines { lines ->
+            lines.takeWhile { !Thread.currentThread().isInterrupted }.forEach { Log.d(tag, it) }
+        }
     }
 
     private class LineBufferedOutputStream(out: OutputStream?) : BufferedOutputStream(out) {

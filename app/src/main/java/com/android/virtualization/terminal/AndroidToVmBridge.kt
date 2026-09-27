@@ -1,233 +1,131 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 Terminal Plus contributors
+ * SPDX-License-Identifier: Apache-2.0
  */
-
 package com.android.virtualization.terminal
 
-import android.system.ErrnoException
-import android.system.Os
-import android.system.OsConstants
-import android.system.VmSocketAddress
+import android.os.ParcelFileDescriptor
+import android.system.virtualmachine.VirtualMachine
 import android.util.Log
-import java.io.FileDescriptor
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.io.OutputStream
+import java.io.ByteArrayOutputStream
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
-import java.nio.charset.StandardCharsets
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
+/** Authenticated localhost HTTP/WebSocket bridge to the stock Debian ttyd service. */
 class AndroidToVmBridge(
-    private val vmCid: Int,
+    private val vm: VirtualMachine,
     private val vmPort: Int = 7681,
-    public val secretKey: String = UUID.randomUUID().toString(),
+    val secretKey: String = UUID.randomUUID().toString(),
 ) {
+    private var listener: ServerSocket? = null
+    private val running = AtomicBoolean(false)
+    private val clients = ConcurrentHashMap.newKeySet<Socket>()
+    private val descriptors = ConcurrentHashMap.newKeySet<ParcelFileDescriptor>()
 
-    companion object {
-        private const val TAG = "AndroidToVmBridge"
-        // 600 retries * 100ms = 60 seconds total wait
-        private const val MAX_RETRIES = 600
-        private const val RETRY_DELAY_MS = 100L
-        private const val BUFFER_SIZE = 8192
-    }
-
-    private val authCookie = "access_token=$secretKey"
-    private var serverSocket: ServerSocket? = null
-    private val isRunning = AtomicBoolean(false)
-
-    /**
-     * Starts the bridge.
-     *
-     * @return The bound local TCP port, or null if failed.
-     */
-    // TODO(b/464250786): we should initiate this function when a guest agent reports its readiness
-    fun start(): Int? {
-        if (isRunning.get()) return serverSocket?.localPort
-
+    @Synchronized fun start(): Int? {
+        if (running.get()) return listener?.localPort
         return try {
-            val socket = ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"))
-            this.serverSocket = socket
-            this.isRunning.set(true)
-
-            val port = socket.localPort
-            Log.i(TAG, "Bridge started on 127.0.0.1:$port (Target VM: $vmCid:$vmPort)")
-
-            thread(name = "Bridge-Listener") { listenLoop(socket) }
-            port
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to start bridge", e)
-            null
-        }
-    }
-
-    fun stop() {
-        if (isRunning.compareAndSet(true, false)) {
-            try {
-                serverSocket?.close()
-            } catch (e: Exception) {
-                Log.w(TAG, "Error while closing server socket", e)
-            }
-            serverSocket = null
-        }
-    }
-
-    private fun listenLoop(socket: ServerSocket) {
-        try {
-            while (isRunning.get()) {
-                val clientSocket = socket.accept()
-                thread(name = "Bridge-Client") { handleClient(clientSocket) }
-            }
-        } catch (e: Exception) {
-            // If the socket is closed intentionally, isRunning will be false.
-            if (isRunning.get()) {
-                Log.w(TAG, "Accept loop stopped unexpectedly", e)
-            } else {
-                Log.d(TAG, "Accept loop finished")
-            }
-        }
-    }
-
-    private fun handleClient(clientSocket: Socket) {
-        var vsockFd: FileDescriptor? = null
-        try {
-            val clientIn = clientSocket.getInputStream()
-            val clientOut = clientSocket.getOutputStream()
-
-            // 1. Peek headers for auth check
-            val buffer = ByteArray(4096)
-            val bytesRead = clientIn.read(buffer)
-            if (bytesRead == -1) return
-
-            val headers = String(buffer, 0, bytesRead, StandardCharsets.UTF_8)
-
-            if (!headers.contains(authCookie)) {
-                Log.w(TAG, "Auth failed: Missing cookie")
-                clientOut.write("HTTP/1.1 403 Forbidden\r\n\r\nAccess Denied".toByteArray())
-                return
-            }
-
-            // 2. Connect to VM (Silent retry until failure)
-            vsockFd = connectWithRetry()
-
-            if (vsockFd == null) {
-                clientOut.write("HTTP/1.1 504 Gateway Timeout\r\n\r\nVM Not Ready".toByteArray())
-                return
-            }
-
-            // 3. Forward buffered headers first
-            val vmOut = FileOutputStream(vsockFd)
-            val vmIn = FileInputStream(vsockFd)
-
-            vmOut.write(buffer, 0, bytesRead)
-            vmOut.flush()
-
-            // 4. Start bidirectional pipe
-            val closeConnection = {
-                try {
-                    clientSocket.close()
-                } catch (e: Exception) {
-                    Log.v(TAG, "Error closing client socket", e)
-                }
-                if (vsockFd != null && vsockFd.valid()) {
+            val server = ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"))
+            listener = server
+            running.set(true)
+            thread(name = "PlusTtydListener", isDaemon = true) {
+                while (running.get()) {
                     try {
-                        Os.close(vsockFd)
+                        val client = server.accept()
+                        clients.add(client)
+                        thread(name = "PlusTtydClient", isDaemon = true) { handle(client) }
                     } catch (e: Exception) {
-                        Log.v(TAG, "Error closing vsock", e)
+                        if (running.get()) Log.w(TAG, "Accept failed", e)
+                        break
                     }
                 }
             }
-
-            val t1 = thread {
-                pipe("Client->VM", clientIn, vmOut)
-                closeConnection()
-            }
-            val t2 = thread {
-                pipe("VM->Client", vmIn, clientOut)
-                closeConnection()
-            }
-
-            t1.join()
-            t2.join()
-        } catch (e: Exception) {
-            Log.d(TAG, "Session ended: ${e.message}")
-        } finally {
-            try {
-                clientSocket.close()
-            } catch (e: Exception) {
-                Log.v(TAG, "Error closing client socket", e)
-            }
-            if (vsockFd != null && vsockFd.valid()) {
-                try {
-                    Os.close(vsockFd)
-                } catch (e: Exception) {
-                    Log.v(TAG, "Error closing vsock", e)
-                }
-            }
-        }
+            Log.i(TAG, "Listening on 127.0.0.1:${server.localPort}")
+            server.localPort
+        } catch (e: Exception) { Log.e(TAG, "Cannot start bridge", e); null }
     }
 
-    // TODO(b/464250786): when a guest agent notifies the host when it is ready, we don't need to
-    // keep trying until it is ready.
-    private fun connectWithRetry(): FileDescriptor? {
-        val vmAddress = VmSocketAddress(vmPort, vmCid)
+    @Synchronized fun stop() {
+        running.set(false)
+        runCatching { listener?.close() }
+        listener = null
+        clients.forEach { runCatching { it.close() } }
+        descriptors.forEach { runCatching { it.close() } }
+    }
 
-        for (i in 1..MAX_RETRIES) {
-            if (!isRunning.get()) return null
-
-            var fd: FileDescriptor? = null
-            try {
-                fd = Os.socket(OsConstants.AF_VSOCK, OsConstants.SOCK_STREAM, 0)
-                Os.connect(fd, vmAddress)
-                return fd
-            } catch (e: ErrnoException) {
-                if (fd != null && fd.valid()) {
-                    try {
-                        Os.close(fd)
-                    } catch (_: Exception) {}
-                }
-
-                if (i == MAX_RETRIES) {
-                    Log.e(TAG, "VM connection failed after $MAX_RETRIES attempts")
-                    return null
-                }
-                try {
-                    Thread.sleep(RETRY_DELAY_MS)
-                } catch (_: InterruptedException) {}
-            } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error in connectWithRetry", e)
-                return null
+    private fun connect(): ParcelFileDescriptor? {
+        // AVF opens the socket on our behalf; untrusted_app does not need direct vsock access.
+        repeat(600) {
+            if (!running.get()) return null
+            try { return vm.connectVsock(vmPort.toLong()) }
+            catch (e: Exception) {
+                if (it == 599) Log.e(TAG, "Guest ttyd did not become ready", e)
+                Thread.sleep(100)
             }
         }
         return null
     }
 
-    private fun pipe(direction: String, input: InputStream, output: OutputStream) {
-        val buf = ByteArray(BUFFER_SIZE)
-        var len: Int
+    private fun handle(client: Socket) {
+        var guest: ParcelFileDescriptor? = null
+        var outputFd: ParcelFileDescriptor? = null
         try {
-            while (input.read(buf).also { len = it } != -1) {
-                output.write(buf, 0, len)
-                output.flush()
+            client.soTimeout = 15_000
+            val input = client.getInputStream()
+            val output = client.getOutputStream()
+            val header = ByteArrayOutputStream()
+            var tail = 0
+            while (header.size() < 32_768) {
+                val b = input.read()
+                if (b < 0) return
+                header.write(b)
+                tail = (tail shl 8) or b
+                if (tail == 0x0d0a0d0a) break
             }
+            val bytes = header.toByteArray()
+            val authorized = tail == 0x0d0a0d0a && bytes.toString(Charsets.ISO_8859_1)
+                .split("\r\n").filter { it.startsWith("Cookie:", ignoreCase = true) }
+                .flatMap { it.substringAfter(':').split(';') }
+                .any { it.trim() == "access_token=$secretKey" }
+            if (!authorized) {
+                output.write("HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray())
+                return
+            }
+            client.soTimeout = 0
+            guest = connect()
+            if (guest == null) {
+                output.write("HTTP/1.1 504 Gateway Timeout\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray())
+                return
+            }
+            descriptors.add(guest)
+            outputFd = ParcelFileDescriptor.dup(guest.fileDescriptor)
+            descriptors.add(outputFd)
+            if (!running.get()) return
+            val guestInput = ParcelFileDescriptor.AutoCloseInputStream(guest)
+            val guestOutput = ParcelFileDescriptor.AutoCloseOutputStream(outputFd)
+            guestOutput.write(bytes)
+            guestOutput.flush()
+            val upload = thread(name = "PlusTtydUpload", isDaemon = true) {
+                try { input.copyTo(guestOutput) }
+                catch (_: Exception) { }
+                finally { runCatching { guestOutput.close() }; runCatching { client.close() } }
+            }
+            try { guestInput.copyTo(output) }
+            finally { runCatching { guestInput.close() }; runCatching { client.close() } }
+            upload.join()
         } catch (e: Exception) {
-            Log.d(TAG, "Pipe [$direction] closed: ${e.message}")
+            if (running.get()) Log.d(TAG, "Connection closed: ${e.message}")
+        } finally {
+            runCatching { client.close() }; clients.remove(client)
+            guest?.let { runCatching { it.close() }; descriptors.remove(it) }
+            outputFd?.let { runCatching { it.close() }; descriptors.remove(it) }
         }
     }
+    companion object { private const val TAG = "AndroidToVmBridge" }
 }

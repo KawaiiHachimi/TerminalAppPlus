@@ -234,6 +234,7 @@ class VmService : LifecycleService() {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun monitorInstaller() {
+        var lastNotification = 0L
         lifecycleScope.launch {
             Installer.installState
                 .flatMapLatest { state ->
@@ -245,6 +246,9 @@ class VmService : LifecycleService() {
                 }
                 .collect { (state, progress) ->
                     if (state is InstallState.Installing) {
+                        val now = android.os.SystemClock.elapsedRealtime()
+                        if (now - lastNotification < 500) return@collect
+                        lastNotification = now
                         val notification = createInstallNotification(state, progress)
                         getSystemService(NotificationManager::class.java)
                             .notify(NOTIFICATION_ID, notification)

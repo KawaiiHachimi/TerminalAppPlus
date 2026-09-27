@@ -199,7 +199,7 @@ class VmLauncherService : Service() {
         portNotifier = PortNotifier(this)
 
         if (canUseTtydOverVsock()) {
-            val bridge = AndroidToVmBridge(virtualMachine.getCid())
+            val bridge = AndroidToVmBridge(virtualMachine)
             val port = bridge.start()
             if (port == null) {
                 Log.e(TAG, "Failed to start bridge")
@@ -306,14 +306,14 @@ class VmLauncherService : Service() {
                 stopIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
-        val icon = Icon.createWithResource(resources, R.drawable.ic_launcher_foreground)
+        val icon = Icon.createWithResource(this, R.drawable.ic_launcher_foreground)
         val stopActionText: String? = resources.getString(R.string.notif_action_force_close)
         val stopNotificationTitle: String? = resources.getString(R.string.notif_title_closing)
         return Notification.Builder(this, Application.CHANNEL_SYSTEM_EVENTS_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(stopNotificationTitle)
             .setOngoing(true)
-            .setSilent(true)
+            .setOnlyAlertOnce(true)
             .addAction(Notification.Action.Builder(icon, stopActionText, stopPendingIntent).build())
             .build()
     }
