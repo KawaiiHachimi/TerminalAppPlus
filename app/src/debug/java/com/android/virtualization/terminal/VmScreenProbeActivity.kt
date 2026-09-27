@@ -4,67 +4,91 @@ package com.android.virtualization.terminal
 import android.app.Activity
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
-import android.graphics.BitmapFactory
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.graphics.Bitmap
+import android.graphics.Rect
+import android.widget.*
+import android.view.Gravity
 import com.android.virtualization.terminal.new2.core.VmController
-import java.io.DataInputStream
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import java.io.*
+import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 
-/** Read-only capture viewer; no separate desktop session or native display Binder. */
+/** Existing KMS screen + AOSP input. No system display Binder or new desktop. */
 class VmScreenProbeActivity : Activity() {
     private val worker = Executors.newSingleThreadExecutor()
     @Volatile private var connection: ParcelFileDescriptor? = null
     @Volatile private var stopped = false
+    private var inputForwarder: InputForwarder? = null
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
-        val status = TextView(this).apply { text = "当前 VM 屏幕 · 只读实验（需要来宾采集服务）" }
-        val image = ImageView(this).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
+        val vm = VmController.virtualMachine
+        val status = TextView(this).apply { text = "KMS → Surface · AOSP 输入实验" }
+        val surface = DisplaySurfaceView(this, null)
+        val area = FrameLayout(this).apply { setBackgroundColor(android.graphics.Color.BLACK); addView(surface) }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(android.graphics.Color.BLACK)
             addView(status)
-            addView(image, LinearLayout.LayoutParams(-1, 0, 1f))
-            setOnApplyWindowInsetsListener { v, insets ->
-                val b = insets.getInsets(android.view.WindowInsets.Type.systemBars())
-                v.setPadding(b.left, b.top, b.right, b.bottom)
-                insets
+            addView(area, LinearLayout.LayoutParams(-1, 0, 1f))
+            addView(LinearLayout(this@VmScreenProbeActivity).apply {
+                addView(Button(context).apply { text = "键盘"; setOnClickListener { surface.showSoftInput() } })
+                addView(Button(context).apply { text = "捕获鼠标"; setOnClickListener { surface.requestFocus(); surface.requestPointerCapture() } })
+                addView(Button(context).apply { text = "返回"; setOnClickListener { finish() } })
+            })
+            setOnApplyWindowInsetsListener { view, insets ->
+                val b = insets.getInsets(android.view.WindowInsets.Type.systemBars() or android.view.WindowInsets.Type.ime())
+                view.setPadding(b.left, b.top, b.right, b.bottom); insets
             }
         }
         setContentView(root)
+        if (vm == null) { status.text = "请先启动虚拟机"; return }
+        inputForwarder = InputForwarder(this, vm, surface, surface, surface) { surface.releasePointerCapture() }
+        surface.requestFocus()
         worker.execute {
+            var bitmap: Bitmap? = null
             try {
-                val vm = checkNotNull(VmController.virtualMachine) { "请先启动 VM" }
                 vm.connectVsock(7683).use { fd ->
                     connection = fd
-                    if (stopped) return@execute
                     val input = DataInputStream(FileInputStream(fd.fileDescriptor))
                     val output = FileOutputStream(fd.fileDescriptor)
-                    var count = 0
+                    var buffer = ByteArray(0)
+                    var frames = 0
+                    val start = System.nanoTime()
                     while (!stopped) {
-                        output.write('F'.code); output.flush()
-                        val size = input.readInt()
-                        check(size in 1..(16 * 1024 * 1024)) { "Invalid frame size" }
-                        val bytes = ByteArray(size); input.readFully(bytes)
-                        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-                        check(bounds.outWidth in 1..4096 && bounds.outHeight in 1..4096)
-                        val bitmap = checkNotNull(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
-                        count++
-                        val label = "当前 VM 屏幕 · ${bitmap.width}×${bitmap.height} · 帧 $count · 只读"
-                        runOnUiThread { if (!stopped) { image.setImageBitmap(bitmap); status.text = label } }
+                        output.write('R'.code); output.flush()
+                        val w = input.readInt(); val h = input.readInt(); val length = input.readInt()
+                        check(w in 1..4096 && h in 1..4096 && length == w*h*4)
+                        if (buffer.size != length) buffer = ByteArray(length)
+                        input.readFully(buffer)
+                        if (bitmap?.width != w || bitmap?.height != h) {
+                            bitmap?.recycle(); bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+                        }
+                        bitmap!!.copyPixelsFromBuffer(ByteBuffer.wrap(buffer))
+                        if (surface.holder.surface.isValid) {
+                            val canvas = surface.holder.lockHardwareCanvas()
+                            try { canvas.drawBitmap(bitmap!!, null, Rect(0, 0, canvas.width, canvas.height), null) }
+                            finally { surface.holder.unlockCanvasAndPost(canvas) }
+                        }
+                        frames++
+                        if (frames % 10 == 1) {
+                            val fps = frames * 1e9 / (System.nanoTime() - start)
+                            runOnUiThread {
+                                if (!stopped) {
+                                    val fit = minOf(area.width.toFloat()/w, area.height.toFloat()/h)
+                                    surface.layoutParams = FrameLayout.LayoutParams((w*fit).toInt(), (h*fit).toInt(), Gravity.CENTER)
+                                    status.text = "${w}×${h} · %.1f fps · AOSP 输入".format(fps)
+                                }
+                            }
+                        }
                     }
                 }
             } catch (e: Exception) {
-                runOnUiThread { if (!stopped) status.text = "无法读取屏幕：${e.message}\n请在来宾运行实验采集服务。" }
-            }
+                runOnUiThread { if (!stopped) status.text = "画面不可用：${e.message}" }
+            } finally { bitmap?.recycle() }
         }
     }
     override fun onDestroy() {
         stopped = true
+        inputForwarder?.cleanUp()
         connection?.let { runCatching { android.system.Os.shutdown(it.fileDescriptor, android.system.OsConstants.SHUT_RDWR) }; runCatching { it.close() } }
         worker.shutdownNow()
         super.onDestroy()

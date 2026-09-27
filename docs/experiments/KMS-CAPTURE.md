@@ -54,3 +54,16 @@ References:
 Status at branch split: standalone guest-frame export verified visually; Android
 viewer builds, but its end-to-end live view has not yet been validated. Subsequent
 branches compare AOSP-style input/rendering and a Termux:X11 route separately.
+
+## AOSP-input branch
+
+`codex/feat-aosp-kms-display` uses raw RGBA frames (no PNG encode/decode), a reused
+Bitmap and hardware Canvas onto AOSP DisplaySurfaceView. InputForwarder is the
+existing AOSP implementation, including touch scaling, captured pointer and key
+forwarding. Surface layout preserves frame aspect ratio. The read-only menu label
+is historical; this branch connects input as well.
+
+Observed live on device: current GDM screen at 1280x720, approximately 8.1–8.2 fps
+with the prototype's 100 ms server pacing. Input plumbing builds but comprehensive
+mouse/IME/touch validation is still pending. This is not a zero-copy or finished
+high-performance renderer; capture/transport overhead must be measured separately.

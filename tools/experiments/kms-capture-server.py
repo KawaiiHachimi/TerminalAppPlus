@@ -7,7 +7,7 @@ import os,fcntl,struct,mmap,re,zlib,binascii,socket,time
 from pathlib import Path
 from contextlib import ExitStack
 
-def capture():
+def capture(raw_output=False):
     with ExitStack() as stack:
         state=Path('/sys/kernel/debug/dri/0/state').read_text()
         fb=int(re.search(r'\n\s*fb=(\d+)',state).group(1))
@@ -29,6 +29,16 @@ def capture():
          dumb=bytearray(struct.pack('IIQ',handle,0,0));fcntl.ioctl(fd,0xc01064b3,dumb,True)
          pixels=mmap.mmap(fd,offset+pitch*h,flags=mmap.MAP_SHARED,prot=mmap.PROT_READ,offset=struct.unpack('IIQ',dumb)[2])
         stack.callback(pixels.close)
+        if raw_output:
+            rgba = bytearray(w*h*4)
+            for y in range(h):
+                row = pixels[offset+y*pitch:offset+y*pitch+w*4]
+                start = y*w*4
+                rgba[start:start+w*4:4] = row[2::4]
+                rgba[start+1:start+w*4:4] = row[1::4]
+                rgba[start+2:start+w*4:4] = row[0::4]
+                rgba[start+3:start+w*4:4] = b'\xff'*w
+            return struct.pack('!III', w, h, len(rgba)) + rgba
         raw=bytearray()
         for y in range(h):
          row=pixels[offset+y*pitch:offset+y*pitch+w*4]
@@ -49,10 +59,12 @@ def main():
                     continue
                 connection.settimeout(10)
                 try:
-                    while connection.recv(1) == b'F':
-                        frame = capture()
-                        connection.sendall(struct.pack('!I', len(frame)) + frame)
-                        time.sleep(0.25)
+                    while True:
+                        request = connection.recv(1)
+                        if request not in (b'F', b'R'): break
+                        frame = capture(request == b'R')
+                        connection.sendall(frame if request == b'R' else struct.pack('!I', len(frame)) + frame)
+                        time.sleep(0.1 if request == b'R' else 0.25)
                 except (ConnectionError, TimeoutError, OSError, AssertionError):
                     pass
 
