@@ -13,40 +13,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** Idempotent upgrade for the app-managed Debian guest; never used by custom-image labs. */
 internal object GuestScreenSetup {
-    private const val READY = "TERMINAL_PLUS_CAPTURE_READY_v1"
+    private const val READY = "TERMINAL_PLUS_GUEST_READY_v2"
     private val client = OkHttpClient.Builder().connectTimeout(3, TimeUnit.SECONDS)
         .readTimeout(0, TimeUnit.SECONDS).build()
 
     fun ensure(context: Context, port: Int, token: String, current: () -> Boolean) {
         val id = java.io.File(context.filesDir, "linux/cidata.build_id").readText().trim()
         if (id != "15101902-plus-display1") return
-        fun payload(name: String) = context.assets.open("guest-setup/$name").use {
-            Base64.encodeToString(it.readBytes(), Base64.NO_WRAP)
-        }
-        val script = """
-            set -eu
-            test -d /etc/systemd/system
-            command -v python3 >/dev/null
-            temp=${'$'}(mktemp -d)
-            trap 'rm -rf "${'$'}temp"' EXIT
-            printf '%s' '${payload("terminal-plus-capture.py")}' | base64 -d > "${'$'}temp/capture.py"
-            printf '%s' '${payload("terminal-plus-capture.service")}' | base64 -d > "${'$'}temp/capture.service"
-            changed=0
-            if ! cmp -s "${'$'}temp/capture.py" /usr/local/bin/terminal-plus-capture.py; then
-                install -m 755 "${'$'}temp/capture.py" /usr/local/bin/terminal-plus-capture.py
-                changed=1
-            fi
-            if ! cmp -s "${'$'}temp/capture.service" /etc/systemd/system/terminal-plus-capture.service; then
-                install -m 644 "${'$'}temp/capture.service" /etc/systemd/system/terminal-plus-capture.service
-                changed=1
-            fi
-            systemctl stop terminal-plus-kms-probe.service 2>/dev/null || true
-            systemctl daemon-reload
-            systemctl enable --now terminal-plus-capture.service
-            if [ "${'$'}changed" = 1 ]; then systemctl restart terminal-plus-capture.service; fi
-            systemctl is-active --quiet terminal-plus-capture.service
-            printf '\n$READY\n'
-        """.trimIndent()
+        val script = GuestTools.installScript(context) + "\nprintf '\\n$READY\\n'\n"
         val encoded = Base64.encodeToString(script.toByteArray(), Base64.NO_WRAP)
         // Fixed packaged installer, no guest-controlled command text. Separate ttyd session.
         val command = "printf '%s' '$encoded' | base64 -d | sudo -n sh\r"
@@ -80,9 +54,9 @@ internal object GuestScreenSetup {
                 override fun onClosed(webSocket: WebSocket, code: Int, reason: String) { done.countDown() }
             })
             try { done.await(8, TimeUnit.SECONDS) } finally { socket.cancel() }
-            if (success.get()) { Log.i("GuestScreenSetup", "Persistent capture service is ready"); return }
+            if (success.get()) { Log.i("GuestScreenSetup", "Unified guest service is ready"); return }
             if (current()) Thread.sleep(1000)
         }
-        Log.w("GuestScreenSetup", "Capture setup did not complete; guest sudo or systemd may be unavailable")
+        Log.w("GuestScreenSetup", "Guest tools setup did not complete; guest sudo or systemd may be unavailable")
     }
 }

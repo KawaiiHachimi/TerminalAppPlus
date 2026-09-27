@@ -201,3 +201,7 @@ truncated zlib/LZ4 payload rejection passed. Managed guest upgrade ran automatic
 
 LZ4 Java dependency: https://github.com/yawkat/lz4-java at Maven
 `at.yawk.lz4:lz4-java:1.12.0` (Apache-2.0). The discontinued org.lz4 artifact is not used.
+
+## Unified guest service
+
+The former capture/proxy units have been superseded by `terminal-plus-guest.service`, which also provides serial-console size synchronization. Use the [current guest service guide](../GUEST-SCREEN-SERVICE.md) for installation and migration.

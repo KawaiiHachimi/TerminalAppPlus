@@ -1,0 +1,17 @@
+[Unit]
+Description=Terminal Plus guest integration
+After=local-fs.target network.target
+
+[Service]
+ExecStart=/usr/bin/python3 -u /usr/local/bin/terminal-plus-guest.py
+Restart=on-failure
+RestartSec=2
+KillMode=control-group
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+RestrictAddressFamilies=AF_VSOCK AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

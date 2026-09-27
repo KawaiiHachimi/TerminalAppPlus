@@ -73,6 +73,8 @@ object VmController {
     val terminalConnection: StateFlow<TerminalConnection> = _terminalConnection.asStateFlow()
     private var terminalConnectionJob: Job? = null
     private var terminalTimeoutSecs = 60L
+    var consoleDevice: String = "hvc0"
+        private set
     private var runningProfile: VmProfile? = null
     private val _switching = MutableStateFlow(false)
     val switching = _switching.asStateFlow()
@@ -315,6 +317,7 @@ object VmController {
     private fun buildDefaultConfig(): android.system.virtualmachine.VirtualMachineConfig {
         val image = InstalledImage.getDefault(context)
         val json = ConfigJson.from(context, image.configPath)
+        consoleDevice = json.consoleDevice()
         terminalTimeoutSecs = json.getBootTimeoutSecs().toLong() * (if (IS_EMULATOR) 10 else 1)
         val configBuilder = json.toConfigBuilder(context)
         _guestAgentController.value =
@@ -360,6 +363,7 @@ object VmController {
 
     private fun buildCustomConfig(profile: VmProfile): android.system.virtualmachine.VirtualMachineConfig {
         _guestAgentController.value = null
+        consoleDevice = "ttyS0"
         val directory = VmProfiles.directory(profile)
         val custom = VirtualMachineCustomImageConfig.Builder()
             .setName("plus-${profile.id}")

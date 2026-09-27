@@ -4,7 +4,9 @@ package com.termux.terminal;
 /** Stream-backed session: never creates a host process or invokes the Termux PTY JNI. */
 public final class AvfTerminalSession extends TerminalSession {
     public interface Writer { void write(byte[] bytes); }
+    public interface ResizeListener { void onResize(int columns, int rows); }
     private final Writer writer;
+    public ResizeListener resizeListener;
     public AvfTerminalSession(TerminalSessionClient client, Writer writer) {
         super("", "", new String[0], new String[0], 2000, client);
         this.writer = writer;
@@ -15,13 +17,13 @@ public final class AvfTerminalSession extends TerminalSession {
     }
     @Override public void updateSize(int cols, int rows, int cw, int ch) {
         mEmulator.resize(cols, rows, cw, ch);
-        // AVF console has no PTY resize API. Guest-side stty/agent is a separate concern.
+        if (resizeListener != null) resizeListener.onResize(cols, rows);
     }
     @Override public void write(byte[] data, int offset, int count) {
         writer.write(java.util.Arrays.copyOfRange(data, offset, offset + count));
     }
     public void append(byte[] bytes) { mEmulator.append(bytes, bytes.length); notifyScreenUpdate(); }
     @Override public synchronized boolean isRunning() { return true; }
-    @Override public void finishIfRunning() { /* VM lifecycle belongs to the Activity. */ }
+    @Override public void finishIfRunning() { /* Shared VM lifecycle belongs to VmController. */ }
     @Override public int getPid() { return -1; }
 }

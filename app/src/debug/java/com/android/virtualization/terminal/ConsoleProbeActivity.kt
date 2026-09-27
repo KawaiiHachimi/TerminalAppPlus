@@ -19,6 +19,10 @@ class ConsoleProbeActivity : Activity() {
     private lateinit var session: com.termux.terminal.AvfTerminalSession
     private val writer = Executors.newSingleThreadExecutor()
     private var sharedConsole = false
+    private var resizeClient: ConsoleResizeClient? = null
+    private lateinit var sizeStatus: android.widget.TextView
+    private var consoleColumns = 80
+    private var consoleRows = 24
     private var replayingConsole = false
     private val consoleListener: (ByteArray) -> Unit = { bytes ->
         runOnUiThread { if (!isDestroyed) session.append(bytes) }
@@ -48,6 +52,12 @@ class ConsoleProbeActivity : Activity() {
                 if (sharedConsole) VmConsole.write(bytes)
                 else { consoleInput?.write(bytes); consoleInput?.flush() }
             } }
+        }
+        session.resizeListener = com.termux.terminal.AvfTerminalSession.ResizeListener { columns, rows ->
+            consoleColumns = columns
+            consoleRows = rows
+            resizeClient?.update(columns, rows)
+            if (::sizeStatus.isInitialized) sizeStatus.text = "$columns 列 × $rows 行 · 同步中"
         }
         terminal.attachSession(session)
         val container = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
@@ -88,6 +98,29 @@ class ConsoleProbeActivity : Activity() {
             (modifiers.getChildAt(1) as android.widget.Button).text = if (client.control) "Ctrl ●" else "Ctrl"
             (modifiers.getChildAt(2) as android.widget.Button).text = if (client.alt) "Alt ●" else "Alt"
         }
+
+        sizeStatus = android.widget.TextView(this).apply {
+            setTextColor(android.graphics.Color.GRAY)
+            setBackgroundColor(android.graphics.Color.BLACK)
+            textSize = 11f
+            gravity = android.view.Gravity.CENTER
+            text = "$consoleColumns 列 × $consoleRows 行 · 点此配置尺寸同步"
+            setOnClickListener {
+                android.app.AlertDialog.Builder(this@ConsoleProbeActivity)
+                    .setTitle("Guest 终端尺寸同步")
+                    .setMessage("当前 $consoleColumns 列 × $consoleRows 行。\n\n自动同步需要统一的 terminal-plus-guest.service（Python 3 + systemd）。安装一次后，缩放字体、旋转和键盘开关都会同步到 Guest。\n\n复制安装命令后，请在 Guest 登录后的 shell 中自行粘贴执行；不会自动输入，也不会改动账户。已有旧版采集/代理服务会合并迁移。\n\n不安装服务也可在 shell 执行一次 stty，之后尺寸变化需要重新执行。")
+                    .setPositiveButton("复制安装命令") { _, _ ->
+                        getSystemService(android.content.ClipboardManager::class.java).setPrimaryClip(
+                            android.content.ClipData.newPlainText("Guest tools setup", GuestTools.manualCommand(this@ConsoleProbeActivity)))
+                    }
+                    .setNeutralButton("复制 stty 命令") { _, _ ->
+                        getSystemService(android.content.ClipboardManager::class.java).setPrimaryClip(
+                            android.content.ClipData.newPlainText("TTY dimensions", "stty rows $consoleRows cols $consoleColumns"))
+                    }
+                    .setNegativeButton("关闭", null).show()
+            }
+        }
+        container.addView(sizeStatus, android.widget.LinearLayout.LayoutParams(-1, -2))
 
         container.setOnApplyWindowInsetsListener { view, insets ->
             val bars = insets.getInsets(android.view.WindowInsets.Type.systemBars() or android.view.WindowInsets.Type.ime())
@@ -184,6 +217,26 @@ class ConsoleProbeActivity : Activity() {
         val machine = vm
         vm = null
         runCatching { machine?.let { it.stop(); getSystemService(VirtualMachineManager::class.java)?.delete(it.name) } }
+    }
+    override fun onStart() {
+        super.onStart()
+        if (sharedConsole) {
+            val machine = com.android.virtualization.terminal.new2.core.VmController.virtualMachine
+            if (machine != null) {
+                resizeClient = ConsoleResizeClient(machine,
+                    com.android.virtualization.terminal.new2.core.VmController.consoleDevice) { columns, rows, synced ->
+                    runOnUiThread {
+                        if (!isDestroyed) sizeStatus.text = "$columns 列 × $rows 行 · " +
+                            if (synced) "已同步" else "未同步（点此配置）"
+                    }
+                }.also { it.update(consoleColumns, consoleRows) }
+            }
+        }
+    }
+    override fun onStop() {
+        resizeClient?.close()
+        resizeClient = null
+        super.onStop()
     }
     override fun onDestroy() {
         VmConsole.unsubscribe(consoleListener)

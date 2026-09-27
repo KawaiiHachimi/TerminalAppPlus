@@ -1,101 +1,96 @@
-# 虚拟机屏幕采集服务
+# 统一 Guest 服务：图形采集、串口尺寸与端口代理
 
-本项目显示的是来宾现有 DRM/KMS 输出，不会另开一个 VNC/RDP 桌面。
-数据经 AVF vsock 传到 App，再由 Android 渲染；键盘、触摸和鼠标通过 AVF 输入接口回传。
-采集需要 **Linux 来宾内的管理员权限**，不需要 Android 手机 root。
+只需要一个 `terminal-plus-guest.service`，管理三个独立模块：
 
-## 预构建 Debian：通常无需手工操作
+| 模块 | 通道 | 作用 |
+| --- | --- | --- |
+| 串口尺寸 | vsock 7684 | 同步行列数，通过 `TIOCSWINSZ` 让前台 TUI 收到 `SIGWINCH` |
+| 图形采集 | vsock 7683 | 采集 Guest DRM/KMS 画面与光标 |
+| 端口代理 | vsock 7682 | 访问 Guest 的 localhost TCP 服务 |
 
-当前 App 会自动为受管理的 Debian 镜像安装、更新并启用
-`terminal-plus-capture.service`。服务随虚拟机开机启动，不再有临时版的 30 分钟限制。
-已有镜像通过独立的本地 ttyd 会话运行固定安装程序；使用 `sudo -n`，不会询问或保存密码，
-也不会重置磁盘、修改用户或设置自动登录。
+各模块在独立进程中运行，避免图形采集的 CPU 工作阻塞尺寸更新。模块退出后单独重启。
+服务只接受 Android 宿主 CID 2 的 vsock 请求，不在局域网监听 TCP 端口。
+端口代理降权到已有的 droid 或 nobody 用户；没有可用用户时仅该模块不可用。
 
-自动配置依赖预构建 Debian 原有的 Python 3、systemd、ttyd 和非交互 sudo 权限。
-如果自行修改了这些条件，可以按下方方式手工安装。自定义镜像不自动执行安装。
+## 安装一次
 
-**服务已经安装但没启动时，在虚拟机终端执行这一条命令：**
+**最方便的方法：点击 App 控制台底部“列 × 行”状态，复制安装命令，在 Guest 已登录的 shell 内自行粘贴执行。**
+命令携带 App 内置版本，不要求 Guest 能访问 GitHub。需要 Python 3、systemd，以及 root 或 sudo 权限。
+App 不会把安装命令自动输入到串口，也不改动登录账户或密码。
 
-```sh
-sudo systemctl daemon-reload && sudo systemctl enable --now terminal-plus-capture.service && sudo systemctl restart terminal-plus-capture.service
-```
-
-返回图形页后会自动重连，不必重装 App 或删除虚拟机。
-
-## 自定义镜像 / 手工安装
-
-需要 Linux DRM/KMS、vsock、Python 3、systemd，以及可读取的
-`/sys/kernel/debug/dri/0/state` 和 `/dev/dri/card0`。
-目前支持线性 XR24/AR24 帧缓冲，以及常见 ARGB 硬件光标；不是所有 GPU 格式、
-多显示器组合或保护内容都能捕获。可选的 `liblz4` 能加快传输，缺少时会回退。
-
-先把包含图形采集功能的分支（如 `codex/feat-aosp-kms-display`）源码放入**虚拟机内**。
-私有 GitHub 仓库需要你自己的访问权限，
-不要把访问令牌写进安装脚本。随后在仓库根目录执行：
+已经在 Guest 中取得仓库代码时，一条命令即可安装或更新：
 
 ```sh
-sudo sh tools/install-guest-capture.sh
+sh tools/install-guest-tools.sh
 ```
 
-不想复制整个仓库，也可以把以下三个文件放到虚拟机同一目录：
-
-- [install-guest-capture.sh](../tools/install-guest-capture.sh)
-- [terminal-plus-capture.py](../app/src/main/assets/guest-setup/terminal-plus-capture.py)
-- [terminal-plus-capture.service](../app/src/main/assets/guest-setup/terminal-plus-capture.service)
-
-在该目录一键安装：
+私有仓库须通过自己的 GitHub 身份获取，不能使用未经认证的 raw 链接。
+也可把 [guest-setup](../app/src/main/assets/guest-setup) 中的 `guest-tools.tar.gz` 拷入 Guest：
 
 ```sh
-sudo sh ./install-guest-capture.sh .
+mkdir -p terminal-plus-tools
+tar -xzf guest-tools.tar.gz -C terminal-plus-tools
+sh terminal-plus-tools/install-guest-tools.sh terminal-plus-tools
 ```
 
-安装器会检查依赖、安装文件并启用服务；不会自动安装系统软件包或改写账号。
-如果 debugfs 尚未挂载，先确认内核支持，再执行：
+安装器会停用旧的 `terminal-plus-capture`、`terminal-plus-proxy`、`terminal-plus-console-resize` 与临时 kms-probe 单元，避免端口冲突。
+不会停用 ttyd、SSH 或发行版原有服务。旧入口 `tools/install-guest-capture.sh` 保留为统一安装器的兼容入口。
+
+App 管理的官方 Debian 会通过已有认证 ttyd 通道自动更新此服务；自定义镜像需显式安装一次。
+没有 ttyd、没有桌面也能使用串口尺寸同步，缺失 DRM 不影响其运行。
+
+## 日常维护
+
+```sh
+sudo systemctl restart terminal-plus-guest.service
+systemctl is-enabled terminal-plus-guest.service
+systemctl is-active terminal-plus-guest.service
+sudo journalctl -u terminal-plus-guest.service -n 50 --no-pager
+```
+
+服务 active 表示管理进程运行中，不代表 Guest 一定存在可采集的图形画面。
+图形采集仍需要 virtio-gpu、`/dev/dri/card0` 与可读 DRM debugfs 状态。
+需要时在 Guest 挂载 debugfs：
 
 ```sh
 sudo mount -t debugfs debugfs /sys/kernel/debug
 ```
 
-自定义系统还需保证重启后 debugfs 可用。无 systemd 的镜像可直接运行采集程序，
-但需要用自己的 init 系统管理开机启动：
+无 systemd 的系统，可将这些 Python 模块放在同一目录，以 root 运行 `python3 terminal-plus-guest.py`，自行接入该发行版的启动机制。
+
+## 控制台尺寸
+
+App 根据实际视图大小和等宽字体计算列数、行数，缩放、旋转、软键盘开关都触发更新。
+变更合并后发送，Guest 启动期间连接失败会保留最新尺寸并重试；退出控制台停止同步。
+当前支持 `/dev/hvc0` 和 `/dev/ttyS0`，根据 VM 的控制台配置选择，不猜测用户账户。
+不通过键盘输入注入 shell 命令，不执行任意路径或任意指令。
+
+检查 Guest 当前尺寸：
 
 ```sh
-sudo python3 /usr/local/bin/terminal-plus-capture.py --fps 30
+stty size
 ```
 
-## 状态、日志与停止
+输出顺序是 **行 列**。App 显示“60 列 × 90 行”时，应输出 `90 60`。
+不安装服务时可临时在 shell 运行 `stty rows 90 cols 60`，但下次尺寸变化需要重新执行。
+U-Boot 自身不是 Linux TTY，不支持这里的 ioctl/SIGWINCH 同步。
 
-```sh
-systemctl is-enabled terminal-plus-capture.service
-systemctl is-active terminal-plus-capture.service
-sudo journalctl -u terminal-plus-capture.service -n 50 --no-pager
+## 图形画面不更新
 
-# 停止并取消自启
-sudo systemctl disable --now terminal-plus-capture.service
-```
-
-对于 App 管理的 Debian，下一次 App 自动配置可能再次启用服务；上面的停止命令主要用于排查。
-采集只监听 vsock 7683，只接受宿主 CID 2，不开放局域网 TCP 端口。
-
-## 能显示但画面不更新
-
-先检查图形会话是否活动。原版 AOSP 的 shell 显示启动脚本可能与后来安装的 GDM 等
-显示管理器争用 tty1。仅在确认遇到这个兼容问题时，运行：
+若使用 GDM/GNOME，原 AOSP `activate_display.sh` 可能抢占图形会话的 seat。
+只有确认该问题时才在 Guest 执行修复脚本（脚本会备份原文件）：
 
 ```sh
 sudo python3 tools/experiments/fix-aosp-display-seat.py
 ```
 
-这个工具会备份已知 AOSP 脚本，避免已启用显示管理器时重复创建空的显示会话，
-并尝试激活明确的图形会话。它不修改密码或自动登录设置；不是通用自定义镜像安装步骤。
+它不会设置自动登录或修改密码；详细排查见 [KMS 实验记录](experiments/KMS-CAPTURE.md)。
 
-## 代码位置与维护
+## 实现和来源
 
-- [采集器源代码](../tools/experiments/kms-capture-server.py)：读取活动输出、合成光标、编码和 vsock 服务。
-- [systemd 服务](../guest/root_files/etc/systemd/system/terminal-plus-capture.service)。
-- [App 自动配置](../app/src/main/java/com/android/virtualization/terminal/GuestScreenSetup.kt)。
-- [App 显示接收与绘制](../app/src/main/java/com/android/virtualization/terminal/KmsDisplayProvider.kt)。
-- [打包脚本](../tools/build-cidata.py)：将同一份采集器生成到 cidata 和 App 升级资源。
+- [统一管理进程](../guest/root_files/usr/local/bin/terminal-plus-guest.py)、[systemd 单元](../guest/root_files/etc/systemd/system/terminal-plus-guest.service)
+- [串口尺寸模块](../guest/root_files/usr/local/bin/terminal-plus-console-resize.py)、[App 尺寸发送器](../app/src/main/java/com/android/virtualization/terminal/ConsoleResizeClient.kt)
+- [图形采集源码](../tools/experiments/kms-capture-server.py)、[端口代理](../guest/root_files/usr/local/bin/terminal-plus-proxy.py)
+- [统一安装器](../tools/install-guest-tools.sh)、[生成 cidata 和安装包](../tools/build-cidata.py)
 
-修改采集器或服务后执行 `.venv/bin/python tools/build-cidata.py`，不要单独改生成副本。
-协议、性能测量和已知限制见 [KMS-CAPTURE 实验记录](experiments/KMS-CAPTURE.md)。
+串口尺寸通知路线参考了 [Podroid](https://github.com/ExTV/Podroid) 的 resize-notifying session / Guest control channel 设计；这里的协议与服务为独立实现，没有复制其实现代码。

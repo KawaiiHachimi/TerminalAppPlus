@@ -65,6 +65,8 @@ internal data class ConfigJson(
     private val auto_memory_balloon: Boolean,
     private val boot_timeout_secs: Int?,
 ) {
+    fun consoleDevice(): String = if (GuestKernelCompat.required) "hvc0" else console_input_device ?: "ttyS0"
+
     private fun getCpuTopology(): Int {
         return when (cpu_topology) {
             "one_cpu" -> VirtualMachineConfig.CPU_TOPOLOGY_ONE_CPU

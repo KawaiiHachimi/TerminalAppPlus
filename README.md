@@ -135,3 +135,5 @@ AOSP 显示分支复用原版全屏、缩放/平移、软键盘、触控板、�
 ### 自定义虚拟机
 
 可在“设置 → 虚拟机”切换默认 Debian 与独立的 U-Boot 镜像；实验室仅保留镜像导入入口。格式限制、U-Boot 选择和切换说明见 [自定义 U-Boot 虚拟机](docs/CUSTOM-VM.md)。
+
+控制台现在显示实际列数、行数及 Guest 同步状态；缩放字体、旋转和软键盘变化通过统一的 `terminal-plus-guest.service` 同步到串口 TTY。点击尺寸状态可复制安装命令。该服务同时管理图形采集和端口代理，详见 [Guest 服务说明](docs/GUEST-SCREEN-SERVICE.md)。尺寸通知路线参考 Podroid，协议与服务独立实现。

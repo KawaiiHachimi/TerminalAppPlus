@@ -1,13 +1,12 @@
 [Unit]
-Description=Terminal Plus localhost port proxy
-After=network.target
+Description=Terminal Plus guest integration
+After=local-fs.target network.target
 
 [Service]
-ExecStart=/usr/bin/python3 /usr/local/bin/terminal-plus-proxy.py
-User=droid
-Group=users
+ExecStart=/usr/bin/python3 -u /usr/local/bin/terminal-plus-guest.py
 Restart=on-failure
 RestartSec=2
+KillMode=control-group
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
