@@ -96,7 +96,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.android.virtualization.terminal.DisplayProvider
+import com.android.virtualization.terminal.KmsDisplayProvider as DisplayProvider
 import com.android.virtualization.terminal.DisplaySurfaceView
 import com.android.virtualization.terminal.InputForwarder
 import com.android.virtualization.terminal.R
@@ -114,8 +114,9 @@ fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
     val settingsViewModel: SettingsViewModel = viewModel()
     val resolution by settingsViewModel.displayResolution.collectAsStateWithLifecycle()
     val vm = VmController.virtualMachine ?: return
-    val vmDisplayWidth = vm.config.customImageConfig?.displayConfig!!.width
-    val vmDisplayHeight = vm.config.customImageConfig?.displayConfig!!.height
+    var vmDisplayWidth by remember(vm) { mutableStateOf(vm.config.customImageConfig?.displayConfig!!.width) }
+    var vmDisplayHeight by remember(vm) { mutableStateOf(vm.config.customImageConfig?.displayConfig!!.height) }
+    var displayStatus by remember(vm) { mutableStateOf<String?>(null) }
 
     var displaySurfaceView by remember { mutableStateOf<DisplaySurfaceView?>(null) }
 
@@ -230,6 +231,8 @@ fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                                 vmDisplayWidth,
                                 vmDisplayHeight,
                                 resolution,
+                                onFrameSize = { width, height -> vmDisplayWidth = width; vmDisplayHeight = height },
+                                onStatus = { displayStatus = it },
                             )
 
                         // Use a dummy view for touch receiver to prevent InputForwarder from
@@ -252,7 +255,15 @@ fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                     onRelease = { view ->
                         val pair = view.tag as? Pair<*, *>
                         (pair?.first as? InputForwarder)?.cleanUp()
+                        (pair?.second as? DisplayProvider)?.close()
                     },
+                )
+            }
+            displayStatus?.let { message ->
+                androidx.compose.material3.Text(
+                    text = message,
+                    color = Color.White,
+                    modifier = Modifier.align(Alignment.TopCenter).background(Color.Black.copy(alpha = 0.8f)).padding(12.dp),
                 )
             }
             val hasPhysicalKeyboard by viewModel.hasPhysicalKeyboard.collectAsStateWithLifecycle()

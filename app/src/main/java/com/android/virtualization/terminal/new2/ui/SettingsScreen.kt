@@ -414,6 +414,19 @@ fun AdvancedPage(
     }
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
+        item {
+            ListItem(
+                headlineContent = {
+                    Text(stringResource(R.string.settings_display_resolution_title))
+                },
+                supportingContent = { Text(formatDisplayResolution(displayResolution)) },
+                leadingContent = {
+                    Icon(imageVector = Icons.Default.DisplaySettings, contentDescription = null)
+                },
+                modifier = Modifier.clickable { showResolutionDialog = true },
+            )
+            HorizontalDivider()
+        }
         if (VmController.isGraphicsAccelerationSupported) {
             item {
                 ListItem(

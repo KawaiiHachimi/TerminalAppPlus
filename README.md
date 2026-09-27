@@ -62,7 +62,8 @@ adb shell pm grant com.android.virtualization.terminal.plus android.permission.U
 - cidata 增加一个以 droid 身份运行的 guest localhost 代理，替代需要宿主直接
   监听 vsock 的原版 JNI 转发。仅监听 vsock，校验连接来自宿主 CID 2；手机端仅绑定回环地址。
 - **这台 ROM 的原生 VM 显示 Binder 服务被 SELinux 限制给系统应用。两个 AVF 开发权限
-  无法解锁。已隐藏原生显示入口及其分辨率设置，并移除原生显示 Activity 注册。**
+  无法解锁。本 AOSP 显示实验分支恢复原版 Compose 显示入口和分辨率设置，
+  以 KMS/vsock 画面采集替代受限 Binder；仍需在来宾中运行采集服务。**
   GPU 后端、虚拟显示与输入设备、渲染器设置和 guest 资源保持原样；这不代表硬件 3D 加速已验证。
 - 下载目录数字并不是 Android 或 Debian 版本，且 `latest` 不一定最新。
   详见 [docs/IMAGE-VERSIONS.md](docs/IMAGE-VERSIONS.md)。
@@ -110,3 +111,7 @@ APK 不打包字体。设备缺少该文件时回退到系统等宽字体。
   本分支直接使用 Termux 官方组件，没有复制 Podroid 的 UI 或桥接实现。
 
 第三方许可及本地调整见 [third_party/termux/README.md](third_party/termux/README.md)。
+
+AOSP 显示分支复用原版全屏、缩放/平移、软键盘、触控板、鼠标捕获和剪贴板交互。
+图形分辨率按原版设置调整；采集服务缺失时页面显示说明并自动重连。
+当前采集仍是实验级主平面抓取，尚未完整支持独立硬件光标和叠加平面。

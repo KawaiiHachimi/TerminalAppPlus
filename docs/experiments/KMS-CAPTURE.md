@@ -110,3 +110,23 @@ The updated active-plane + DMA sync code also captured a 3,686,412-byte raw fram
 successfully on device. Build, lint and five Python tests passed. The guest fix
 was applied live; installing the newly built status-counter APK is not required
 for the live seat repair and was deferred to preserve the active desktop session.
+
+## Restored AOSP display UI
+
+The AOSP branch restores DisplayController/DisplayScreen in the main Compose UI,
+including fullscreen, pan/zoom, keyboard, touchpad/mouse capture, modifier keys and
+clipboard hooks. The direct serial-console action remains separate. Advanced
+settings again show display resolution; gfxstream remains gated by the original
+device capability flag.
+
+KmsDisplayProvider replaces only the restricted host Surface Binder path. It
+reads bounded raw frames from the guest helper, renders to the original
+DisplaySurfaceView, reports missing capture service visibly, retries connections,
+and stops reading when the Activity stops or the composable is released. Actual
+frame dimensions update touch mapping after resolution changes. The original
+resolution setting drives VirtualMachine display resize and surface buffer size.
+
+Build/lint passed and device UI inspection confirmed the restored controls and
+fullscreen entry. Fullscreen/resolution combinations and external mouse behavior
+still need broader hardware validation. The capture helper still omits separate
+cursor/overlay planes; do not call this full native-display parity.

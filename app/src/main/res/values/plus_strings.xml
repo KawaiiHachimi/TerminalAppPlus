@@ -18,4 +18,6 @@
     <string name="plus_copy_commands">Copy ADB commands</string>
     <string name="plus_commands_copied">Commands copied. Run them on your ADB computer, then tap Check again.</string>
     <string name="plus_direct_console">Direct console (experimental)</string>
+    <string name="plus_display_connecting">Connecting to VM screen…</string>
+    <string name="plus_display_service_required">Screen capture is unavailable. Start the capture service inside the VM; this page will retry automatically.</string>
 </resources>
