@@ -16,4 +16,5 @@
     <string name="plus_adb_alternative">也可以通过 ADB 配置</string>
     <string name="plus_copy_commands">复制 ADB 命令</string>
     <string name="plus_commands_copied">命令已复制。在已连接 ADB 的电脑上执行后，点击「重新检查」。</string>
+    <string name="plus_direct_console">直接控制台（实验）</string>
 </resources>

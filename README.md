@@ -91,7 +91,10 @@ AOSP 来源、参考项目及移植边界见 [docs/UPSTREAM.md](docs/UPSTREAM.md
 ## 实验分支：AVF 原生控制台
 
 `codex/feat-direct-console` 在 debug 构建中提供独立的控制台实验入口，
-用 AVF 输入输出流连接来宾串口，不依赖 ttyd。常规终端入口保持原样。
+用 AVF 输入输出流连接来宾串口，不依赖 ttyd。主界面设置按钮左侧的控制台按钮
+可进入实验终端；原有 ttyd 终端仍可使用。实验终端直接加载手机上的
+`/system/fonts/DroidSansMono.ttf`，避免厂商主题替换 monospace 字体别名；
+APK 不打包字体。设备缺少该文件时回退到系统等宽字体。
 实验步骤与实机结果见 [DIRECT-CONSOLE.md](docs/experiments/DIRECT-CONSOLE.md)。
 
 ### Credit

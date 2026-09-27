@@ -17,4 +17,5 @@
     <string name="plus_adb_alternative">Or configure with ADB</string>
     <string name="plus_copy_commands">Copy ADB commands</string>
     <string name="plus_commands_copied">Commands copied. Run them on your ADB computer, then tap Check again.</string>
+    <string name="plus_direct_console">Direct console (experimental)</string>
 </resources>

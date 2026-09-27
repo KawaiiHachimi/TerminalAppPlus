@@ -15,6 +15,7 @@
  */
 package com.android.virtualization.terminal.new2.ui
 
+import android.content.Intent
 import android.app.Activity
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
@@ -29,6 +30,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.ui.res.stringResource
+import com.android.virtualization.terminal.BuildConfig
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -136,6 +140,7 @@ fun BootingScreen() {
 
 @Composable
 fun RunningScreen(state: MainUiState.Running, viewModel: MainViewModel) {
+    val context = LocalContext.current
     val tabs by viewModel.tabs.collectAsStateWithLifecycle()
     val selectedTabId by viewModel.selectedTabId.collectAsStateWithLifecycle()
 
@@ -152,6 +157,16 @@ fun RunningScreen(state: MainUiState.Running, viewModel: MainViewModel) {
                     onTabClosed = { viewModel.closeTab(it) },
                     onAddTab = { viewModel.addTab() },
                 )
+            }
+            if (BuildConfig.DEBUG) {
+                IconButton(onClick = {
+                    context.startActivity(Intent().setClassName(
+                        context.packageName,
+                        "com.android.virtualization.terminal.ConsoleProbeActivity",
+                    ))
+                }) {
+                    Icon(Icons.Default.Terminal, contentDescription = stringResource(R.string.plus_direct_console))
+                }
             }
             IconButton(
                 onClick = {

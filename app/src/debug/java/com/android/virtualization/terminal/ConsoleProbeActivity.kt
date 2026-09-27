@@ -29,7 +29,13 @@ class ConsoleProbeActivity : Activity() {
             isFocusable = true
             isFocusableInTouchMode = true
             setTextSize((12 * resources.displayMetrics.scaledDensity).toInt())
-            setTypeface(android.graphics.Typeface.MONOSPACE)
+            // Load the actual font file, bypassing vendor replacements of the monospace alias.
+            setTypeface(runCatching {
+                android.graphics.Typeface.createFromFile("/system/fonts/DroidSansMono.ttf")
+            }.getOrElse {
+                android.util.Log.w("ConsoleProbe", "Stock monospace font unavailable; using platform fallback", it)
+                android.graphics.Typeface.MONOSPACE
+            })
         }
         val client = ProbeTerminalClient(terminal)
         terminal.setTerminalViewClient(client)

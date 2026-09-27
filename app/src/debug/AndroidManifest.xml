@@ -2,10 +2,7 @@
     <application>
         <activity android:name=".ConsoleProbeActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboard|keyboardHidden"
             android:label="终端 Plus · 控制台实验" android:windowSoftInputMode="adjustResize">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+
         </activity>
     </application>
 </manifest>

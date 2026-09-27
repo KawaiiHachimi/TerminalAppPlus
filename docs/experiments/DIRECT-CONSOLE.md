@@ -109,9 +109,19 @@ a separate incomplete validation item.
 The experimental page now follows Termux's basic interaction model: black terminal,
 two extra-key rows, sticky Ctrl/Alt, Escape/Tab/navigation keys, keyboard toggle,
 pinch font scaling, long-press selection and a left-edge drawer for probe modes.
-A separate debug launcher entry identifies it as Console Experiment. Insets keep
+A debug-only console button to the left of Settings on the normal terminal
+toolbar opens the experiment; it does not add a second launcher icon. Insets keep
 the terminal and key rows above the IME. Hardware-key input through TerminalView
 was verified with `echo 1` returning `1`; the IME and key rows were visually checked
 on the device. Ctrl/Alt are sticky until tapped again. This is still a single-VM
 probe, not a full Termux multi-session clone. All 145 upstream emulator JVM tests
 passed using upstream's Android stub configuration.
+
+## Font and entry placement
+
+The console action is immediately left of Settings in the normal terminal toolbar.
+No separate launcher icon is added. The terminal loads the device font file
+/system/fonts/DroidSansMono.ttf directly rather than the themed monospace alias.
+On PKB110 it is app-readable and matches the AOSP font SHA256
+`db19a1fdaba41cc4a2fec0330e5c15e71c6dd68a3ef074f4f28268828b45c862`.
+No TTF is bundled. Devices lacking the file fall back to Typeface.MONOSPACE.
