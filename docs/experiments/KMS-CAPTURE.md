@@ -67,3 +67,16 @@ Observed live on device: current GDM screen at 1280x720, approximately 8.1–8.2
 with the prototype's 100 ms server pacing. Input plumbing builds but comprehensive
 mouse/IME/touch validation is still pending. This is not a zero-copy or finished
 high-performance renderer; capture/transport overhead must be measured separately.
+
+## Important correction: received frames are not necessarily changing frames
+
+Follow-up on 2026-09-28 confirmed four captures two seconds apart had identical
+SHA256 `2c50ab7a04915841d3b51e13f3a92d764ca9a01f43b840e37ffcd90330ace326`.
+DRM framebuffer ID stayed 149. The captured GNOME greeter session c1 was
+Active=no, while seat0 ActiveSession was a droid session created by the stock
+interactive-shell display setup. `loginctl activate c1` did not make it active in
+this test. Therefore the displayed ~8 fps measures repeated frame delivery, not
+validated animated desktop updates. Renderer-performance comparison is premature.
+A dynamically changing source and correct compositor/session ownership must be
+verified before declaring the display/input path fully functional. No permanent
+session/login configuration was changed to mask this limitation.
