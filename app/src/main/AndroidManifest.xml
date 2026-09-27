@@ -20,6 +20,7 @@
 
     <queries>
         <package android:name="com.google.android.apps.internal.betterbug" />
+        <package android:name="moe.shizuku.privileged.api" />
     </queries>
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -46,6 +47,11 @@
         android:enabled="true"
         android:allowBackup="false"
         android:name=".Application">
+        <provider android:name="rikka.shizuku.ShizukuProvider"
+                  android:authorities="${applicationId}.shizuku"
+                  android:exported="true"
+                  android:multiprocess="false"
+                  android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
         <activity android:name=".LauncherActivity"
                   android:exported="true">
             <intent-filter>

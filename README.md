@@ -29,7 +29,10 @@ adb shell pm grant com.android.virtualization.terminal.plus android.permission.M
 adb shell pm grant com.android.virtualization.terminal.plus android.permission.USE_CUSTOM_VIRTUAL_MACHINE
 ```
 
-也可运行 `tools/grant-permissions.sh`。首次启动有可复制授权命令。
+也可运行 `tools/grant-permissions.sh`。首次启动保留可复制授权命令和重新检查，
+并提供「使用 Shizuku 配置」：先启动 Shizuku，允许终端 Plus 使用 Shizuku 后，
+自动授予本应用的两个 AVF 权限，检查成功后进入终端。无需电脑输入命令。
+该功能不改变 SELinux 策略，也不解锁原生显示服务。
 随后按原版流程授予通知、本地网络和音频权限，下载约 628 MB Debian 镜像。
 默认 4 GB 内存（可在「设置 → 高级」调整），CPU 使用原版 match_host 拓扑。
 没有使用 `su`、平台证书、sharedUserId 或系统分区安装。

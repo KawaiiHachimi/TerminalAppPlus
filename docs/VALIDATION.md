@@ -51,3 +51,14 @@ These device nodes confirm that the virtual GPU is present, not that hardware
 The temporary headless guest profile and plus2 cidata from the discarded changes
 were restored on the test device to the original Plus profile and plus1 cidata,
 without resetting the guest root disk.
+
+## Shizuku onboarding — 2026-09-27
+
+Built APK and lint successfully. Installed on PKB110, revoked both Plus AVF
+development grants without clearing data, and opened the initial dialog.
+Confirmed the Shizuku configuration button, Copy and Check again controls.
+After using the Shizuku flow, dumpsys reported both AVF grants and Shizuku access
+as granted; the app entered the terminal and the guest agent registered.
+No adb pm grant was used to restore these permissions during this test.
+Shizuku-unavailable and denial messages are implemented but those branches were
+not exercised in this hardware run.

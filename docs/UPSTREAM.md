@@ -29,3 +29,8 @@ localhost proxy. This replaces the Soong-specific Rust JNI library and the rever
 listener that untrusted_app SELinux forbids. The original port-control UI is retained.
 
 The hidden-API signature JAR is only a compile dependency; see `app/libs/README.md`.
+
+Permission onboarding uses the official [Shizuku API](https://github.com/RikkaApps/Shizuku-API)
+and provider 13.1.5. A wrapped permission-manager Binder grants only the two fixed
+AVF permissions to this app in its own Android user; no shell-command interface
+or persistent privileged user service is exposed.

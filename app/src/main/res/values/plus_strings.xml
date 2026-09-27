@@ -1,7 +1,20 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Plus additions intentionally provide English fallback and Simplified Chinese. -->
-    <string name="plus_grant_instructions">Terminal Plus uses Android Virtualization Framework without root. Run these two commands once from an ADB computer, then tap Check again:\n\n%1$s</string>
+    <string name="plus_grant_instructions">Terminal Plus uses Android Virtualization Framework without root. Use a running Shizuku to configure permissions, or run these two commands once from an ADB computer and tap Check again:\n\n%1$s</string>
     <string name="plus_check_again">Check again</string>
     <string name="plus_avf_unavailable">This device does not provide Android Virtualization Framework. Terminal Plus requires AVF and custom non-protected VM support.</string>
     <string name="plus_display_unavailable">This ROM restricts the native VM display to system apps. The two AVF grants enable the terminal, but do not unlock this display service.</string>
+    <string name="plus_shizuku_configure">Configure with Shizuku</string>
+    <string name="plus_shizuku_unavailable">Install and start Shizuku, then return and tap Configure with Shizuku again. You can also copy the ADB commands below.</string>
+    <string name="plus_shizuku_update">Please update Shizuku and try again.</string>
+    <string name="plus_shizuku_denied">Shizuku access was denied. Allow Terminal Plus in Shizuku’s authorized apps, then try again.</string>
+    <string name="plus_shizuku_working">Granting the two AVF permissions…</string>
+    <string name="plus_shizuku_failed">Configuration failed: %1$s. You can retry or use the ADB commands.</string>
+    <string name="plus_shizuku_verify">The request completed, but permissions are not yet confirmed. Tap Check again or use the ADB commands.</string>
+    <string name="plus_setup_title">Set up Terminal Plus</string>
+    <string name="plus_setup_summary">Allow two virtualization permissions to get started. Choose either method below.</string>
+    <string name="plus_shizuku_hint">Start Shizuku first, then allow Terminal Plus when prompted.</string>
+    <string name="plus_adb_alternative">Or configure with ADB</string>
+    <string name="plus_copy_commands">Copy ADB commands</string>
+    <string name="plus_commands_copied">Commands copied. Run them on your ADB computer, then tap Check again.</string>
 </resources>

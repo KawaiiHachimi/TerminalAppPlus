@@ -21,6 +21,8 @@ android {
 }
 dependencies {
     implementation(project(":guest-protocol"))
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
     compileOnly(files("libs/android-hidden-37.jar"))
     implementation("org.lsposed.hiddenapibypass:hiddenapibypass:6.1")
     implementation("androidx.appcompat:appcompat:1.7.1")
