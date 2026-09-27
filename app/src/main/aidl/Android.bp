@@ -1,0 +1,165 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+aidl_interface {
+    name: "android.system.virtualizationservice",
+    srcs: ["android/system/virtualizationservice/**/*.aidl"],
+    imports: ["android.system.virtualizationcommon"],
+    // This is never accessed directly. Apps are expected to use this indirectly via the Java
+    // wrapper android.system.virtualmachine.
+    unstable: true,
+    backend: {
+        java: {
+            sdk_version: "module_current",
+            apex_available: [
+                "//apex_available:platform",
+                "com.android.virt",
+            ],
+        },
+        cpp: {
+            enabled: true,
+        },
+        ndk: {
+            apex_available: [
+                "com.android.virt",
+                "com.android.compos",
+            ],
+        },
+        rust: {
+            enabled: true,
+            gen_mockall: true,
+            additional_rustlibs: [
+                "libmockall",
+            ],
+            apex_available: [
+                "//apex_available:platform",
+                "com.android.virt",
+                "com.android.compos",
+                "com.android.microfuchsia",
+            ],
+        },
+    },
+}
+
+aidl_interface {
+    name: "android.system.virtualizationservice_internal",
+    srcs: ["android/system/virtualizationservice_internal/**/*.aidl"],
+    imports: [
+        "android.system.virtualizationcommon",
+        "android.system.virtualizationservice",
+    ],
+    unstable: true,
+    backend: {
+        java: {
+            sdk_version: "module_current",
+            apex_available: [
+                "com.android.virt",
+            ],
+        },
+        rust: {
+            enabled: true,
+            apex_available: [
+                "com.android.virt",
+            ],
+        },
+        ndk: {
+            apex_available: [
+                "com.android.virt",
+            ],
+        },
+    },
+}
+
+aidl_interface {
+    name: "android.system.virtualizationmaintenance",
+    srcs: ["android/system/virtualizationmaintenance/**/*.aidl"],
+    unstable: true,
+    backend: {
+        java: {
+            sdk_version: "module_current",
+            apex_available: [
+                "com.android.virt",
+            ],
+        },
+        rust: {
+            enabled: true,
+            apex_available: [
+                "com.android.virt",
+            ],
+        },
+    },
+}
+
+aidl_interface {
+    name: "android.system.vmtethering",
+    srcs: ["android/system/vmtethering/**/*.aidl"],
+    unstable: true,
+    backend: {
+        java: {
+            sdk_version: "module_current",
+            apex_available: [
+                "com.android.virt",
+            ],
+        },
+        rust: {
+            enabled: true,
+            apex_available: [
+                "com.android.virt",
+            ],
+        },
+    },
+}
+
+aidl_interface {
+    name: "android.system.virtualmachineservice",
+    srcs: ["android/system/virtualmachineservice/**/*.aidl"],
+    imports: [
+        "android.hardware.security.secretkeeper-V2",
+        "android.system.virtualizationcommon",
+        "rpc_servicemanager_aidl",
+    ],
+    unstable: true,
+    backend: {
+        java: {
+            enabled: false,
+        },
+        rust: {
+            enabled: true,
+            apex_available: [
+                "com.android.virt",
+                "com.android.compos",
+            ],
+        },
+    },
+}
+
+aidl_interface {
+    name: "android.system.virtualizationcommon",
+    srcs: ["android/system/virtualizationcommon/**/*.aidl"],
+    unstable: true,
+    backend: {
+        java: {
+            sdk_version: "module_current",
+            apex_available: [
+                "com.android.virt",
+                "//apex_available:platform",
+            ],
+        },
+        ndk: {
+            apex_available: [
+                "com.android.virt",
+                "com.android.compos",
+            ],
+        },
+        rust: {
+            enabled: true,
+            apex_available: [
+                "//apex_available:platform",
+                "com.android.virt",
+                "com.android.compos",
+                "com.android.microfuchsia",
+            ],
+        },
+    },
+}
