@@ -88,7 +88,7 @@ internal data class ConfigJson(
             .setProtectedVm(isProtected)
             .setMemoryBytes(memory_mib.toLong() * 1024 * 1024)
             .setShouldUseHugepages(hugepages)
-            .setConsoleInputDevice(console_input_device)
+            .setConsoleInputDevice(if (GuestKernelCompat.required) "hvc0" else console_input_device)
             .setCpuTopology(getCpuTopology())
             .setCustomImageConfig(toCustomImageConfigBuilder(context).build())
             .setDebugLevel(getDebugLevel())
@@ -103,7 +103,7 @@ internal data class ConfigJson(
             .setName(name)
             .setOsName("debian")
             .setBootloaderPath(bootloader)
-            .setKernelPath(kernel)
+            .setKernelPath(GuestKernelCompat.kernelPath(kernel, isProtected))
             .setInitrdPath(initrd)
             .useNetwork(network)
             .useAutoMemoryBalloon(auto_memory_balloon)
@@ -133,7 +133,10 @@ internal data class ConfigJson(
             builder.addParam("transparent_hugepage=always")
         }
 
-        params?.split(" ".toRegex())?.filter { it.isNotEmpty() }?.forEach { builder.addParam(it) }
+        val effectiveParams = if (GuestKernelCompat.required) {
+            params?.replace("console=ttyS0", "console=hvc0") + " earlycon"
+        } else params
+        effectiveParams?.split(" ".toRegex())?.filter { it.isNotEmpty() }?.forEach { builder.addParam(it) }
 
         disks?.forEach { builder.addDisk(it.toConfig()) }
 
@@ -148,7 +151,7 @@ internal data class ConfigJson(
                 val terminalUid = getTerminalUid(context)
                 if (sharedPath?.contains("emulated") == true) {
                     if (Environment.isExternalStorageManager()) {
-                        val currentUserId = context.userId
+                        val currentUserId = (android.os.Process.myUid() / 100000)
                         val path = "$sharedPath/$currentUserId"
                         return VirtualMachineCustomImageConfig.SharedPath(
                             path,
@@ -171,9 +174,7 @@ internal data class ConfigJson(
 
         @Throws(PackageManager.NameNotFoundException::class)
         fun getTerminalUid(context: Context): Int {
-            return context
-                .getPackageManager()
-                .getPackageUidAsUser(context.getPackageName(), context.userId)
+            return context.applicationInfo.uid
         }
 
         companion object {
@@ -308,7 +309,7 @@ internal data class ConfigJson(
             val rules: Map<String, String> =
                 mapOf(
                     "\\\$PAYLOAD_DIR" to InstalledImage.getDefault(context).installDir.toString(),
-                    "\\\$USER_ID" to context.userId.toString(),
+                    "\\\$USER_ID" to (android.os.Process.myUid() / 100000).toString(),
                     "\\\$PACKAGE_NAME" to context.getPackageName(),
                     "\\\$APP_DATA_DIR" to context.getDataDir().toString(),
                 )
