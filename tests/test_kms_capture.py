@@ -44,3 +44,47 @@ class CursorCompositionTest(unittest.TestCase):
                  'plane[2]: cursor\n crtc=crtc-0\n fb=51\n crtc-pos=64x64-2+20\n normalized-zpos=1\n'
                  'crtc[3]: crtc-0\n enable=1\n active=1\n')
         self.assertEqual(module.active_planes(state)[1]['rect'], (64, 64, -2, 20))
+
+class FramePacingTest(unittest.TestCase):
+    def test_capture_time_is_part_of_frame_budget(self):
+        self.assertAlmostEqual(module.frame_delay(1/30, 0.020), 1/30-0.020)
+        self.assertEqual(module.frame_delay(1/30, 0.050), 0)
+    def test_reuse_is_bounded_by_role_not_resolution_history(self):
+        buffers = {}
+        first = module.reusable_buffer(buffers, 'primary', 16)
+        self.assertIs(first, module.reusable_buffer(buffers, 'primary', 16))
+        self.assertEqual(len(module.reusable_buffer(buffers, 'primary', 32)), 32)
+        self.assertEqual(len(buffers), 1)
+
+class AdaptiveCompressionTest(unittest.TestCase):
+    def test_flat_desktop_compresses_losslessly(self):
+        import zlib
+        pixels = bytearray([20, 40, 60, 255]*4096)
+        codec, payload = module.encode_frame(pixels)
+        self.assertEqual(codec, 1)
+        self.assertEqual(zlib.decompress(payload), pixels)
+    def test_high_entropy_uses_raw_without_full_copy(self):
+        import random
+        pixels = bytearray(random.Random(0).randbytes(32768))
+        codec, payload = module.encode_frame(pixels)
+        self.assertEqual(codec, 0)
+        self.assertEqual(payload, pixels)
+        self.assertIs(payload.obj, pixels)
+
+class NativeLz4Test(unittest.TestCase):
+    def test_native_block_roundtrip_when_available(self):
+        import ctypes
+        encoder = module.Lz4Encoder()
+        if encoder.library is None:
+            self.skipTest('Native LZ4 is optional on the build host')
+        pixels = bytearray([20, 40, 60, 255]*4096)
+        codec, payload = encoder.encode(pixels)
+        self.assertEqual(codec, 2)
+        decoder = encoder.library.LZ4_decompress_safe
+        decoder.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int]
+        decoder.restype = ctypes.c_int
+        output = ctypes.create_string_buffer(len(pixels))
+        compressed = bytes(payload)
+        size = decoder(compressed, output, len(compressed), len(pixels))
+        self.assertEqual(size, len(pixels))
+        self.assertEqual(output.raw, pixels)

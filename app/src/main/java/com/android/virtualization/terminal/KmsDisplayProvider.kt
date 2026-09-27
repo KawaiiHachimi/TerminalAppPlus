@@ -27,6 +27,8 @@ internal class KmsDisplayProvider(
     private val vm = checkNotNull(VmController.virtualMachine)
     private val generation = AtomicInteger()
     private val executor = Executors.newSingleThreadExecutor()
+    private val renderer = Executors.newSingleThreadExecutor()
+    @Volatile private var frames: LatestFrameQueue? = null
     private val lifecycle = (mainView.context as? LifecycleOwner)?.lifecycle
     @Volatile private var connection: ParcelFileDescriptor? = null
     @Volatile private var running = false
@@ -66,9 +68,13 @@ internal class KmsDisplayProvider(
         running = true
         val ticket = generation.incrementAndGet()
         onStatus(mainView.context.getString(R.string.plus_display_connecting))
+        val queue = LatestFrameQueue()
+        val ready = java.util.concurrent.atomic.AtomicBoolean(false)
+        frames = queue
+        renderer.execute { render(queue, ticket, ready) }
         executor.execute {
-            var bitmap: Bitmap? = null
-            var buffer = ByteArray(0)
+            val decoder = CaptureFrameDecoder()
+            var compressed = ByteArray(0)
             try {
                 while (generation.get() == ticket) {
                     try {
@@ -78,25 +84,29 @@ internal class KmsDisplayProvider(
                             val input = DataInputStream(FileInputStream(fd.fileDescriptor))
                             val output = FileOutputStream(fd.fileDescriptor)
                             while (generation.get() == ticket) {
-                                output.write('R'.code); output.flush()
+                                output.write('Q'.code); output.flush()
                                 val w = input.readInt(); val h = input.readInt(); val length = input.readInt()
-                                check(w in 1..4096 && h in 1..4096 && length == w * h * 4)
-                                if (buffer.size != length) buffer = ByteArray(length)
-                                input.readFully(buffer)
-                                if (bitmap?.width != w || bitmap?.height != h) {
-                                    bitmap?.recycle(); bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+                                check(w in 1..4096 && h in 1..4096 && length == w * h * 4 && length <= 32 * 1024 * 1024)
+                                val wireLength = input.readInt()
+                                val codec = input.readInt()
+                                check(wireLength in 1..length && codec in 0..2)
+                                val buffer = queue.acquire(length)
+                                if (codec == 0) {
+                                    check(wireLength == length)
+                                    input.readFully(buffer)
+                                } else {
+                                    if (compressed.size < wireLength) {
+                                        compressed = ByteArray(minOf(length, maxOf(wireLength, compressed.size * 2, 65536)))
+                                    }
+                                    input.readFully(compressed, 0, wireLength)
+                                    decoder.decode(compressed, wireLength, buffer, codec)
                                 }
-                                bitmap!!.copyPixelsFromBuffer(ByteBuffer.wrap(buffer))
-                                if (mainView.holder.surface.isValid && generation.get() == ticket) {
-                                    val canvas = mainView.holder.lockHardwareCanvas()
-                                    try { canvas.drawBitmap(bitmap!!, null, Rect(0, 0, canvas.width, canvas.height), null) }
-                                    finally { mainView.holder.unlockCanvasAndPost(canvas) }
-                                    mainView.post { if (generation.get() == ticket) onStatus(null) }
-                                }
+                                queue.offer(LatestFrameQueue.Frame(w, h, buffer))
                             }
                         }
                     } catch (e: Exception) {
                         if (generation.get() != ticket) break
+                        ready.set(false)
                         mainView.post {
                             if (generation.get() == ticket) onStatus(mainView.context.getString(R.string.plus_display_service_required))
                         }
@@ -105,12 +115,62 @@ internal class KmsDisplayProvider(
                 }
             } catch (_: InterruptedException) {
                 Thread.currentThread().interrupt()
-            } finally { bitmap?.recycle() }
+            } finally { decoder.close(); queue.close() }
         }
+    }
+    private fun render(queue: LatestFrameQueue, ticket: Int, ready: java.util.concurrent.atomic.AtomicBoolean) {
+        var bitmap: Bitmap? = null
+        val paint = android.graphics.Paint().apply {
+            // The guest sends native BGRX. Swizzle on the GPU instead of in guest Python.
+            colorFilter = android.graphics.ColorMatrixColorFilter(floatArrayOf(
+                0f, 0f, 1f, 0f, 0f,
+                0f, 1f, 0f, 0f, 0f,
+                1f, 0f, 0f, 0f, 0f,
+                0f, 0f, 0f, 0f, 255f,
+            ))
+        }
+        var count = 0
+        var sampleStart = System.nanoTime()
+        var drawNanos = 0L
+        try {
+            while (generation.get() == ticket) {
+                val frame = queue.take() ?: break
+                val start = System.nanoTime()
+                try {
+                    if (bitmap?.width != frame.width || bitmap?.height != frame.height) {
+                        bitmap?.recycle()
+                        bitmap = Bitmap.createBitmap(frame.width, frame.height, Bitmap.Config.ARGB_8888).apply { setHasAlpha(false) }
+                    }
+                    bitmap!!.copyPixelsFromBuffer(ByteBuffer.wrap(frame.bytes))
+                    if (mainView.holder.surface.isValid && generation.get() == ticket) {
+                        val canvas = mainView.holder.lockHardwareCanvas()
+                        try { canvas.drawBitmap(bitmap!!, null, Rect(0, 0, canvas.width, canvas.height), paint) }
+                        finally { mainView.holder.unlockCanvasAndPost(canvas) }
+                        if (ready.compareAndSet(false, true)) {
+                            mainView.post { if (generation.get() == ticket) onStatus(null) }
+                        }
+                    }
+                } finally { queue.recycle(frame.bytes) }
+                drawNanos += System.nanoTime()-start
+                count++
+                val elapsed = System.nanoTime()-sampleStart
+                if (elapsed >= 5_000_000_000L) {
+                    android.util.Log.d("KmsDisplayProvider", "${frame.width}x${frame.height}: %.1f drawn fps, %.1f ms draw, %d dropped".format(
+                        count*1e9/elapsed, drawNanos/1e6/count, queue.dropped))
+                    sampleStart=System.nanoTime(); count=0; drawNanos=0
+                }
+            }
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+        } catch (e: Exception) {
+            if (generation.get() == ticket) android.util.Log.w("KmsDisplayProvider", "Render stopped", e)
+        } finally { bitmap?.recycle() }
     }
     private fun stop() {
         running = false
         generation.incrementAndGet()
+        frames?.close()
+        frames = null
         connection?.let {
             runCatching { android.system.Os.shutdown(it.fileDescriptor, android.system.OsConstants.SHUT_RDWR) }
             runCatching { it.close() }
@@ -124,5 +184,6 @@ internal class KmsDisplayProvider(
         mainView.holder.removeCallback(this)
         lifecycle?.removeObserver(this)
         executor.shutdownNow()
+        renderer.shutdownNow()
     }
 }

@@ -3,7 +3,10 @@
 Guest sudo is required; Android root is not. Only host CID 2 may request frames.
 No desktop/session configuration or input injection is performed by this server.
 """
+import argparse
 import binascii
+import ctypes
+import ctypes.util
 from contextlib import ExitStack
 import fcntl
 import mmap
@@ -47,7 +50,20 @@ def active_framebuffer(state):
     return active_planes(state)[0]['fb']
 
 
-def read_framebuffer(fd, fb, stack):
+def reusable_buffer(buffers, key, length):
+    value = buffers.get(key)
+    if value is None or len(value) != length:
+        value = buffers[key] = bytearray(length)
+    return value
+
+
+def frame_delay(deadline, now):
+    return max(0.0, deadline - now)
+
+
+def read_framebuffer(fd, fb, stack, buffers=None, role='primary', native=False):
+    if buffers is None:
+        buffers = {}
     cmd = bytearray(104)
     struct.pack_into('I', cmd, 0, fb)
     fcntl.ioctl(fd, 0xc06864ce, cmd, True)  # DRM_IOCTL_MODE_GETFB2
@@ -73,14 +89,27 @@ def read_framebuffer(fd, fb, stack):
     stack.callback(pixels.close)
     fcntl.ioctl(dmafd, 0x40086200, struct.pack('Q', 1))  # CPU READ START
     stack.callback(fcntl.ioctl, dmafd, 0x40086200, struct.pack('Q', 5))  # CPU READ END
-    rgba = bytearray(width*height*4)
-    for y in range(height):
-        row = pixels[offset+y*pitch:offset+y*pitch+width*4]
-        start = y*width*4
-        rgba[start:start+width*4:4] = row[2::4]
-        rgba[start+1:start+width*4:4] = row[1::4]
-        rgba[start+2:start+width*4:4] = row[0::4]
-        rgba[start+3:start+width*4:4] = row[3::4] if pixel_format == AR24 else b'\xff'*width
+    length = width*height*4
+    packed = reusable_buffer(buffers, role+'-packed', length)
+    view = memoryview(pixels)
+    try:
+        if pitch == width*4:
+            packed[:] = view[offset:offset+length]
+        else:
+            for y in range(height):
+                packed[y*width*4:(y+1)*width*4] = view[offset+y*pitch:offset+y*pitch+width*4]
+    finally:
+        view.release()
+    if native:
+        return width, height, pixel_format, packed
+    rgba = reusable_buffer(buffers, role+'-rgba', length)
+    # Bulk channel conversion runs in C, rather than four Python slices per scanline.
+    rgba[0::4], rgba[1::4], rgba[2::4] = packed[2::4], packed[1::4], packed[0::4]
+    if pixel_format == AR24:
+        rgba[3::4] = packed[3::4]
+    elif buffers.get(role+'-alpha') != (width, height, pixel_format):
+        rgba[3::4] = b'\xff'*(width*height)
+    buffers[role+'-alpha'] = (width, height, pixel_format)
     return width, height, pixel_format, rgba
 
 
@@ -98,13 +127,15 @@ def compose_cursor(frame, width, height, cursor, cursor_width, cursor_height, x,
                     (frame[target+channel]*(255-alpha)+127)//255)
 
 
-def capture(raw_output=False):
+def capture(raw_output=False, buffers=None, split=False, native=False):
+    if buffers is None:
+        buffers = {}
     with ExitStack() as stack:
         planes = active_planes(Path('/sys/kernel/debug/dri/0/state').read_text())
         primary = planes[0]
         fd = os.open('/dev/dri/card0', os.O_RDWR | os.O_CLOEXEC)
         stack.callback(os.close, fd)
-        width, height, _, rgba = read_framebuffer(fd, primary['fb'], stack)
+        width, height, _, rgba = read_framebuffer(fd, primary['fb'], stack, buffers, 'primary', native)
         for plane in planes[1:]:
             if plane['crtc'] != primary['crtc'] or not plane['rect']:
                 continue
@@ -112,13 +143,14 @@ def capture(raw_output=False):
             if not (0 < pw <= 512 and 0 < ph <= 512):
                 continue  # Cursor-sized planes only; general overlay composition is not implemented.
             try:
-                cw, ch, fmt, cursor = read_framebuffer(fd, plane['fb'], stack)
+                cw, ch, fmt, cursor = read_framebuffer(fd, plane['fb'], stack, buffers, 'cursor', native)
                 if fmt == AR24 and (cw, ch) == (pw, ph):
                     compose_cursor(rgba, width, height, cursor, cw, ch, x, y)
             except OSError:
                 pass  # Cursor may disappear/change FB while a frame is being captured.
         if raw_output:
-            return struct.pack('!III', width, height, len(rgba)) + rgba
+            header = struct.pack('!III', width, height, len(rgba))
+            return (header, rgba) if split else header + rgba
         raw = bytearray()
         for y in range(height):
             row = rgba[y*width*4:(y+1)*width*4]
@@ -132,7 +164,49 @@ def capture(raw_output=False):
                 chunk(b'IDAT', zlib.compress(raw))+chunk(b'IEND', b''))
 
 
+def encode_frame(pixels):
+    """Skip full compression for high-entropy images; preserve a lossless raw fallback."""
+    view = memoryview(pixels)
+    chunk_size = min(8192, len(view)//4)
+    sample = b''.join(view[offset:offset+chunk_size] for offset in
+                      (0, len(view)//4, len(view)//2, 3*len(view)//4))
+    if not sample or len(zlib.compress(sample, 1)) >= len(sample)*0.8:
+        return 0, view
+    compressed = zlib.compress(view, 1)
+    return (1, compressed) if len(compressed) < len(view) else (0, view)
+
+
+class Lz4Encoder:
+    """Use the guest's existing native LZ4 library when available; no pip dependency."""
+    def __init__(self):
+        self.destination = None
+        try:
+            self.library = ctypes.CDLL(ctypes.util.find_library('lz4') or 'liblz4.so.1')
+            self.library.LZ4_compressBound.argtypes = [ctypes.c_int]
+            self.library.LZ4_compressBound.restype = ctypes.c_int
+            self.library.LZ4_compress_default.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int]
+            self.library.LZ4_compress_default.restype = ctypes.c_int
+        except (OSError, AttributeError):
+            self.library = None
+
+    def encode(self, pixels):
+        if self.library is None:
+            return encode_frame(pixels)
+        length = len(pixels)
+        bound = self.library.LZ4_compressBound(length)
+        if self.destination is None or len(self.destination) < bound:
+            self.destination = ctypes.create_string_buffer(bound)
+        source = (ctypes.c_char * length).from_buffer(pixels)
+        size = self.library.LZ4_compress_default(source, self.destination, length, len(self.destination))
+        if 0 < size < length:
+            return 2, memoryview(self.destination).cast('B')[:size]
+        return 0, memoryview(pixels)
+
+
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--fps', type=int, default=30, choices=range(1, 61), metavar='1..60')
+    args = parser.parse_args()
     with socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM) as server:
         server.bind((socket.VMADDR_CID_ANY, 7683))
         server.listen(1)
@@ -142,14 +216,46 @@ def main():
                 if address[0] != 2:
                     continue
                 connection.settimeout(10)
+                buffers = {}
+                lz4 = Lz4Encoder()
+                deadline = 0.0
+                sample_start = time.monotonic()
+                frames = 0
+                capture_seconds = 0.0
+                send_seconds = 0.0
                 try:
                     while True:
                         request = connection.recv(1)
-                        if request not in (b'F', b'R'):
+                        if request not in (b'F', b'R', b'Z', b'B', b'Q'):
                             break
-                        frame = capture(request == b'R')
-                        connection.sendall(frame if request == b'R' else struct.pack('!I', len(frame))+frame)
-                        time.sleep(0.1 if request == b'R' else 0.25)
+                        time.sleep(frame_delay(deadline, time.monotonic()))
+                        start = time.monotonic()
+                        frame = capture(request in (b'R', b'Z', b'B', b'Q'), buffers=buffers, split=True, native=request in (b'B', b'Q'))
+                        captured = time.monotonic()
+                        if request in (b'Z', b'B', b'Q'):
+                            header, pixels = frame
+                            width, height, raw_length = struct.unpack('!III', header)
+                            codec, payload = lz4.encode(pixels) if request == b'Q' else encode_frame(pixels)
+                            connection.sendall(struct.pack('!IIIII', width, height, raw_length, len(payload), codec))
+                            connection.sendall(payload)
+                        elif request == b'R':
+                            header, pixels = frame
+                            connection.sendall(header)
+                            connection.sendall(memoryview(pixels))
+                        else:
+                            connection.sendall(struct.pack('!I', len(frame)))
+                            connection.sendall(frame)
+                        end = time.monotonic()
+                        # Budget capture/send time into the frame period; never add 100ms after it.
+                        deadline = start + 1.0/(args.fps if request in (b'R', b'Z', b'B', b'Q') else min(4, args.fps))
+                        frames += 1
+                        capture_seconds += captured-start
+                        send_seconds += end-captured
+                        if end-sample_start >= 5:
+                            print('capture: %.1f fps, %.1f ms capture, %.1f ms encode/send' %
+                                  (frames/(end-sample_start), capture_seconds*1000/frames,
+                                   send_seconds*1000/frames), flush=True)
+                            sample_start=end; frames=0; capture_seconds=send_seconds=0.0
                 except (ConnectionError, TimeoutError, OSError):
                     pass
 

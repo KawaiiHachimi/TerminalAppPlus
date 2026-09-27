@@ -165,3 +165,39 @@ Build/lint and nine Python tests passed before device testing. Verified a visibl
 cursor moving in trackpad mode and direct touch opening the far-right GNOME quick
 settings menu. The user then confirmed both modes worked and requested no further
 testing; device interaction stopped at that point.
+
+## Capture pipeline optimization — 2026-09-28
+
+- Replaced the post-frame 100 ms sleep with a configurable frame-period budget
+  (`--fps`, default 30, range 1..60). Capture/encode/send time counts toward it.
+- Reuse guest buffers; bulk conversion remains for legacy clients. New clients
+  request native BGRX and swizzle channels in the host GPU instead of guest Python.
+- New `Q` request: width, height, raw byte length, payload length, codec (five
+  network-order uint32 values), then the payload. Codec 0 = raw, 1 = zlib, 2 = raw
+  LZ4 block. The existing guest liblz4 is preferred via ctypes; absent libraries
+  fall back to adaptive zlib/raw. No guest package installation is required.
+- `F`, `R`, `Z`, and `B` compatibility paths remain. The App bounds dimensions,
+  output lengths and decoding, and uses the maintained lz4-java fork's safe
+  decompressor (pure Java factory; no foreign desktop JNI binaries in the APK).
+- AOSP receive/render workers are separate. One replaceable pending frame and a
+  small byte-buffer pool prevent growing queues; obsolete pending frames drop.
+  Bitmap storage is reused. Readiness updates no longer re-post every frame.
+
+Measurements are observations, not guaranteed animation rates:
+- Same guest capture microbenchmark, 60 samples each in alternating batches:
+  old mean 30.38 ms / median 29.10 ms; buffer/bulk-conversion version mean 17.67 ms /
+  median 18.41 ms (about 42% lower mean). This excludes pacing and transport.
+- Native-pixel path at 628x1194: 28.8 drawn fps.
+- Final LZ4 path: 1256x2389 at 19.8 drawn fps; 1256x2760 at 18.1–18.2 drawn fps,
+  with approximately 3.3–4.4 ms host draw time and no queued-frame drops in those samples.
+- Guest capture logs on the LZ4 path: 6–11 ms capture and 2–13 ms encode/send,
+  versus roughly 40–57 ms encode/send with full-resolution zlib in earlier samples.
+The user changed resolution/window state during testing; these are not controlled
+cross-resolution benchmarks, and delivery rate is distinct from changed-pixel rate.
+
+Validation: build/lint, 14 Python tests (including native LZ4 roundtrip), and eight
+JVM tests covering latest-frame replacement, shutdown wakeup, bounded decoding and
+truncated zlib/LZ4 payload rejection passed. Managed guest upgrade ran automatically.
+
+LZ4 Java dependency: https://github.com/yawkat/lz4-java at Maven
+`at.yawk.lz4:lz4-java:1.12.0` (Apache-2.0). The discontinued org.lz4 artifact is not used.
