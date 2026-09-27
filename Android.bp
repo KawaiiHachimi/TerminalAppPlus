@@ -1,0 +1,90 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+android_app {
+    name: "VmTerminalApp",
+    srcs: [
+        "java/**/*.java",
+        "java/**/*.kt",
+    ],
+    asset_dirs: [
+        "assets",
+    ] + select(product_variable("device_primary_arch"), {
+        "arm64": ["assets-arm64"],
+        "x86_64": ["assets-x86_64"],
+        default: [],
+    }),
+    static_libs: [
+        // TODO(b/330257000): will be removed when binder RPC is used
+        "android.system.virtualizationservice_internal-java",
+        "android.system.virtualmachineservice_non_microdroid",
+        "apache-commons-compress",
+        "avf_aconfig_flags_java",
+        "com.google.android.material_material",
+        "debian-service-grpclib-lite",
+        "debian_aidl_interface-java",
+        "gson",
+        // TODO(b/331708504): will be removed when AVF framework handles surface
+        "libcrosvm_android_display_service-java",
+        "VmTerminalApp.aidl-java",
+        "MicrodroidCommonTestLib", // for DeviceProperties class
+        "androidx-constraintlayout_constraintlayout",
+        "androidx.activity_activity-compose",
+        "androidx.compose.foundation_foundation",
+        "androidx.compose.foundation_foundation-layout",
+        "androidx.compose.material3.adaptive_adaptive",
+        "androidx.compose.material3.adaptive_adaptive-layout",
+        "androidx.compose.material3.adaptive_adaptive-navigation",
+        "androidx.compose.material3_material3",
+        "androidx.compose.material_material-icons-core",
+        "androidx.compose.material_material-icons-extended",
+        "androidx.compose.runtime_runtime",
+        "androidx.compose.ui_ui",
+        "androidx.lifecycle_lifecycle-runtime-compose",
+        "androidx.lifecycle_lifecycle-runtime-ktx",
+        "androidx.lifecycle_lifecycle-service",
+        "androidx.lifecycle_lifecycle-viewmodel-compose",
+        "androidx.navigation_navigation-fragment-ktx",
+        "androidx.window_window",
+        "androidx.work_work-runtime",
+    ],
+    jni_libs: [
+        "libforwarder_host_jni",
+    ],
+    libs: [
+        "androidx.annotation_annotation",
+        "framework-virtualization.impl",
+        "framework-annotations-lib",
+    ],
+    use_embedded_native_libs: true,
+    platform_apis: true,
+    privileged: true,
+    optimize: {
+        // TODO(b/404723964): enable bytecode optimization again
+        //optimize: true,
+        proguard_flags_files: ["proguard.flags"],
+        shrink_resources: true,
+        keep_runtime_invisible_annotations: true,
+    },
+    apex_available: [
+        "com.android.virt",
+        "//apex_available:platform",
+    ],
+    jarjar_rules: "jarjar-rules.txt",
+}
+
+aidl_interface {
+    name: "VmTerminalApp.aidl",
+    srcs: ["aidl/**/*.aidl"],
+    unstable: true,
+    local_include_dir: "aidl",
+    backend: {
+        java: {
+            enabled: true,
+            apex_available: [
+                "com.android.virt",
+            ],
+        },
+    },
+}
