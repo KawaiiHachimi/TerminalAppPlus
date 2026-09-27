@@ -114,8 +114,8 @@ fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
     val settingsViewModel: SettingsViewModel = viewModel()
     val resolution by settingsViewModel.displayResolution.collectAsStateWithLifecycle()
     val vm = VmController.virtualMachine ?: return
-    var vmDisplayWidth by remember(vm) { mutableStateOf(vm.config.customImageConfig?.displayConfig!!.width) }
-    var vmDisplayHeight by remember(vm) { mutableStateOf(vm.config.customImageConfig?.displayConfig!!.height) }
+    val touchWidth = vm.config.customImageConfig!!.displayConfig!!.width
+    val touchHeight = vm.config.customImageConfig!!.displayConfig!!.height
     var displayStatus by remember(vm) { mutableStateOf<String?>(null) }
 
     var displaySurfaceView by remember { mutableStateOf<DisplaySurfaceView?>(null) }
@@ -194,10 +194,13 @@ fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                     } else {
                         val matrix = Matrix()
                         matrix.setScale(
-                            vmDisplayWidth.toFloat() / contentSize.width,
-                            vmDisplayHeight.toFloat() / contentSize.height,
+                            touchWidth.toFloat() / contentSize.width,
+                            touchHeight.toFloat() / contentSize.height,
                         )
                         event.transform(matrix)
+                        // AVF's absolute input range is fixed when the VM is created; changing
+                        // display resolution does not resize the virtio touchscreen device.
+                        vm.setTouchScale(1f)
                         vm.sendMultiTouchEvent(event)
                     }
                 },
@@ -228,10 +231,7 @@ fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                             DisplayProvider(
                                 mainView,
                                 cursorView,
-                                vmDisplayWidth,
-                                vmDisplayHeight,
                                 resolution,
-                                onFrameSize = { width, height -> vmDisplayWidth = width; vmDisplayHeight = height },
                                 onStatus = { displayStatus = it },
                             )
 

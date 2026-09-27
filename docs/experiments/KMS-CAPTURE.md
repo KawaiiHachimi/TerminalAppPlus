@@ -148,3 +148,20 @@ ready. Guest systemctl showed enabled + active and the persistent executable pat
 The AOSP display page showed the GNOME desktop after restart. Build/lint and six
 Python tests passed. One earlier test boot stalled before ttyd and was retried;
 that was not counted as a successful service-start test.
+
+## Touch range and hardware cursor fix
+
+The virtio touchscreen retains the VM creation-time ABS ranges (measured 0..1280
+and 0..720), even after scanout resizes to 628x1194. Direct-touch mapping now uses
+those fixed input ranges, not current framebuffer dimensions, with AVF touchScale
+reset to 1 to avoid double scaling.
+
+Capture composites cursor-sized linear AR24 planes on the active CRTC using
+premultiplied alpha and clipping; it does not fabricate a host-side cursor. General
+overlays and scaled/rotated cursor planes remain unsupported. Packaging was
+regenerated so existing-guest automatic setup installs the same helper.
+
+Build/lint and nine Python tests passed before device testing. Verified a visible
+cursor moving in trackpad mode and direct touch opening the far-right GNOME quick
+settings menu. The user then confirmed both modes worked and requested no further
+testing; device interaction stopped at that point.

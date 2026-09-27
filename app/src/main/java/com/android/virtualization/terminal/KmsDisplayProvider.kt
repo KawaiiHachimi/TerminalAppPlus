@@ -21,10 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 internal class KmsDisplayProvider(
     private val mainView: SurfaceView,
     cursorView: SurfaceView,
-    width: Int,
-    height: Int,
     initialResolution: DisplayResolution,
-    private val onFrameSize: (Int, Int) -> Unit,
     private val onStatus: (String?) -> Unit,
 ) : SurfaceHolder.Callback, DefaultLifecycleObserver {
     private val vm = checkNotNull(VmController.virtualMachine)
@@ -38,7 +35,7 @@ internal class KmsDisplayProvider(
     private var requestedSize = 0 to 0
 
     init {
-        // KMS prototype captures the primary plane; there is no host cursor Binder stream.
+        // Guest capture composites the cursor into the frame; no host cursor Binder is needed.
         cursorView.visibility = android.view.View.GONE
         mainView.holder.addCallback(this)
         lifecycle?.addObserver(this)
@@ -88,7 +85,6 @@ internal class KmsDisplayProvider(
                                 input.readFully(buffer)
                                 if (bitmap?.width != w || bitmap?.height != h) {
                                     bitmap?.recycle(); bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-                                    mainView.post { if (generation.get() == ticket) onFrameSize(w, h) }
                                 }
                                 bitmap!!.copyPixelsFromBuffer(ByteBuffer.wrap(buffer))
                                 if (mainView.holder.surface.isValid && generation.get() == ticket) {

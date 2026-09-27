@@ -25,3 +25,22 @@ class ActivePlaneTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class CursorCompositionTest(unittest.TestCase):
+    def test_premultiplied_cursor_alpha(self):
+        frame = bytearray([0, 0, 255, 255])
+        module.compose_cursor(frame, 1, 1, bytes([128, 0, 0, 128]), 1, 1, 0, 0)
+        self.assertEqual(frame, bytearray([128, 0, 127, 255]))
+
+    def test_cursor_clipped_at_negative_position(self):
+        frame = bytearray([0, 0, 0, 255]*4)
+        cursor = bytes([255, 0, 0, 255, 0, 255, 0, 255])
+        module.compose_cursor(frame, 2, 2, cursor, 2, 1, -1, 1)
+        self.assertEqual(frame[8:12], bytearray([0, 255, 0, 255]))
+        self.assertEqual(frame[12:16], bytearray([0, 0, 0, 255]))
+
+    def test_active_cursor_plane_coordinates(self):
+        state = ('plane[1]: primary\n crtc=crtc-0\n fb=50\n normalized-zpos=0\n'
+                 'plane[2]: cursor\n crtc=crtc-0\n fb=51\n crtc-pos=64x64-2+20\n normalized-zpos=1\n'
+                 'crtc[3]: crtc-0\n enable=1\n active=1\n')
+        self.assertEqual(module.active_planes(state)[1]['rect'], (64, 64, -2, 20))
