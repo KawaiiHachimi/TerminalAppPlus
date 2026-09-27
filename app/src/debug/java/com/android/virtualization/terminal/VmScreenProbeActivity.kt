@@ -86,6 +86,10 @@ class VmScreenProbeActivity : Activity() {
             } finally { bitmap?.recycle() }
         }
     }
+    override fun onStop() {
+        super.onStop()
+        finish() // Release the capture session when leaving this experimental viewer.
+    }
     override fun onDestroy() {
         stopped = true
         inputForwarder?.cleanUp()

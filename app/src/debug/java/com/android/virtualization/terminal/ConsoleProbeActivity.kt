@@ -140,10 +140,33 @@ class ConsoleProbeActivity : Activity() {
         }
         menuAction(if (sharedConsole) "关闭控制台页面" else "关闭实验") { finish() }
         drawer.addView(menu, androidx.drawerlayout.widget.DrawerLayout.LayoutParams(
-            (300 * resources.displayMetrics.density).toInt(), -1, android.view.Gravity.START))
-        terminal.setOnTouchListener { _, event ->
-            if (event.action == android.view.MotionEvent.ACTION_DOWN) terminal.requestFocus()
-            false
+            (300 * resources.displayMetrics.density).toInt(), -1, androidx.core.view.GravityCompat.START))
+        var gestureStartX = 0f
+        var gestureStartY = 0f
+        var drawerGesture = false
+        terminal.setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    view.requestFocus()
+                    gestureStartX = event.x
+                    gestureStartY = event.y
+                    drawerGesture = false
+                }
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    val dx = event.x - gestureStartX
+                    val dy = kotlin.math.abs(event.y - gestureStartY)
+                    val threshold = 72 * resources.displayMetrics.density
+                    if (!drawerGesture && event.pointerCount == 1 && dx > threshold && dx > dy * 2) {
+                        drawerGesture = true
+                        val cancel = android.view.MotionEvent.obtain(event)
+                        cancel.action = android.view.MotionEvent.ACTION_CANCEL
+                        terminal.onTouchEvent(cancel)
+                        cancel.recycle()
+                        drawer.openDrawer(androidx.core.view.GravityCompat.START)
+                    }
+                }
+            }
+            drawerGesture
         }
         setContentView(drawer)
         terminal.requestFocus()
