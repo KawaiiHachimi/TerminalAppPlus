@@ -33,4 +33,21 @@ validated. Temporary one_cpu, cma=0 and initcall_debug settings were removed.
 Raw transient build logs, guest outputs and earlier diagnostics are under artifacts/
 (ignored by Git). No generic emulator boot can substitute for this AVF hardware test.
 Native VM display is blocked by the target ROM's ServiceManager SELinux policy;
-that limitation is surfaced in the UI and is not counted as a passing feature.
+the unavailable native display entry is now hidden and is not counted as a passing feature.
+
+## Native display entry removal, GPU retained — 2026-09-27
+
+Installed the corrected APK and restarted the existing guest on PKB110.
+The terminal toolbar has no native display button; the legacy display Activity is
+unregistered, and the native-surface resolution setting is hidden.
+GPU/rendering configuration, virtual display/input devices, renderer preferences
+and bundled guest resources match the preceding working baseline.
+
+Guest command input/output passed: nproc = 8, memory = 3907 MiB,
+terminal-plus-proxy = active, and /dev/dri contains card0 and renderD128.
+These device nodes confirm that the virtual GPU is present, not that hardware
+3D acceleration has been validated. APK compilation and lint passed.
+
+The temporary headless guest profile and plus2 cidata from the discarded changes
+were restored on the test device to the original Plus profile and plus1 cidata,
+without resetting the guest root disk.

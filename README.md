@@ -59,7 +59,8 @@ adb shell pm grant com.android.virtualization.terminal.plus android.permission.U
 - cidata 增加一个以 droid 身份运行的 guest localhost 代理，替代需要宿主直接
   监听 vsock 的原版 JNI 转发。仅监听 vsock，校验连接来自宿主 CID 2；手机端仅绑定回环地址。
 - **这台 ROM 的原生 VM 显示 Binder 服务被 SELinux 限制给系统应用。两个 AVF 开发权限
-  无法解锁。显示按钮提示限制；不宣称原生桌面、GPU/音频路径已验证可用。**
+  无法解锁。已隐藏原生显示入口及其分辨率设置，并移除原生显示 Activity 注册。**
+  GPU 后端、虚拟显示与输入设备、渲染器设置和 guest 资源保持原样；这不代表硬件 3D 加速已验证。
 - 下载目录数字并不是 Android 或 Debian 版本，且 `latest` 不一定最新。
   详见 [docs/IMAGE-VERSIONS.md](docs/IMAGE-VERSIONS.md)。
 - 当前交付 APK 使用本机 debug 签名，适合自用测试；不是公开发布签名。

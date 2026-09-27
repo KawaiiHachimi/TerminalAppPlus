@@ -67,12 +67,6 @@
                   android:configChanges="keyboard|keyboardHidden|navigation|uiMode|fontScale|density"
                   android:windowSoftInputMode="adjustResize"
                   android:label="@string/app_name" />
-        <activity android:name=".DisplayActivity"
-            android:taskAffinity="${applicationId}.display"
-            android:resizeableActivity="false"
-            android:theme="@style/FullscreenTheme"
-            android:supportsPictureInPicture="true"
-            android:configChanges="orientation|screenSize|keyboard|keyboardHidden|navigation|uiMode|screenLayout|smallestScreenSize" />
         <activity android:name=".SettingsActivity"
             android:label="@string/action_settings" />
         <activity android:name=".SettingsPortForwardingActivity"

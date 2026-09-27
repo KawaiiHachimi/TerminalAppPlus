@@ -76,7 +76,6 @@ public class MainActivity :
     private lateinit var terminalTabAdapter: TerminalTabAdapter
     private val terminalInfo = CompletableFuture<TerminalInfo>()
     private val terminalViewModel: TerminalViewModel by viewModels()
-    private lateinit var displayMenu: Button
     private var tabAddButton: Button? = null
     private val bootCompleted = ConditionVariable()
     private var isVmRunning = false
@@ -123,7 +122,6 @@ public class MainActivity :
     private fun initializeUi() {
         setContentView(R.layout.activity_headless)
         tabLayout = findViewById<TabLayout>(R.id.tab_layout)
-        displayMenu = findViewById<Button>(R.id.display_button)
         tabAddButton = findViewById<Button>(R.id.tab_add_button)
         tabScrollView = findViewById<HorizontalScrollView>(R.id.tab_scrollview)
         val modifierKeysContainerView =
@@ -141,15 +139,6 @@ public class MainActivity :
 
         findViewById<Button>(R.id.settings_button).setOnClickListener {
             val intent = Intent(this, SettingsActivity::class.java)
-            this.startActivity(intent)
-        }
-
-        displayMenu = findViewById(R.id.display_button)
-        displayMenu.visibility = View.VISIBLE
-        displayMenu.isEnabled = false
-        displayMenu.setOnClickListener {
-            val intent = Intent(this, DisplayActivity::class.java)
-            intent.flags = intent.flags or Intent.FLAG_ACTIVITY_CLEAR_TASK
             this.startActivity(intent)
         }
 
@@ -334,7 +323,6 @@ public class MainActivity :
     }
 
     fun onTtydConnected() {
-        displayMenu.isEnabled = true
         tabAddButton!!.isEnabled = true
         isTtydConnected = true
         bootCompleted.open()
