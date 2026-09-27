@@ -113,7 +113,10 @@ object Installer {
 
         networkMonitor = NetworkMonitor(context)
 
-        repositoryScope.launch { checkInstallStatus() }
+        repositoryScope.launch {
+            com.android.virtualization.terminal.GuestAssets.updateKnownCidata(this@Installer.context)
+            checkInstallStatus()
+        }
     }
 
     fun install() {
