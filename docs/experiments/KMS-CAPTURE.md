@@ -80,3 +80,33 @@ validated animated desktop updates. Renderer-performance comparison is premature
 A dynamically changing source and correct compositor/session ownership must be
 verified before declaring the display/input path fully functional. No permanent
 session/login configuration was changed to mask this limitation.
+
+## Frozen-source fix
+
+Root cause verified: AOSP's `/etc/profile.d/activate_display.sh` invokes
+`enable_display` for each interactive ttyd shell, creating a dummy PAM login on
+tty1. With GDM installed, these placeholders can make the real graphical session
+inactive and drop its DRM master. Repeated capture then returns stale scanout.
+
+The opt-in guest tool `fix-aosp-display-seat.py` backs up the known AOSP profile
+and guards its bootstrap when display-manager.service is enabled or active.
+It stops only matching stock transient sleep/PAM/tty1 placeholders, then restores
+an unambiguous graphical session. A real VT transition is used only if logind's
+same-VT activation leaves it inactive. No passwords, autologin or user names are
+configured. This repair is specific to the prebuilt AOSP bootstrap, not a required
+custom-image modification.
+
+Capture now selects a framebuffer attached to an enabled, active CRTC and uses
+DMA-BUF CPU read synchronization. The viewer counts content CRC changes separately
+from frame delivery. A static image no longer masquerades as an animated 8-fps
+desktop. Parser tests cover stale/inactive and absent scanout.
+
+Verified repair on the running guest: real VT transition restored the greeter,
+then the user graphical session remained ActiveSession=16 across fresh ttyd
+connections. A short desktop notification changed captured PNG SHA256 from
+`709a0f845efc1a3d110ab8dda1b16a796c51806e8bed9c57632ea63814f82121`
+to `4ecd7a3aed14df2a6de78cea9e3cf62960d94f1f94a8ca15622957f8bf5dd897`.
+The updated active-plane + DMA sync code also captured a 3,686,412-byte raw frame
+successfully on device. Build, lint and five Python tests passed. The guest fix
+was applied live; installing the newly built status-counter APK is not required
+for the live seat repair and was deferred to preserve the active desktop session.

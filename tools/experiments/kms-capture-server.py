@@ -7,10 +7,27 @@ import os,fcntl,struct,mmap,re,zlib,binascii,socket,time
 from pathlib import Path
 from contextlib import ExitStack
 
+def active_framebuffer(state):
+    blocks = re.split(r'(?m)^(?=(?:plane|crtc|connector)\[)', state)
+    active = set()
+    for block in blocks:
+        name = re.match(r'crtc\[\d+\]: (\S+)', block)
+        if name and re.search(r'^\s*enable=1$', block, re.M) and re.search(r'^\s*active=1$', block, re.M):
+            active.add(name[1])
+    for block in blocks:
+        if not block.startswith('plane['):
+            continue
+        crtc = re.search(r'^\s*crtc=(\S+)', block, re.M)
+        fb = re.search(r'^\s*fb=(\d+)', block, re.M)
+        if crtc and fb and crtc[1] in active and int(fb[1]) > 0:
+            return int(fb[1])
+    raise OSError('No active DRM scanout')
+
+
 def capture(raw_output=False):
     with ExitStack() as stack:
         state=Path('/sys/kernel/debug/dri/0/state').read_text()
-        fb=int(re.search(r'\n\s*fb=(\d+)',state).group(1))
+        fb=active_framebuffer(state)
         fd=os.open('/dev/dri/card0',os.O_RDWR|os.O_CLOEXEC)
         stack.callback(os.close, fd)
         cmd=bytearray(104);struct.pack_into('I',cmd,0,fb)
@@ -29,6 +46,9 @@ def capture(raw_output=False):
          dumb=bytearray(struct.pack('IIQ',handle,0,0));fcntl.ioctl(fd,0xc01064b3,dumb,True)
          pixels=mmap.mmap(fd,offset+pitch*h,flags=mmap.MAP_SHARED,prot=mmap.PROT_READ,offset=struct.unpack('IIQ',dumb)[2])
         stack.callback(pixels.close)
+        # Synchronize CPU reads of exported buffers instead of relying on coherent mappings.
+        fcntl.ioctl(dmafd, 0x40086200, struct.pack('Q', 1))  # DMA_BUF_SYNC_START | READ
+        stack.callback(fcntl.ioctl, dmafd, 0x40086200, struct.pack('Q', 5))  # END | READ
         if raw_output:
             rgba = bytearray(w*h*4)
             for y in range(h):

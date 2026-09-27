@@ -52,6 +52,8 @@ class VmScreenProbeActivity : Activity() {
                     val output = FileOutputStream(fd.fileDescriptor)
                     var buffer = ByteArray(0)
                     var frames = 0
+                    var changes = 0
+                    var lastHash = -1L
                     val start = System.nanoTime()
                     while (!stopped) {
                         output.write('R'.code); output.flush()
@@ -59,6 +61,8 @@ class VmScreenProbeActivity : Activity() {
                         check(w in 1..4096 && h in 1..4096 && length == w*h*4)
                         if (buffer.size != length) buffer = ByteArray(length)
                         input.readFully(buffer)
+                        val crc = java.util.zip.CRC32().apply { update(buffer) }.value
+                        if (crc != lastHash) { changes++; lastHash = crc }
                         if (bitmap?.width != w || bitmap?.height != h) {
                             bitmap?.recycle(); bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
                         }
@@ -75,7 +79,7 @@ class VmScreenProbeActivity : Activity() {
                                 if (!stopped) {
                                     val fit = minOf(area.width.toFloat()/w, area.height.toFloat()/h)
                                     surface.layoutParams = FrameLayout.LayoutParams((w*fit).toInt(), (h*fit).toInt(), Gravity.CENTER)
-                                    status.text = "${w}×${h} · %.1f fps · AOSP 输入".format(fps)
+                                    status.text = "${w}×${h} · 接收 %.1f fps · 内容变化 $changes 次".format(fps)
                                 }
                             }
                         }
