@@ -71,21 +71,15 @@ class ConsoleProbeActivity : Activity() {
         }
         row(listOf(key("ESC", 111), " / " to { session.write("/") }, " - " to { session.write("-") }, key("HOME", 122), key("↑", 19), key("END", 123), key("PGUP", 92)))
         row(listOf(
+            key("TAB", 61),
             "Ctrl" to { client.control = !client.control; client.onModifiersChanged() },
             "Alt" to { client.alt = !client.alt; client.onModifiersChanged() },
-            key("TAB", 61), key("←", 21), key("↓", 20), key("→", 22), key("PGDN", 93),
-            "⌨" to {
-                terminal.requestFocus()
-                val ime = getSystemService(android.view.inputmethod.InputMethodManager::class.java)
-                val visible = container.rootWindowInsets?.isVisible(android.view.WindowInsets.Type.ime()) == true
-                if (visible) ime.hideSoftInputFromWindow(terminal.windowToken, 0)
-                else ime.showSoftInput(terminal, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
-            }
+            key("←", 21), key("↓", 20), key("→", 22), key("PGDN", 93),
         ))
         val modifiers = container.getChildAt(2) as android.widget.LinearLayout
         client.onModifiersChanged = {
-            (modifiers.getChildAt(0) as android.widget.Button).text = if (client.control) "Ctrl ●" else "Ctrl"
-            (modifiers.getChildAt(1) as android.widget.Button).text = if (client.alt) "Alt ●" else "Alt"
+            (modifiers.getChildAt(1) as android.widget.Button).text = if (client.control) "Ctrl ●" else "Ctrl"
+            (modifiers.getChildAt(2) as android.widget.Button).text = if (client.alt) "Alt ●" else "Alt"
         }
 
         container.setOnApplyWindowInsetsListener { view, insets ->
