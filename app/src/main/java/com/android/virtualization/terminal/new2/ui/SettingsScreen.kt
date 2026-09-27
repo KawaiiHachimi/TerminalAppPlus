@@ -107,6 +107,7 @@ import kotlinx.coroutines.launch
 
 enum class SettingsDestination(val title: Int, val icon: ImageVector) {
     PortControl(R.string.settings_port_title, Icons.Default.Security),
+    VirtualMachines(R.string.plus_virtual_machines, Icons.Default.Memory),
     Advanced(R.string.settings_advanced_title, Icons.Default.Tune),
     Laboratory(R.string.plus_laboratory, Icons.Default.Science),
     Recovery(R.string.settings_recovery_title, Icons.Default.Restore),
@@ -140,7 +141,13 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: MainViewModel = viewModel()) {
     val settingsRequest by viewModel.settingsRequest.collectAsStateWithLifecycle()
     val settingsViewModel: SettingsViewModel = viewModel()
 
-    val destinations = remember { SettingsDestination.entries.filter { BuildConfig.DEBUG || it != SettingsDestination.Laboratory } }
+    val selectedProfile by com.android.virtualization.terminal.new2.core.VmProfiles.selected.collectAsStateWithLifecycle()
+    val destinations = remember(selectedProfile) {
+        SettingsDestination.entries.filter {
+            (BuildConfig.DEBUG || (it != SettingsDestination.Laboratory && it != SettingsDestination.VirtualMachines)) &&
+                (selectedProfile.isDefault || it != SettingsDestination.Recovery)
+        }
+    }
 
     LaunchedEffect(settingsRequest, isMobileMode) {
         if (settingsRequest != null) {
@@ -275,6 +282,7 @@ fun SettingsDetailPane(
                 SettingsDestination.PortControl -> PortControlPage()
                 SettingsDestination.Advanced -> AdvancedPage(onCloseSettings)
                 SettingsDestination.Laboratory -> LaboratoryPage()
+                SettingsDestination.VirtualMachines -> VmManagementPage()
                 SettingsDestination.Recovery -> RecoveryPage()
             }
         }
@@ -287,6 +295,7 @@ fun AdvancedPage(
     mainViewModel: MainViewModel = viewModel(),
     settingsViewModel: SettingsViewModel = viewModel(),
 ) {
+    val selectedProfile by com.android.virtualization.terminal.new2.core.VmProfiles.selected.collectAsStateWithLifecycle()
     val currentType = VmController.graphicsAccelerationType
     var showSelectionDialog by remember { mutableStateOf(false) }
     var showRebootDialog by remember { mutableStateOf(false) }
@@ -452,11 +461,11 @@ fun AdvancedPage(
         item {
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_advanced_memory_title)) },
-                supportingContent = { Text(formatMemorySize(currentMemoryMb)) },
+                supportingContent = { Text(if (selectedProfile.isDefault) formatMemorySize(currentMemoryMb) else "2 GiB · 自定义镜像，资源编辑将在后续版本开放") },
                 leadingContent = {
                     Icon(imageVector = Icons.Default.Memory, contentDescription = null)
                 },
-                modifier = Modifier.clickable { showMemoryDialog = true },
+                modifier = Modifier.clickable(enabled = selectedProfile.isDefault) { showMemoryDialog = true },
             )
             HorizontalDivider()
         }

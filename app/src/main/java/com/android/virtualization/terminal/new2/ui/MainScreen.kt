@@ -68,13 +68,10 @@ fun MainScreen(viewModel: MainViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val installState by Installer.installState.collectAsStateWithLifecycle()
     val showSettings by viewModel.showSettings.collectAsStateWithLifecycle()
+    val profile by com.android.virtualization.terminal.new2.core.VmProfiles.selected.collectAsStateWithLifecycle()
+    val switching by com.android.virtualization.terminal.new2.core.VmController.switching.collectAsStateWithLifecycle()
     val isFullscreen by viewModel.isFullscreen.collectAsStateWithLifecycle()
     val hasMandatoryPermissions by viewModel.hasMandatoryPermissions.collectAsStateWithLifecycle()
-
-    var lastValidState by remember { mutableStateOf<MainUiState>(MainUiState.Ready) }
-    if (uiState !is MainUiState.Error) {
-        lastValidState = uiState
-    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
@@ -87,11 +84,17 @@ fun MainScreen(viewModel: MainViewModel) {
             is MainUiState.Ready -> {
                 snackbarHostState.currentSnackbarData?.dismiss()
             }
-            is MainUiState.Stopped -> activity.finish()
-            is MainUiState.Error -> {
-                handleError(activity, snackbarHostState, state.handler)
-            }
+            is MainUiState.Stopped -> {}
+            is MainUiState.Error -> {}
             else -> {}
+        }
+    }
+
+    LaunchedEffect(uiState is MainUiState.Running, profile.id) {
+        if (uiState is MainUiState.Running && !profile.isDefault && BuildConfig.DEBUG) {
+            viewModel.setShowSettings(false)
+            context.startActivity(Intent().setClassName(context.packageName,
+                "com.android.virtualization.terminal.ConsoleProbeActivity"))
         }
     }
 
@@ -102,16 +105,17 @@ fun MainScreen(viewModel: MainViewModel) {
             Box(modifier = Modifier.padding(padding).fillMaxSize()) {
                 if (!hasMandatoryPermissions) {
                     PermissionScreen(viewModel = viewModel)
-                } else if (installState !is InstallState.Installed) {
+                } else if (profile.isDefault && installState !is InstallState.Installed) {
                     InstallScreen(snackbarHostState = snackbarHostState)
                 } else
-                    when (val state = lastValidState) {
+                    when (val state = uiState) {
                         is MainUiState.Ready -> {
                             // VM will soon be booting
                         }
                         is MainUiState.Stopped -> {
-                            // Activity will finish
+                            if (switching) BootingScreen() else VmStoppedScreen(viewModel)
                         }
+                        is MainUiState.Error -> VmStoppedScreen(viewModel, (state.handler as? MainUiState.ErrorHandler.ReportBug)?.error?.message)
                         is MainUiState.Booting -> BootingScreen()
                         is MainUiState.Running -> RunningScreen(state, viewModel)
                         is MainUiState.Stopping -> BootingScreen() // TODO: show the shutdown screen
@@ -235,5 +239,22 @@ private suspend fun handleError(
         )
     if (result == SnackbarResult.ActionPerformed) {
         action()
+    }
+}
+
+@Composable
+private fun VmStoppedScreen(viewModel: MainViewModel, error: String? = null) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+    ) {
+        androidx.compose.material3.Text(error ?: "虚拟机已停止")
+        androidx.compose.material3.TextButton(onClick = { viewModel.startVm() }) {
+            androidx.compose.material3.Text(if (error == null) "启动虚拟机" else "重试启动")
+        }
+        androidx.compose.material3.TextButton(onClick = { viewModel.setShowSettings(true) }) {
+            androidx.compose.material3.Text("虚拟机与设置")
+        }
     }
 }

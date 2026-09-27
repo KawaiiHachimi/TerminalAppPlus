@@ -306,8 +306,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             hasMandatoryPermissions.collectLatest { hasMandatory ->
                 if (hasMandatory) {
                     launch {
-                        Installer.installState.collectLatest { installState ->
-                            if (installState is InstallState.Installed) {
+                        combine(Installer.installState, com.android.virtualization.terminal.new2.core.VmProfiles.selected) { installState, profile ->
+                            !profile.isDefault || installState is InstallState.Installed
+                        }.collectLatest { ready ->
+                            if (ready) {
                                 // Reset sessions to start fresh upon installation completion.
                                 TerminalSessionRepository.reset()
 

@@ -30,4 +30,5 @@
     <string name="plus_terminal_no_sessions">当前没有打开的终端会话，虚拟机仍在运行。</string>
     <string name="plus_terminal_retry">重试连接</string>
     <string name="plus_terminal_new_session">新建终端</string>
+    <string name="plus_virtual_machines">虚拟机</string>
 </resources>

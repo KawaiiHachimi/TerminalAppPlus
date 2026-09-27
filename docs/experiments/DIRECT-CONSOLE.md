@@ -155,3 +155,7 @@ Debian, and current-VM screen prototype entries (debug builds). The regular tool
 console still attaches to the current VM. Pinch font size persists in
 terminal_console_appearance/font_size_sp and restores before the terminal is shown.
 The chosen font file and the existing terminal emulator remain unchanged.
+
+## Managed imports supersede the laboratory probes
+
+The laboratory now contains only the custom U-Boot image importer. Imported VMs use the main VmController and shared console; closing the console does not stop them. Legacy explicit debug intents remain available for development. See [custom VM usage](../CUSTOM-VM.md).
