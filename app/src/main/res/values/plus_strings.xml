@@ -27,4 +27,8 @@
     <string name="plus_lab_uboot_hint">Independent VM. Requires a bootloader and a separate test disk.</string>
     <string name="plus_lab_display">Current VM screen prototype</string>
     <string name="plus_lab_display_hint">Open the experimental capture/rendering page for the running VM.</string>
+    <string name="plus_terminal_unavailable">The virtual machine is running, but ttyd is not connected. This image may not provide ttyd. You can continue using the console or graphical display.</string>
+    <string name="plus_terminal_no_sessions">No terminal sessions are open. The virtual machine is still running.</string>
+    <string name="plus_terminal_retry">Retry connection</string>
+    <string name="plus_terminal_new_session">New terminal</string>
 </resources>

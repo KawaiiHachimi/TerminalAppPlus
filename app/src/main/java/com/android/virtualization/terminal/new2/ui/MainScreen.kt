@@ -196,7 +196,14 @@ fun RunningScreen(state: MainUiState.Running, viewModel: MainViewModel) {
                 key(isFullscreen) { DisplayScreen(viewModel = viewModel) }
             }
         } else {
-            TerminalScreen(state.terminalAddress, selectedTabId, viewModel)
+            val connection = state.terminalConnection
+            if (tabs.isEmpty()) {
+                TerminalServiceNotice(onRetry = { viewModel.addTab() }, emptySession = true)
+            } else if (connection is com.android.virtualization.terminal.new2.core.TerminalConnection.Endpoint) {
+                TerminalScreen(connection.address, selectedTabId, viewModel)
+            } else {
+                TerminalServiceNotice(onRetry = { com.android.virtualization.terminal.new2.core.VmController.retryTerminalConnection() })
+            }
         }
     }
 }

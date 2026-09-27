@@ -49,7 +49,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -64,6 +67,12 @@ import kotlinx.coroutines.launch
 
 object VmController {
     private val TAG = "VmController"
+
+    private val _terminalConnection = MutableStateFlow<TerminalConnection>(TerminalConnection.Disconnected)
+    val terminalConnection: StateFlow<TerminalConnection> = _terminalConnection.asStateFlow()
+    private var terminalConnectionJob: Job? = null
+    private var terminalTimeoutSecs = 60L
+    private val lifecycleMutex = Mutex()
 
     private var terminalBridge: AndroidToVmBridge? = null
     private lateinit var context: Context
@@ -171,188 +180,157 @@ object VmController {
 
     @Synchronized fun start() {
         if (_vmState.value is VmState.Running || _vmState.value is VmState.Starting || _vmState.value is VmState.Stopping) return
+        _terminalConnection.value = TerminalConnection.Connecting
         _vmState.value = VmState.Starting
 
         val intent = Intent(context, VmService::class.java)
         context.startForegroundService(intent)
         repositoryScope.launch {
-            try {
-                val image = InstalledImage.getDefault(context)
-                val json = ConfigJson.from(context, image.configPath)
-                val configBuilder = json.toConfigBuilder(context)
-                _guestAgentController.value =
-                    GuestAgentController(context, image.isAidlGuestAgent(), repositoryScope)
-
-                val sharedPref =
-                    context.getSharedPreferences(SettingsViewModel.PREFS_NAME, Context.MODE_PRIVATE)
-                val memoryMib =
-                    sharedPref.getInt(
-                        SettingsViewModel.KEY_MEMORY_MIB,
-                        SettingsViewModel.DEFAULT_MEMORY_MIB,
-                    )
-                configBuilder.setMemoryBytes(memoryMib.toLong() * 1024 * 1024)
-                configBuilder.setVmConsoleInputSupported(true).setConnectVmConsole(false)
-
-                val customImageConfigBuilder = json.toCustomImageConfigBuilder(context)
-
-                // Convert rootfs disk into a sparse file for storage ballooning.
-                truncateDiskIfNecessary(image)
-
-                if (image.hasBackup()) {
-                    customImageConfigBuilder.addDisk(
-                        VirtualMachineCustomImageConfig.Disk.RWDisk(image.backupFile.toString())
-                    )
-                }
-
-                val port = _guestAgentController.value!!.startServer()
-                customImageConfigBuilder.addParam("debian_server_port=$port")
-
-                // Override config for Display
-                setDisplayConfig(customImageConfigBuilder)
-                setGpuConfig(context, customImageConfigBuilder)
-                customImageConfigBuilder.setAudioConfig(
-                    VirtualMachineCustomImageConfig.AudioConfig.Builder()
-                        .setUseSpeaker(true)
-                        .setUseMicrophone(true)
-                        .build()
-                )
-                configBuilder.setCustomImageConfig(customImageConfigBuilder.build())
-
-                val config = configBuilder.build()
-
-                val vmm = context.getSystemService(VirtualMachineManager::class.java)!!
-                val vmName = config.customImageConfig!!.name!!
-
+            lifecycleMutex.withLock {
+                if (_vmState.value != VmState.Starting) return@withLock
                 try {
-                    vmm.get(vmName)?.let { // Clean up existing VM if it's not stopped
-                        it.clearCallback()
-                        if (it.status != VirtualMachine.STATUS_STOPPED) {
-                            Log.e(TAG, "stopping vm because it is not stopped")
-                            it.stop()
-                        }
-                        // TODO: revisit this to see if we can omit this step.
-                        vmm.delete(vmName)
-                    }
-                } catch (e: VirtualMachineException) {
-                    // Ignore if VM doesn't exist
-                }
+                    val image = InstalledImage.getDefault(context)
+                    val json = ConfigJson.from(context, image.configPath)
+                    val configBuilder = json.toConfigBuilder(context)
+                    _guestAgentController.value =
+                        GuestAgentController(context, image.isAidlGuestAgent(), repositoryScope)
 
-                val vm = vmm.create(vmName, config)
-                virtualMachine = vm
-                com.android.virtualization.terminal.ForwarderHost.attach(vm)
-                com.android.virtualization.terminal.VmConsole.begin(vm)
-                Logger.setup(context, vm, Executors.newFixedThreadPool(2)) { bytes ->
-                    com.android.virtualization.terminal.VmConsole.publish(vm, bytes)
-                }
+                    val sharedPref =
+                        context.getSharedPreferences(SettingsViewModel.PREFS_NAME, Context.MODE_PRIVATE)
+                    val memoryMib =
+                        sharedPref.getInt(
+                            SettingsViewModel.KEY_MEMORY_MIB,
+                            SettingsViewModel.DEFAULT_MEMORY_MIB,
+                        )
+                    configBuilder.setMemoryBytes(memoryMib.toLong() * 1024 * 1024)
+                    configBuilder.setVmConsoleInputSupported(true).setConnectVmConsole(false)
 
-                val callback =
-                    object : VirtualMachineCallback {
-                        override fun onPayloadStarted(vm: VirtualMachine) {}
+                    val customImageConfigBuilder = json.toCustomImageConfigBuilder(context)
 
-                        override fun onPayloadReady(vm: VirtualMachine) {}
+                    // Convert rootfs disk into a sparse file for storage ballooning.
+                    truncateDiskIfNecessary(image)
 
-                        override fun onPayloadFinished(vm: VirtualMachine, exitCode: Int) {}
-
-                        override fun onError(vm: VirtualMachine, errorCode: Int, message: String) {
-                            Log.e(TAG, "VM error: $message ($errorCode)")
-                            _vmState.value = VmState.Error(RuntimeException("VM error: $message"))
-                            _guestAgentController.value?.stop()
-                        }
-
-                        override fun onStopped(vm: VirtualMachine, reason: Int) {
-                            if (virtualMachine !== vm) return
-                            com.android.virtualization.terminal.VmConsole.end(vm)
-                            terminalBridge?.stop()
-                            terminalBridge = null
-                            Log.i("VmController", "VM stopped. reason: $reason")
-                            if (
-                                reason == VirtualMachineCallback.STOP_REASON_SHUTDOWN ||
-                                    reason == VirtualMachineCallback.STOP_REASON_KILLED
-                            ) {
-                                _vmState.value = VmState.Stopped
-                            } else if (reason == VirtualMachineCallback.STOP_REASON_REBOOT) {
-                                _vmState.value = VmState.Rebooting
-                            } else {
-                                Log.e("VmController", "VM stopped unexpectedly. reason: $reason")
-                                _vmState.value =
-                                    VmState.Error(
-                                        RuntimeException("VM stopped unexpectedly: $reason")
-                                    )
-                            }
-                            _guestAgentController.value?.stop()
-                        }
-
-                        override fun onGuestAgentRegistered(
-                            vm: VirtualMachine,
-                            guestAgent: IGuestAgent,
-                        ) {
-                            Log.d(TAG, "Guest agent registered. Imply AIDL connection")
-
-                            var binder: IBinder? = null
-                            try {
-                                binder = vm.connectToVsockServer(IDebianService.VSOCK_PORT)
-                            } catch (e: Exception) {
-                                _vmState.value =
-                                    VmState.Error(
-                                        RuntimeException("Failed to connect to guest agent", e)
-                                    )
-                                return
-                            }
-                            val debian_service = IDebianService.Stub.asInterface(binder)
-
-                            val cid = vm!!.cid
-                            _guestAgentController.value?.start(cid, guestAgent, debian_service)
-
-                            Log.d(TAG, "Guest agent ready")
-                        }
+                    if (image.hasBackup()) {
+                        customImageConfigBuilder.addDisk(
+                            VirtualMachineCustomImageConfig.Disk.RWDisk(image.backupFile.toString())
+                        )
                     }
 
-                vm.setCallback(Executors.newSingleThreadExecutor(), callback)
-                vm.run()
+                    val port = _guestAgentController.value!!.startServer()
+                    customImageConfigBuilder.addParam("debian_server_port=$port")
 
-                if (canUseTtydOverVsock()) {
-                    Log.i(TAG, "Connect to ttyd using vsock")
-                    terminalBridge?.stop()
-                    val bridge = AndroidToVmBridge(virtualMachine!!)
-                    terminalBridge = bridge
-                    val port = bridge.start()
-                    if (port == null) {
-                        Log.e(TAG, "Failed to start bridge")
-                        _vmState.value = VmState.Error(RuntimeException("Failed to start bridge"))
-                    } else {
-                        Log.d(TAG, "localhost is running with port=" + port)
-                        _vmState.value =
-                            VmState.Running(TerminalAddress("localhost", port, bridge.secretKey))
-                        repositoryScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                            runCatching {
-                                com.android.virtualization.terminal.GuestScreenSetup.ensure(context, port, bridge.secretKey) {
-                                    virtualMachine === vm && vm.status == VirtualMachine.STATUS_RUNNING
+                    // Override config for Display
+                    setDisplayConfig(customImageConfigBuilder)
+                    setGpuConfig(context, customImageConfigBuilder)
+                    customImageConfigBuilder.setAudioConfig(
+                        VirtualMachineCustomImageConfig.AudioConfig.Builder()
+                            .setUseSpeaker(true)
+                            .setUseMicrophone(true)
+                            .build()
+                    )
+                    configBuilder.setCustomImageConfig(customImageConfigBuilder.build())
+
+                    val config = configBuilder.build()
+
+                    val vmm = context.getSystemService(VirtualMachineManager::class.java)!!
+                    val vmName = config.customImageConfig!!.name!!
+
+                    try {
+                        vmm.get(vmName)?.let { // Clean up existing VM if it's not stopped
+                            it.clearCallback()
+                            if (it.status != VirtualMachine.STATUS_STOPPED) {
+                                Log.e(TAG, "stopping vm because it is not stopped")
+                                it.stop()
+                            }
+                            // TODO: revisit this to see if we can omit this step.
+                            vmm.delete(vmName)
+                        }
+                    } catch (e: VirtualMachineException) {
+                        // Ignore if VM doesn't exist
+                    }
+
+                    val vm = vmm.create(vmName, config)
+                    virtualMachine = vm
+                    com.android.virtualization.terminal.ForwarderHost.attach(vm)
+                    com.android.virtualization.terminal.VmConsole.begin(vm)
+                    Logger.setup(context, vm, Executors.newFixedThreadPool(2)) { bytes ->
+                        com.android.virtualization.terminal.VmConsole.publish(vm, bytes)
+                    }
+
+                    val callback =
+                        object : VirtualMachineCallback {
+                            override fun onPayloadStarted(vm: VirtualMachine) {}
+
+                            override fun onPayloadReady(vm: VirtualMachine) {}
+
+                            override fun onPayloadFinished(vm: VirtualMachine, exitCode: Int) {}
+
+                            override fun onError(vm: VirtualMachine, errorCode: Int, message: String) {
+                                if (virtualMachine !== vm) return
+                                Log.e(TAG, "VM error: $message ($errorCode)")
+                                _vmState.value = VmState.Error(RuntimeException("VM error: $message"))
+                                _guestAgentController.value?.stop()
+                            }
+
+                            override fun onStopped(vm: VirtualMachine, reason: Int) {
+                                if (virtualMachine !== vm) return
+                                com.android.virtualization.terminal.VmConsole.end(vm)
+                                disconnectTerminal()
+                                virtualMachine = null
+                                _guestAgentController.value?.stop()
+                                Log.i("VmController", "VM stopped. reason: $reason")
+                                if (
+                                    reason == VirtualMachineCallback.STOP_REASON_SHUTDOWN ||
+                                        reason == VirtualMachineCallback.STOP_REASON_KILLED
+                                ) {
+                                    _vmState.value = VmState.Stopped
+                                } else if (reason == VirtualMachineCallback.STOP_REASON_REBOOT) {
+                                    _vmState.value = VmState.Rebooting
+                                } else {
+                                    Log.e("VmController", "VM stopped unexpectedly. reason: $reason")
+                                    _vmState.value =
+                                        VmState.Error(
+                                            RuntimeException("VM stopped unexpectedly: $reason")
+                                        )
                                 }
-                            }.onFailure { Log.w(TAG, "Guest capture setup failed", it) }
-                        }
-                    }
-                }
+                            }
 
-                val timeout = json.getBootTimeoutSecs() ?: 60
-                val effectiveTimeout = if (IS_EMULATOR) (timeout * 10) else timeout
+                            override fun onGuestAgentRegistered(
+                                vm: VirtualMachine,
+                                guestAgent: IGuestAgent,
+                            ) {
+                                if (virtualMachine !== vm) return
+                                Log.d(TAG, "Guest agent registered. Imply AIDL connection")
 
-                if (image.isAidlGuestAgent()) {
-                    repositoryScope.launch {
-                        delay(TimeUnit.SECONDS.toMillis(effectiveTimeout.toLong()))
-                        if (_vmState.value == VmState.Starting) {
-                            _vmState.value =
-                                VmState.Error(
-                                    RuntimeException("Timed out waiting for terminal service")
-                                )
+                                var binder: IBinder? = null
+                                try {
+                                    binder = vm.connectToVsockServer(IDebianService.VSOCK_PORT)
+                                } catch (e: Exception) {
+                                    Log.w(TAG, "Guest agent unavailable; VM remains running", e)
+                                    return
+                                }
+                                val debian_service = IDebianService.Stub.asInterface(binder)
+
+                                val cid = vm!!.cid
+                                _guestAgentController.value?.start(cid, guestAgent, debian_service)
+
+                                Log.d(TAG, "Guest agent ready")
+                            }
                         }
-                    }
-                } else if (!canUseTtydOverVsock()) {
-                    startTtydDiscovery(effectiveTimeout.toLong())
+
+                    vm.setCallback(Executors.newSingleThreadExecutor(), callback)
+                    vm.run()
+
+                    // Guest services are optional. AVF running is sufficient to expose console/display.
+                    if (!_vmState.compareAndSet(VmState.Starting, VmState.Running)) return@withLock
+                    terminalTimeoutSecs = json.getBootTimeoutSecs().toLong() * (if (IS_EMULATOR) 10 else 1)
+                    retryTerminalConnection()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to start VM", e)
+                    if (_vmState.value != VmState.Stopping) _vmState.value = VmState.Error(e)
+                    disconnectTerminal()
+                    _guestAgentController.value?.stop()
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to start VM", e)
-                _vmState.value = VmState.Error(e)
-                _guestAgentController.value?.stop()
             }
         }
     }
@@ -397,67 +375,83 @@ object VmController {
             .useTrackpad(true)
     }
 
-    private fun startTtydDiscovery(timeoutSecs: Long) {
-        check(!canUseTtydOverVsock()) {
-            "startTtydDiscovery should only be called when ttyd over http is used"
+    private fun disconnectTerminal() {
+        terminalConnectionJob?.cancel()
+        terminalConnectionJob = null
+        terminalBridge?.stop()
+        terminalBridge = null
+        _terminalConnection.value = TerminalConnection.Disconnected
+    }
+
+    @Synchronized fun retryTerminalConnection() {
+        val vm = virtualMachine ?: return
+        if (_vmState.value != VmState.Running || terminalConnectionJob?.isActive == true) return
+        _terminalConnection.value = TerminalConnection.Connecting
+        terminalConnectionJob = repositoryScope.launch {
+            try {
+                if (canUseTtydOverVsock()) {
+                    terminalBridge?.stop()
+                    val bridge = AndroidToVmBridge(vm)
+                    terminalBridge = bridge
+                    val port = bridge.start() ?: error("Failed to start terminal bridge")
+                    if (virtualMachine !== vm || _vmState.value != VmState.Running) {
+                        bridge.stop()
+                        return@launch
+                    }
+                    _terminalConnection.value = TerminalConnection.Endpoint(
+                        TerminalAddress("localhost", port, bridge.secretKey))
+                    repositoryScope.launch {
+                        runCatching {
+                            com.android.virtualization.terminal.GuestScreenSetup.ensure(context, port, bridge.secretKey) {
+                                virtualMachine === vm && vm.status == VirtualMachine.STATUS_RUNNING
+                            }
+                        }.onFailure { Log.w(TAG, "Guest capture setup failed", it) }
+                    }
+                } else {
+                    discoverTerminal(vm)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Terminal unavailable; VM remains running", e)
+                if (virtualMachine === vm && _vmState.value == VmState.Running) {
+                    _terminalConnection.value = TerminalConnection.Unavailable(e.message ?: "Terminal unavailable")
+                }
+            }
         }
-        val executor =
-            Executors.newSingleThreadExecutor(TerminalThreadFactory(context.applicationContext))
-        val nsdManager = context.getSystemService<NsdManager>(NsdManager::class.java)!!
-        val queryInfo = NsdServiceInfo()
-        queryInfo.serviceType = "_http._tcp"
-        queryInfo.serviceName = "ttyd"
+    }
 
-        var isDiscovered = false
-
-        val callback =
-            object : NsdManager.ServiceInfoCallback {
-                override fun onServiceInfoCallbackRegistrationFailed(errorCode: Int) {}
-
-                override fun onServiceInfoCallbackUnregistered() {
-                    executor.shutdown()
-                }
-
-                override fun onServiceLost() {}
-
-                override fun onServiceUpdated(info: NsdServiceInfo) {
-                    val hasUsableAddress = info.hostAddresses.any { !it.isLinkLocalAddress }
-
-                    if (!hasUsableAddress) {
-                        return
-                    }
-
-                    if (!isDiscovered) {
-                        isDiscovered = true
-                        try {
-                            nsdManager.unregisterServiceInfoCallback(this)
-                        } catch (e: IllegalArgumentException) {
-                            // Ignore if already unregistered
-                        }
-                        val ipAddress =
-                            info.hostAddresses
-                                .firstOrNull { !it.isLinkLocalAddress }!!
-                                .hostAddress!!
-                        val port = info.port
-
-                        _vmState.value = VmState.Running(TerminalAddress(ipAddress, port))
-                    }
-                }
+    private suspend fun discoverTerminal(vm: VirtualMachine) {
+        val executor = Executors.newSingleThreadExecutor(TerminalThreadFactory(context.applicationContext))
+        val nsdManager = context.getSystemService(NsdManager::class.java)!!
+        val queryInfo = NsdServiceInfo().apply {
+            serviceType = "_http._tcp"
+            serviceName = "ttyd"
+        }
+        val result = kotlinx.coroutines.CompletableDeferred<TerminalAddress>()
+        val callback = object : NsdManager.ServiceInfoCallback {
+            override fun onServiceInfoCallbackRegistrationFailed(errorCode: Int) {
+                result.completeExceptionally(IOException("Terminal discovery failed: $errorCode"))
             }
-
-        nsdManager.registerServiceInfoCallback(queryInfo, executor, callback)
-
-        repositoryScope.launch {
-            delay(TimeUnit.SECONDS.toMillis(timeoutSecs))
-            if (!isDiscovered) {
-                try {
-                    nsdManager.unregisterServiceInfoCallback(callback)
-                } catch (e: IllegalArgumentException) {
-                    // Ignore if already unregistered
-                }
-                _vmState.value =
-                    VmState.Error(RuntimeException("Timed out waiting for terminal service"))
+            override fun onServiceInfoCallbackUnregistered() {}
+            override fun onServiceLost() {}
+            override fun onServiceUpdated(info: NsdServiceInfo) {
+                val address = info.hostAddresses.firstOrNull { !it.isLinkLocalAddress }?.hostAddress ?: return
+                result.complete(TerminalAddress(address, info.port))
             }
+        }
+        try {
+            nsdManager.registerServiceInfoCallback(queryInfo, executor, callback)
+            val address = kotlinx.coroutines.withTimeoutOrNull(TimeUnit.SECONDS.toMillis(terminalTimeoutSecs)) {
+                result.await()
+            }
+            if (virtualMachine === vm && _vmState.value == VmState.Running) {
+                _terminalConnection.value = if (address != null) TerminalConnection.Endpoint(address)
+                    else TerminalConnection.Unavailable("Timed out waiting for terminal service")
+            }
+        } finally {
+            runCatching { nsdManager.unregisterServiceInfoCallback(callback) }
+            executor.shutdown()
         }
     }
 
@@ -468,17 +462,24 @@ object VmController {
             buildId >= FIRST_VERSION_SUPPORTS_TTYD_VSOCK
     }
 
-    fun stop() {
+    @Synchronized fun stop() {
         if (_vmState.value == VmState.Stopped || _vmState.value == VmState.Stopping) return
-
+        _vmState.value = VmState.Stopping
         repositoryScope.launch {
-            _vmState.value = VmState.Stopping
-            try {
-                virtualMachine?.stop()
-            } catch (e: VirtualMachineException) {
-                Log.w("VmController", "Failed to stop VM", e)
+            lifecycleMutex.withLock {
+                disconnectTerminal()
+                try {
+                    virtualMachine?.stop()
+                } catch (e: VirtualMachineException) {
+                    Log.w("VmController", "Failed to stop VM", e)
+                    if (virtualMachine?.status == VirtualMachine.STATUS_RUNNING) {
+                        _vmState.value = VmState.Running
+                        retryTerminalConnection()
+                        return@withLock
+                    }
+                }
+                _vmState.value = VmState.Stopped
             }
-            _vmState.value = VmState.Stopped
         }
     }
 

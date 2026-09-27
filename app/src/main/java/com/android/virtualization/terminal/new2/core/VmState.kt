@@ -22,7 +22,7 @@ sealed interface VmState {
 
     data object Starting : VmState
 
-    data class Running(val terminalAddress: TerminalAddress) : VmState
+    data object Running : VmState
 
     data object Rebooting : VmState
 
@@ -34,4 +34,12 @@ sealed interface VmState {
 
     val isAlive: Boolean
         get() = this is Starting || this is Running || this is Stopping || this is Rebooting
+}
+
+/** A local endpoint is not proof that ttyd exists in the guest. WebView tracks session readiness. */
+sealed interface TerminalConnection {
+    data object Disconnected : TerminalConnection
+    data object Connecting : TerminalConnection
+    data class Endpoint(val address: TerminalAddress) : TerminalConnection
+    data class Unavailable(val reason: String) : TerminalConnection
 }

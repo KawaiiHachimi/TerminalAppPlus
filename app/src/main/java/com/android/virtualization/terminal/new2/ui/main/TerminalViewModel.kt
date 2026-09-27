@@ -59,8 +59,11 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
         application.createDisplayContext(disp).createWindowContext(TYPE_APPLICATION, null)
     }
     private var ttydView: TtydView? = null
+    private var loadedAddress: TerminalAddress? = null
 
     fun getOrCreateTtydView(sessionId: String, terminalAddress: TerminalAddress): TtydView {
+        if (loadedAddress != terminalAddress) terminalClose()
+        loadedAddress = terminalAddress
         if (ttydView == null) {
             Log.d("TerminalViewModel", "Creating new TtydView")
             _uiState.value = TerminalUiState.Connecting
@@ -77,14 +80,20 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun terminalClose() {
-        ttydView?.terminalClose()
+        ttydView?.apply {
+            onTerminalReady = null
+            onTerminalDisconnected = null
+            onSessionDiscard = null
+            onTitleChanged = null
+            terminalClose()
+        }
         ttydView = null
+        loadedAddress = null
     }
 
     override fun onCleared() {
         super.onCleared()
         Log.d("TerminalViewModel", "Clearing TtydView")
-        ttydView?.terminalClose()
-        ttydView = null
+        terminalClose()
     }
 }

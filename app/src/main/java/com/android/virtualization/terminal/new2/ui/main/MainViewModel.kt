@@ -39,7 +39,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -50,7 +49,7 @@ sealed interface MainUiState {
 
     data object Booting : MainUiState
 
-    data class Running(val terminalAddress: TerminalAddress) : MainUiState
+    data class Running(val terminalConnection: com.android.virtualization.terminal.new2.core.TerminalConnection) : MainUiState
 
     data object Stopping : MainUiState
 
@@ -185,8 +184,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     val uiState: StateFlow<MainUiState> =
-        VmController.vmState
-            .map { vmState ->
+        combine(VmController.vmState, VmController.terminalConnection) { vmState, terminalConnection ->
                 when (vmState) {
                     is VmState.Ready -> {
                         if (hasVmEverStarted) {
@@ -200,7 +198,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         MainUiState.Booting
                     }
                     is VmState.Rebooting -> MainUiState.Booting
-                    is VmState.Running -> MainUiState.Running(vmState.terminalAddress)
+                    is VmState.Running -> MainUiState.Running(terminalConnection)
                     is VmState.Stopping -> MainUiState.Stopping
                     is VmState.Stopped -> {
                         if (hasVmEverStarted) {
@@ -252,10 +250,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        VmController.stop()
-    }
 
     init {
         VmController.reset()
@@ -337,13 +331,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         VmController.vmState.collect { state ->
                             if (state is VmState.Rebooting) {
                                 restartVm()
-                            }
-                        }
-                    }
-                    launch {
-                        TerminalSessionRepository.sessions.collect { sessions ->
-                            if (sessions.isEmpty()) {
-                                stopVm()
                             }
                         }
                     }

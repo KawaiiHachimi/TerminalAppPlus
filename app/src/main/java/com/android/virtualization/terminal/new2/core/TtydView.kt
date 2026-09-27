@@ -86,7 +86,7 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
             object {
                 @android.webkit.JavascriptInterface
                 fun onTerminalReady() {
-                    this@TtydView.onTerminalReady!!.invoke()
+                    post { this@TtydView.onTerminalReady?.invoke() }
                 }
 
                 @android.webkit.JavascriptInterface

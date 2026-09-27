@@ -351,7 +351,7 @@ fun DisplayController(viewModel: MainViewModel) {
 
     Surface(
         modifier =
-            Modifier.padding(end = 8.dp).pointerInput(Unit) {
+            Modifier.pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()

@@ -240,10 +240,24 @@ private fun TerminalTab(
 fun TerminalScreen(terminalAddress: TerminalAddress, tabId: String, mainViewModel: MainViewModel) {
     val terminalViewModel: TerminalViewModel = viewModel(key = tabId)
     val terminalUiState by terminalViewModel.uiState.collectAsStateWithLifecycle()
+    var retryGeneration by remember(terminalAddress, tabId) { androidx.compose.runtime.mutableIntStateOf(0) }
+    var connectionTimedOut by remember(terminalAddress, tabId, retryGeneration) { mutableStateOf(false) }
     val ttydView =
-        remember(terminalAddress, tabId) {
+        remember(terminalAddress, tabId, retryGeneration) {
             terminalViewModel.getOrCreateTtydView(tabId, terminalAddress)
         }
+
+    LaunchedEffect(ttydView, terminalUiState, retryGeneration) {
+        connectionTimedOut = false
+        if (terminalUiState is TerminalUiState.Connecting || terminalUiState is TerminalUiState.Initializing) {
+            kotlinx.coroutines.delay(15_000)
+            connectionTimedOut = true
+        }
+    }
+    val retryConnection: () -> Unit = {
+        terminalViewModel.terminalClose()
+        retryGeneration++
+    }
 
     val storedImeVisibility by mainViewModel.isImeVisible.collectAsStateWithLifecycle()
     val isWindowImeVisible = WindowInsets.isImeVisible
@@ -291,7 +305,9 @@ fun TerminalScreen(terminalAddress: TerminalAddress, tabId: String, mainViewMode
             modifier = Modifier.fillMaxSize().padding(bottom = stablePadding),
             contentAlignment = Alignment.Center,
         ) {
-            when (terminalUiState) {
+            if (connectionTimedOut || terminalUiState is TerminalUiState.Disconnected) {
+                TerminalServiceNotice(onRetry = retryConnection)
+            } else when (terminalUiState) {
                 is TerminalUiState.Ready -> {
                     key(tabId) {
                         DisposableEffect(ttydView) {

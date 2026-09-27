@@ -26,4 +26,8 @@
     <string name="plus_lab_uboot_hint">独立虚拟机，需要已准备好的引导程序和测试磁盘。</string>
     <string name="plus_lab_display">当前 VM 屏幕原型</string>
     <string name="plus_lab_display_hint">打开当前虚拟机的实验采集与渲染页面。</string>
+    <string name="plus_terminal_unavailable">虚拟机正在运行，尚未连接到 ttyd。此镜像可能未提供 ttyd，你可以继续使用控制台或图形界面。</string>
+    <string name="plus_terminal_no_sessions">当前没有打开的终端会话，虚拟机仍在运行。</string>
+    <string name="plus_terminal_retry">重试连接</string>
+    <string name="plus_terminal_new_session">新建终端</string>
 </resources>
