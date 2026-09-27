@@ -191,6 +191,7 @@ object VmController {
                         SettingsViewModel.DEFAULT_MEMORY_MIB,
                     )
                 configBuilder.setMemoryBytes(memoryMib.toLong() * 1024 * 1024)
+                configBuilder.setVmConsoleInputSupported(true).setConnectVmConsole(false)
 
                 val customImageConfigBuilder = json.toCustomImageConfigBuilder(context)
 
@@ -239,7 +240,10 @@ object VmController {
                 val vm = vmm.create(vmName, config)
                 virtualMachine = vm
                 com.android.virtualization.terminal.ForwarderHost.attach(vm)
-                Logger.setup(context, vm, Executors.newFixedThreadPool(2))
+                com.android.virtualization.terminal.VmConsole.begin(vm)
+                Logger.setup(context, vm, Executors.newFixedThreadPool(2)) { bytes ->
+                    com.android.virtualization.terminal.VmConsole.publish(vm, bytes)
+                }
 
                 val callback =
                     object : VirtualMachineCallback {
@@ -257,6 +261,7 @@ object VmController {
 
                         override fun onStopped(vm: VirtualMachine, reason: Int) {
                             if (virtualMachine !== vm) return
+                            com.android.virtualization.terminal.VmConsole.end(vm)
                             terminalBridge?.stop()
                             terminalBridge = null
                             Log.i("VmController", "VM stopped. reason: $reason")

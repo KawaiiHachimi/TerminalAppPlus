@@ -39,7 +39,7 @@ import libcore.io.Streams
  * Forwards VM's console output to a file on the Android side, and VM's log output to Android logd.
  */
 internal object Logger {
-    fun setup(context: Context, vm: VirtualMachine, executor: ExecutorService) {
+    fun setup(context: Context, vm: VirtualMachine, executor: ExecutorService, onConsole: ((ByteArray) -> Unit)? = null) {
         val tag = vm.name
         val dir = context.getFileStreamPath(vm.name + ".log").toPath()
 
@@ -61,7 +61,13 @@ internal object Logger {
             try {
                 console.use { console ->
                     LineBufferedOutputStream(file).use { fileOutput ->
-                        Streams.copy(console, fileOutput)
+                        val buffer = ByteArray(8192)
+                        while (true) {
+                            val count = console.read(buffer)
+                            if (count < 0) break
+                            fileOutput.write(buffer, 0, count)
+                            onConsole?.invoke(buffer.copyOf(count))
+                        }
                     }
                 }
             } catch (e: Exception) {

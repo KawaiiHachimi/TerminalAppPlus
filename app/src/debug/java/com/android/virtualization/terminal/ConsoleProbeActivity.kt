@@ -20,8 +20,14 @@ class ConsoleProbeActivity : Activity() {
     private lateinit var terminal: com.termux.view.TerminalView
     private lateinit var session: com.termux.terminal.AvfTerminalSession
     private val writer = Executors.newSingleThreadExecutor()
+    private var sharedConsole = false
+    private var replayingConsole = false
+    private val consoleListener: (ByteArray) -> Unit = { bytes ->
+        runOnUiThread { if (!isDestroyed) session.append(bytes) }
+    }
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
+        sharedConsole = !intent.getBooleanExtra("lab", false) && !intent.hasExtra("uboot")
         window.statusBarColor = android.graphics.Color.BLACK
         window.navigationBarColor = android.graphics.Color.BLACK
         terminal = com.termux.view.TerminalView(this, null).apply {
@@ -40,7 +46,10 @@ class ConsoleProbeActivity : Activity() {
         val client = ProbeTerminalClient(terminal)
         terminal.setTerminalViewClient(client)
         session = com.termux.terminal.AvfTerminalSession(client) { bytes ->
-            writer.execute { runCatching { consoleInput?.write(bytes); consoleInput?.flush() } }
+            if (!replayingConsole) writer.execute { runCatching {
+                if (sharedConsole) VmConsole.write(bytes)
+                else { consoleInput?.write(bytes); consoleInput?.flush() }
+            } }
         }
         terminal.attachSession(session)
         val container = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
@@ -65,7 +74,7 @@ class ConsoleProbeActivity : Activity() {
                     setPadding(0, 0, 0, 0)
                     isFocusable = false
                     setOnClickListener { action(); terminal.requestFocus() }
-                }, android.widget.LinearLayout.LayoutParams(0, (48 * resources.displayMetrics.density).toInt(), 1f))
+                }, android.widget.LinearLayout.LayoutParams(0, (36 * resources.displayMetrics.density).toInt(), 1f))
             }
             container.addView(row)
         }
@@ -95,7 +104,7 @@ class ConsoleProbeActivity : Activity() {
             val padding = (24 * resources.displayMetrics.density).toInt()
             setPadding(padding, padding * 2, padding, padding)
         }
-        menu.addView(TextView(this).apply { text = "终端 Plus · 控制台实验"; textSize = 18f; setTextColor(-1) })
+        menu.addView(TextView(this).apply { text = if (sharedConsole) "当前虚拟机 · 直接控制台" else "实验室 · 独立虚拟机"; textSize = 18f; setTextColor(-1) })
         fun menuAction(title: String, action: () -> Unit) {
             menu.addView(android.widget.Button(this).apply {
                 text = title; isAllCaps = false
@@ -108,19 +117,19 @@ class ConsoleProbeActivity : Activity() {
                 .setPositiveButton("切换") { _, _ ->
                     stopProbe()
                     startActivity(android.content.Intent(this, ConsoleProbeActivity::class.java)
-                        .putExtra("uboot", uboot).putExtra("disk", disk))
+                        .putExtra("lab", true).putExtra("uboot", uboot).putExtra("disk", disk))
                     finish()
                 }.setNegativeButton(android.R.string.cancel, null).show()
         }
-        menuAction("Linux / hvc0 测试") { switchProbe(false, false) }
-        menuAction("U-Boot + Debian 测试") { switchProbe(true, true) }
+        menuAction("实验室：BusyBox / hvc0") { switchProbe(false, false) }
+        menuAction("实验室：U-Boot + Debian") { switchProbe(true, true) }
         menuAction("粘贴") { client.onPasteTextFromClipboard(session) }
         menuAction("打开键盘") { terminal.requestFocus(); client.onSingleTapUp(android.view.MotionEvent.obtain(0, 0, 0, 0f, 0f, 0)) }
-        menuAction("返回普通终端") {
-            stopProbe()
-            startActivity(android.content.Intent(this, LauncherActivity::class.java)); finish()
+        menuAction("返回 ttyd 终端") {
+            if (sharedConsole) finish()
+            else { stopProbe(); startActivity(android.content.Intent(this, LauncherActivity::class.java)); finish() }
         }
-        menuAction("关闭实验") { finish() }
+        menuAction(if (sharedConsole) "关闭控制台页面" else "关闭实验") { finish() }
         drawer.addView(menu, androidx.drawerlayout.widget.DrawerLayout.LayoutParams(
             (300 * resources.displayMetrics.density).toInt(), -1, android.view.Gravity.START))
         terminal.setOnTouchListener { _, event ->
@@ -129,6 +138,15 @@ class ConsoleProbeActivity : Activity() {
         }
         setContentView(drawer)
         terminal.requestFocus()
+        if (sharedConsole) {
+            replayingConsole = true
+            val connected = VmConsole.subscribe(consoleListener)
+            replayingConsole = false
+            if (!connected) {
+                session.append("当前虚拟机未运行，请返回主界面启动后重试。\r\n".toByteArray())
+            }
+            return
+        }
         File(filesDir, "console-probe-error.txt").delete()
         val prefs = getSharedPreferences("console-probe", MODE_PRIVATE)
         if (intent.hasExtra("uboot")) prefs.edit().putBoolean("uboot", intent.getBooleanExtra("uboot", false))
@@ -210,6 +228,7 @@ class ConsoleProbeActivity : Activity() {
         runCatching { machine?.let { it.stop(); getSystemService(VirtualMachineManager::class.java)?.delete(it.name) } }
     }
     override fun onDestroy() {
+        VmConsole.unsubscribe(consoleListener)
         stopProbe()
         workers.shutdownNow()
         writer.shutdownNow()

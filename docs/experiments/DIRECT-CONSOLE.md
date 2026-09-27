@@ -1,7 +1,7 @@
 # Direct AVF console feasibility probe
 
-Branch: `codex/feat-direct-console`. Debug builds only; normal LauncherActivity and
-its ttyd implementation are unchanged. ConsoleProbeActivity is an engineering
+Branch: `codex/feat-direct-console`. Debug terminal UI only; the normal LauncherActivity still starts the existing
+Debian VM and ttyd. The toolbar console now attaches to that same VM. ConsoleProbeActivity is an engineering
 probe, not a complete terminal emulator or an image importer.
 
 ## Confirmed on PKB110 / MT6991 / Android 17
@@ -125,3 +125,24 @@ No separate launcher icon is added. The terminal loads the device font file
 On PKB110 it is app-readable and matches the AOSP font SHA256
 `db19a1fdaba41cc4a2fec0330e5c15e71c6dd68a3ef074f4f28268828b45c862`.
 No TTF is bundled. Devices lacking the file fall back to Typeface.MONOSPACE.
+
+## Shared VM console
+
+The toolbar action defaults to the running VmController VM. ConsoleProbeActivity
+only creates a separate VM when launched with an explicit lab/uboot mode. Logger
+is the single console reader and VmConsole distributes ordered byte copies to
+subscribers, retaining bounded history. Replay disables terminal-query writes so
+old DSR sequences are not answered into the current guest prompt. Closing the
+shared console unsubscribes without stopping the VM.
+
+The console does not configure users, passwords or getty. Login and authentication
+are entirely controlled by the guest image. No ttyd credentials are injected.
+The temporary autologin experiment was removed from both source and the test guest.
+The future initial image selector/laboratory UI is not implemented; the U-Boot
+probe and independent disk remain available.
+
+Shared-VM validation: ttyd and direct console both returned boot ID
+`7968d58b-6036-4e01-844c-31e2881ee67b`. The temporary autologin drop-in was then
+removed and serial-getty restarted with the distro defaults; original plus1
+cidata was restored on the device. No username/password policy remains in the
+implementation. Build and lint passed after the rollback.
