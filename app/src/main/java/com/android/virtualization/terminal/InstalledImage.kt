@@ -105,7 +105,7 @@ public class InstalledImage private constructor(val installDir: Path) {
     @Throws(IOException::class)
     fun uninstallFully() {
         cidataBuildId = null
-        FileUtils.deleteContentsAndDir(installDir.toFile())
+        check(installDir.toFile().deleteRecursively()) { "Failed to delete VM image" }
     }
 
     private fun readBuildInfo(): BuildInfo? {

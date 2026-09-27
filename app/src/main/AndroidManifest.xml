@@ -16,7 +16,7 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.android.virtualization.terminal">
+>
 
     <queries>
         <package android:name="com.google.android.apps.internal.betterbug" />
@@ -43,7 +43,8 @@
         android:theme="@style/VmTerminalAppTheme"
         android:usesCleartextTraffic="true"
         android:supportsRtl="true"
-        android:enabled="false"
+        android:enabled="true"
+        android:allowBackup="false"
         android:name=".Application">
         <activity android:name=".LauncherActivity"
                   android:exported="true">
@@ -54,7 +55,7 @@
         </activity>
         <activity android:name=".MainActivity"
                   android:configChanges="orientation|screenSize|keyboard|keyboardHidden|navigation|uiMode|screenLayout|smallestScreenSize|fontScale|density"
-                  android:exported="true">
+                  android:exported="false">
             <intent-filter>
                 <action android:name="android.virtualization.VM_TERMINAL" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -67,7 +68,7 @@
                   android:windowSoftInputMode="adjustResize"
                   android:label="@string/app_name" />
         <activity android:name=".DisplayActivity"
-            android:taskAffinity="com.android.virtualization.terminal.display"
+            android:taskAffinity="${applicationId}.display"
             android:resizeableActivity="false"
             android:theme="@style/FullscreenTheme"
             android:supportsPictureInPicture="true"
@@ -92,12 +93,12 @@
             android:exported="false"
             tools:node="merge">
             <meta-data
-                android:name="${applicationId}.SplitInitializer"
+                android:name="com.android.virtualization.terminal.SplitInitializer"
                 android:value="androidx.startup" />
         </provider>
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.android.virtualization.terminal.fileprovider"
+            android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

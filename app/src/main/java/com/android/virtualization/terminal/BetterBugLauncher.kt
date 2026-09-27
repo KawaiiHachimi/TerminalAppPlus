@@ -120,7 +120,7 @@ class BetterBugLauncher {
 
         // Defined in AndroidManifest.xml
         private const val FILE_PROVIDER_AUTHORITY =
-            "com.android.virtualization.terminal.fileprovider"
+            BuildConfig.APPLICATION_ID + ".fileprovider"
         private const val LOG_ZIP_DIR = "bugreport"
 
         // From go/betterbug-integration

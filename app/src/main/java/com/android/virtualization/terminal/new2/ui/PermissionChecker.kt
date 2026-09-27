@@ -53,6 +53,7 @@ val PERMISSIONS =
 @Composable
 fun PermissionChecker(viewModel: MainViewModel, snackbarHostState: SnackbarHostState) {
     val context = LocalContext.current
+    val resources = androidx.compose.ui.platform.LocalResources.current
     val activity = context as Activity
     val scope = rememberCoroutineScope()
     var showPermissionRationale by remember { mutableStateOf(false) }
@@ -82,11 +83,11 @@ fun PermissionChecker(viewModel: MainViewModel, snackbarHostState: SnackbarHostS
                 val result =
                     snackbarHostState.showSnackbar(
                         message =
-                            context.getString(
+                            resources.getString(
                                 R.string.permission_snkbar_message_missing,
                                 deniedLabels,
                             ),
-                        actionLabel = context.getString(R.string.action_settings),
+                        actionLabel = resources.getString(R.string.action_settings),
                         duration = SnackbarDuration.Long,
                     )
                 if (result == SnackbarResult.ActionPerformed) {

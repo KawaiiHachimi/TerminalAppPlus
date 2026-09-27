@@ -108,7 +108,7 @@ public class InstallerActivity : BaseActivity() {
     override fun onResume() {
         super.onResume()
 
-        if (autoInstall || (Build.isDebuggable() && fromSdCard().exists())) {
+        if (autoInstall || (BuildConfig.DEBUG && fromSdCard().exists())) {
             showSnackBar("Auto installing", Snackbar.LENGTH_LONG)
             requestInstall()
         }
@@ -147,7 +147,7 @@ public class InstallerActivity : BaseActivity() {
     }
 
     fun handleInternalError(e: Exception) {
-        if (Build.isDebuggable()) {
+        if (BuildConfig.DEBUG) {
             showSnackBar(
                 e.message + ". File a bugreport to go/ferrochrome-bug",
                 Snackbar.LENGTH_INDEFINITE,
@@ -296,6 +296,6 @@ public class InstallerActivity : BaseActivity() {
 
     companion object {
         private val AUTO_INSTALL_EXTRA = "AUTO_INSTALL"
-        private val ESTIMATED_IMG_SIZE_BYTES = FileUtils.parseSize("550MB")
+        private val ESTIMATED_IMG_SIZE_BYTES = 550_000_000L
     }
 }

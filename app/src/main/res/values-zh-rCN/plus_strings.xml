@@ -1,0 +1,6 @@
+<resources>
+    <string name="plus_grant_instructions">终端 Plus 通过 Android 虚拟化框架免 root 运行。请在已连接 ADB 的电脑上执行以下两条命令，然后点击「重新检查」：\n\n%1$s</string>
+    <string name="plus_check_again">重新检查</string>
+    <string name="plus_avf_unavailable">此设备未提供 Android 虚拟化框架。终端 Plus 需要 AVF 及自定义非受保护虚拟机支持。</string>
+    <string name="plus_display_unavailable">此 ROM 将原生虚拟机显示服务限制为系统应用。两个 AVF 权限可运行终端，但不能解锁该显示服务。</string>
+</resources>

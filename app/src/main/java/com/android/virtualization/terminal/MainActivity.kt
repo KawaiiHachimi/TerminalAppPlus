@@ -227,7 +227,7 @@ public class MainActivity :
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (Build.isDebuggable() && event.keyCode == KeyEvent.KEYCODE_UNKNOWN) {
+        if (BuildConfig.DEBUG && event.keyCode == KeyEvent.KEYCODE_UNKNOWN) {
             if (event.action == KeyEvent.ACTION_UP) {
                 ErrorActivity.start(this, Exception("Debug: KeyEvent.KEYCODE_UNKNOWN"))
             }
@@ -250,7 +250,7 @@ public class MainActivity :
         super.onPause()
         MediaScannerConnection.scanFile(
             this,
-            arrayOf("/storage/emulated/${userId}/Download"),
+            arrayOf("/storage/emulated/${android.os.Process.myUid() / 100000}/Download"),
             null /* mimeTypes */,
             null, /* callback */
         )
@@ -395,10 +395,10 @@ public class MainActivity :
                 stopIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
-        val icon = Icon.createWithResource(resources, R.drawable.ic_launcher_foreground)
+        val icon = Icon.createWithResource(this, R.drawable.ic_launcher_foreground)
         val notification: Notification =
             Notification.Builder(this, Application.CHANNEL_LONG_RUNNING_ID)
-                .setSilent(true)
+                .setOnlyAlertOnce(true)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(resources.getString(R.string.notif_title_running))
                 .setContentText(resources.getString(R.string.notif_content_running))

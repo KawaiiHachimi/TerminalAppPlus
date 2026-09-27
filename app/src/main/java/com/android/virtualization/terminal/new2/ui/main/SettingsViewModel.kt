@@ -145,7 +145,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         internal const val KEY_MEMORY_MIB = "memory_mib"
         internal const val KEY_DISPLAY_RESOLUTION = "display_resolution"
         internal const val KEY_KEEP_AWAKE = "keep_awake"
-        const val DEFAULT_MEMORY_MIB = 1024
+        const val DEFAULT_MEMORY_MIB = 4096
         const val MIN_MEMORY_MIB = 200
     }
 }

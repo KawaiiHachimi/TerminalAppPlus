@@ -196,7 +196,7 @@ internal class ImageArchive {
                     }
 
                     // Override cidata if necessary. Assume overridden cidata uses AIDL guest agent.
-                    if (Build.isDebuggable() && extra_source.exists() == true) {
+                    if (BuildConfig.DEBUG && extra_source.exists() == true) {
                         Log.d(TAG, "Installing /sdcard/linux/cidata.iso")
 
                         val cidataPath = dir.resolve(extra_source.fileName)
@@ -311,7 +311,7 @@ internal class ImageArchive {
 
         /** Return whether sdcard image would be used for debugging purpose. */
         fun isLocalImage(): Boolean {
-            return Build.isDebuggable() && fromSdCard().exists()
+            return BuildConfig.DEBUG && fromSdCard().exists()
         }
 
         /**

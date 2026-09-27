@@ -58,7 +58,7 @@ private constructor(context: Context, private val sharedPref: SharedPreferences)
 
     fun isGfxstreamEnabled(): Boolean {
         if (
-            android.os.Build.isDebuggable() &&
+            BuildConfig.DEBUG &&
                 java.nio.file.Files.exists(
                     ImageArchive.getSdcardPathForTesting().resolve("gfxstream")
                 )

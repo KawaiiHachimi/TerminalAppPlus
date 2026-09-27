@@ -138,7 +138,7 @@ class TerminalTabFragment() : Fragment() {
 
         terminalView.webChromeClient = TerminalWebChromeClient()
         terminalView.webViewClient = TerminalWebViewClient()
-        terminalView.addJavascriptInterface(TerminalViewInterface(context!!), "TerminalApp")
+        terminalView.addJavascriptInterface(TerminalViewInterface(requireContext()), "TerminalApp")
 
         (activity as MainActivity).modifierKeysController.addTerminalView(terminalView)
         terminalViewModel.terminalTabFragments.add(this)
@@ -177,7 +177,7 @@ class TerminalTabFragment() : Fragment() {
             activity?.runOnUiThread {
                 if (activity != null) {
                     Toast.makeText(
-                            activity!!,
+                            requireActivity(),
                             R.string.terminal_toast_connection_error,
                             Toast.LENGTH_SHORT,
                         )
@@ -287,7 +287,7 @@ class TerminalTabFragment() : Fragment() {
 
     private fun readClientCertificate() {
         val pke = createOrGetKey()
-        writeCertificateToFile(activity!!, pke.certificate)
+        writeCertificateToFile(requireActivity(), pke.certificate)
         privateKey = pke.privateKey
         certificates = arrayOf<X509Certificate>(pke.certificate as X509Certificate)
     }

@@ -24,6 +24,15 @@ import com.android.virtualization.terminal.new2.core.Installer
 import com.android.virtualization.terminal.new2.core.VmController
 
 public class Application : AndroidApplication() {
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        // Enable the same per-process AVF access used by Podroid, before any VM classes load.
+        org.lsposed.hiddenapibypass.HiddenApiBypass.addHiddenApiExemptions(
+            "Landroid/system/", "Landroid/os/", "Landroid/view/",
+            "Landroid/content/", "Landroid/permission/", "Llibcore/io/"
+        )
+    }
+
     override fun onCreate() {
         super.onCreate()
         if (Flags.terminalNewuiJetpack()) {

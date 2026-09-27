@@ -143,6 +143,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun toggleDisplay() {
+        if (android.os.ServiceManager.checkService("android.system.virtualizationservice") == null) {
+            android.widget.Toast.makeText(getApplication(),
+                com.android.virtualization.terminal.R.string.plus_display_unavailable,
+                android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
         _displayState.value =
             if (_displayState.value == DisplayState.Hidden) {
                 DisplayState.Normal
@@ -282,7 +288,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (device.sources and InputDevice.SOURCE_MOUSE == InputDevice.SOURCE_MOUSE) {
                     mouseDeviceIds.add(id)
                 }
-                if (device.isFullKeyboard) {
+                if ((device.keyboardType == InputDevice.KEYBOARD_TYPE_ALPHABETIC)) {
                     keyboardDeviceIds.add(id)
                 }
             }

@@ -16,7 +16,7 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name" msgid="5597111707986572208">"ಟರ್ಮಿನಲ್‌"</string>
+    <string name="app_name" msgid="5597111707986572208">"ಟರ್ಮಿನಲ್‌" Plus</string>
     <string name="action_settings" msgid="5729342767795123227">"ಸೆಟ್ಟಿಂಗ್‌ಗಳು"</string>
     <string name="permission_dlg_title_required" msgid="7330907054330473886">"ಅನುಮತಿಯ ಅಗತ್ಯವಿದೆ"</string>
     <string name="permission_dlg_message_required" msgid="7912498378440483592">"ಟರ್ಮಿನಲ್ ಸರಿಯಾಗಿ ಕಾರ್ಯನಿರ್ವಹಿಸಲು ಈ ಕೆಳಗಿನ ಅನುಮತಿಗಳ ಅಗತ್ಯವಿದೆ: <xliff:g id="PERMISSION_LIST">%s</xliff:g>"</string>

@@ -151,7 +151,7 @@ internal class InputForwarder(
         private fun hasPhysicalKeyboard(): Boolean {
             for (id in InputDevice.getDeviceIds()) {
                 val d = InputDevice.getDevice(id)
-                if (!d!!.isVirtual && d.isEnabled && d.isFullKeyboard) {
+                if (!d!!.isVirtual && d.isEnabled && (d.keyboardType == InputDevice.KEYBOARD_TYPE_ALPHABETIC)) {
                     return true
                 }
             }

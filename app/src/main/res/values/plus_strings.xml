@@ -1,0 +1,7 @@
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <!-- Plus additions intentionally provide English fallback and Simplified Chinese. -->
+    <string name="plus_grant_instructions">Terminal Plus uses Android Virtualization Framework without root. Run these two commands once from an ADB computer, then tap Check again:\n\n%1$s</string>
+    <string name="plus_check_again">Check again</string>
+    <string name="plus_avf_unavailable">This device does not provide Android Virtualization Framework. Terminal Plus requires AVF and custom non-protected VM support.</string>
+    <string name="plus_display_unavailable">This ROM restricts the native VM display to system apps. The two AVF grants enable the terminal, but do not unlock this display service.</string>
+</resources>
