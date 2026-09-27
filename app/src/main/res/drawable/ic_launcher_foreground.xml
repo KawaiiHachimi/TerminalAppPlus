@@ -25,9 +25,9 @@
       android:translateY="39.324776">
     <group android:translateY="133.59375">
       <path android:pathData="M9.078125,-77.484375L69.75,-51.40625L69.75,-37.765625L9.078125,-11.609375L9.078125,-28.40625L52.53125,-44.71875L9.078125,-60.75L9.078125,-77.484375Z"
-          android:fillColor="#3BBA46"/>
+          android:fillColor="#42A5F5"/>
       <path android:pathData="M139.76562,0L139.76562,13.5L75.21875,13.5L75.21875,0L139.76562,0Z"
-          android:fillColor="#3BBA46"/>
+          android:fillColor="#42A5F5"/>
     </group>
   </group>
 </vector>
