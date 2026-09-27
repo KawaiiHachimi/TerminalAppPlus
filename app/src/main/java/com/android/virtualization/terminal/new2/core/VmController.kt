@@ -323,6 +323,13 @@ object VmController {
                         Log.d(TAG, "localhost is running with port=" + port)
                         _vmState.value =
                             VmState.Running(TerminalAddress("localhost", port, bridge.secretKey))
+                        repositoryScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            runCatching {
+                                com.android.virtualization.terminal.GuestScreenSetup.ensure(context, port, bridge.secretKey) {
+                                    virtualMachine === vm && vm.status == VirtualMachine.STATUS_RUNNING
+                                }
+                            }.onFailure { Log.w(TAG, "Guest capture setup failed", it) }
+                        }
                     }
                 }
 

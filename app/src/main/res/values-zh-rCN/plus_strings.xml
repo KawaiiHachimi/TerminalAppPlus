@@ -18,5 +18,5 @@
     <string name="plus_commands_copied">命令已复制。在已连接 ADB 的电脑上执行后，点击「重新检查」。</string>
     <string name="plus_direct_console">直接控制台（实验）</string>
     <string name="plus_display_connecting">正在连接虚拟机屏幕…</string>
-    <string name="plus_display_service_required">无法读取屏幕。请在虚拟机中启动采集服务，本页面会自动重试。</string>
+    <string name="plus_display_service_required">正在等待虚拟机屏幕服务。终端 Plus 会为预构建 Debian 自动配置，准备就绪后自动连接。</string>
 </resources>

@@ -20,6 +20,7 @@ android {
     packaging { resources.excludes += setOf("META-INF/INDEX.LIST", "META-INF/io.netty.versions.properties") }
 }
 dependencies {
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     debugImplementation(project(":terminal-view"))
     debugImplementation("androidx.drawerlayout:drawerlayout:1.2.0")
     implementation(project(":guest-protocol"))

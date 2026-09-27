@@ -5,6 +5,16 @@ spec = importlib.util.spec_from_file_location('kms_capture', Path(__file__).reso
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
+class PackagedCaptureTest(unittest.TestCase):
+    def test_install_and_cloud_init_payloads_match_capture_source(self):
+        root = Path(__file__).resolve().parents[1]
+        expected = (root / 'tools/experiments/kms-capture-server.py').read_bytes()
+        self.assertEqual((root / 'app/src/main/assets/guest-setup/terminal-plus-capture.py').read_bytes(), expected)
+        self.assertEqual((root / 'guest/root_files/usr/local/bin/terminal-plus-capture.py').read_bytes(), expected)
+        unit = (root / 'guest/root_files/etc/systemd/system/terminal-plus-capture.service').read_text()
+        self.assertIn('WantedBy=multi-user.target', unit)
+        self.assertNotIn('RuntimeMaxSec', unit)
+
 class ActivePlaneTest(unittest.TestCase):
     def test_skips_stale_disabled_scanout(self):
         state = 'plane[1]: plane-0\n\tcrtc=crtc-0\n\tfb=149\nplane[2]: plane-1\n\tcrtc=crtc-1\n\tfb=177\ncrtc[3]: crtc-0\n\tenable=1\n\tactive=0\ncrtc[4]: crtc-1\n\tenable=1\n\tactive=1\n'

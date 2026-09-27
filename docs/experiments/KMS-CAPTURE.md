@@ -130,3 +130,21 @@ Build/lint passed and device UI inspection confirmed the restored controls and
 fullscreen entry. Fullscreen/resolution combinations and external mouse behavior
 still need broader hardware validation. The capture helper still omits separate
 cursor/overlay planes; do not call this full native-display parity.
+
+## Persistent managed-Debian service (2026-09-28)
+
+The temporary 30-minute service above is superseded for the managed Debian image.
+`terminal-plus-capture.service` is now packaged in cidata, enabled for multi-user
+boot and has no RuntimeMaxSec. Its executable lives under /usr/local/bin, not /tmp.
+Existing known Plus images receive matching fixed installer assets through a
+separate authenticated localhost ttyd websocket after shell readiness. The
+installer uses sudo -n, compares files before replacing them, enables the service
+and reports a success marker only after systemd confirms it is active. Custom
+image labs are not provisioned. This avoids resetting existing user disks.
+
+Verified: first successful boot automatically installed/enabled the service; a
+second complete App/VM restart, with no manual capture launch, again reported
+ready. Guest systemctl showed enabled + active and the persistent executable path.
+The AOSP display page showed the GNOME desktop after restart. Build/lint and six
+Python tests passed. One earlier test boot stalled before ttyd and was retried;
+that was not counted as a successful service-start test.

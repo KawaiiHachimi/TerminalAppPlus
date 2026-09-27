@@ -15,7 +15,7 @@ internal object GuestAssets {
         val old = id.readText().trim()
         val next = context.assets.open(InstalledImage.CIDATA_BUILD_ID_FILENAME)
             .bufferedReader().use { it.readText() }
-        if (old != "15101902" || next.trim() != "15101902-plus1") return
+        if (old !in setOf("15101902", "15101902-plus1") || next.trim() != "15101902-plus-display1") return
         val temporary = File(dir, "cidata-plus.tmp")
         context.assets.open("cidata.iso").use { input -> temporary.outputStream().use { input.copyTo(it) } }
         Files.move(temporary.toPath(), File(dir, "cidata.iso").toPath(), REPLACE_EXISTING)
