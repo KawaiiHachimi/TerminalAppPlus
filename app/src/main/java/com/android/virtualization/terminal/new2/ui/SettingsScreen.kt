@@ -15,6 +15,9 @@
  */
 package com.android.virtualization.terminal.new2.ui
 
+import android.content.Intent
+import com.android.virtualization.terminal.BuildConfig
+import androidx.compose.material.icons.filled.Science
 import android.icu.number.NumberFormatter
 import android.icu.number.NumberRangeFormatter
 import android.icu.number.Precision
@@ -105,6 +108,7 @@ import kotlinx.coroutines.launch
 enum class SettingsDestination(val title: Int, val icon: ImageVector) {
     PortControl(R.string.settings_port_title, Icons.Default.Security),
     Advanced(R.string.settings_advanced_title, Icons.Default.Tune),
+    Laboratory(R.string.plus_laboratory, Icons.Default.Science),
     Recovery(R.string.settings_recovery_title, Icons.Default.Restore),
 }
 
@@ -136,7 +140,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: MainViewModel = viewModel()) {
     val settingsRequest by viewModel.settingsRequest.collectAsStateWithLifecycle()
     val settingsViewModel: SettingsViewModel = viewModel()
 
-    val destinations = remember { SettingsDestination.values().toList() }
+    val destinations = remember { SettingsDestination.entries.filter { BuildConfig.DEBUG || it != SettingsDestination.Laboratory } }
 
     LaunchedEffect(settingsRequest, isMobileMode) {
         if (settingsRequest != null) {
@@ -270,6 +274,7 @@ fun SettingsDetailPane(
             when (destination) {
                 SettingsDestination.PortControl -> PortControlPage()
                 SettingsDestination.Advanced -> AdvancedPage(onCloseSettings)
+                SettingsDestination.Laboratory -> LaboratoryPage()
                 SettingsDestination.Recovery -> RecoveryPage()
             }
         }

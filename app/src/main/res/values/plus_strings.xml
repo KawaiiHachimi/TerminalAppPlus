@@ -20,4 +20,11 @@
     <string name="plus_direct_console">Direct console (experimental)</string>
     <string name="plus_display_connecting">Connecting to VM screen…</string>
     <string name="plus_display_service_required">Waiting for the VM screen service. Terminal Plus configures it automatically for the managed Debian image and will reconnect when ready.</string>
+    <string name="plus_laboratory">Laboratory</string>
+    <string name="plus_lab_console">BusyBox / hvc0</string>
+    <string name="plus_lab_console_hint">Independent diskless VM. Requires the prepared test initramfs.</string>
+    <string name="plus_lab_uboot">U-Boot + Debian</string>
+    <string name="plus_lab_uboot_hint">Independent VM. Requires a bootloader and a separate test disk.</string>
+    <string name="plus_lab_display">Current VM screen prototype</string>
+    <string name="plus_lab_display_hint">Open the experimental capture/rendering page for the running VM.</string>
 </resources>

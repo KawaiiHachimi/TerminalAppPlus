@@ -24,7 +24,6 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     debugImplementation(project(":terminal-view"))
-    debugImplementation("androidx.drawerlayout:drawerlayout:1.2.0")
     implementation(project(":guest-protocol"))
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")

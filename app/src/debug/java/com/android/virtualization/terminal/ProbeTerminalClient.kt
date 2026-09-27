@@ -26,11 +26,20 @@ internal class ProbeTerminalClient(private val view: com.termux.view.TerminalVie
     override fun onTerminalCursorStateChange(state: Boolean) { view.invalidate() }
     override fun setTerminalShellPid(session: TerminalSession, pid: Int) {}
     override fun getTerminalCursorStyle(): Int = 0
-    private var fontSize = (12 * view.resources.displayMetrics.scaledDensity).toInt()
+    private val appearance = view.context.getSharedPreferences("terminal_console_appearance", Context.MODE_PRIVATE)
+    private var fontSizeSp = runCatching { appearance.getFloat("font_size_sp", 12f) }
+        .getOrDefault(12f).let { if (it.isFinite()) it.coerceIn(6f, 32f) else 12f }
+    init { applyFontSize() }
+    private fun applyFontSize() {
+        view.setTextSize(android.util.TypedValue.applyDimension(
+            android.util.TypedValue.COMPLEX_UNIT_SP, fontSizeSp, view.resources.displayMetrics,
+        ).toInt().coerceAtLeast(1))
+    }
     override fun onScale(scale: Float): Float {
         if (scale < 0.9f || scale > 1.1f) {
-            fontSize = (fontSize + if (scale > 1f) 2 else -2).coerceIn(18, 80)
-            view.setTextSize(fontSize)
+            fontSizeSp = (fontSizeSp + if (scale > 1f) 0.5f else -0.5f).coerceIn(6f, 32f)
+            applyFontSize()
+            appearance.edit().putFloat("font_size_sp", fontSizeSp).apply()
             return 1f
         }
         return scale

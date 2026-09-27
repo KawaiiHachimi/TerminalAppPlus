@@ -7,8 +7,6 @@ import android.system.virtualmachine.VirtualMachine
 import android.system.virtualmachine.VirtualMachineConfig
 import android.system.virtualmachine.VirtualMachineCustomImageConfig
 import android.system.virtualmachine.VirtualMachineManager
-import android.widget.TextView
-import android.widget.ScrollView
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -96,79 +94,7 @@ class ConsoleProbeActivity : Activity() {
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             insets
         }
-        val drawer = androidx.drawerlayout.widget.DrawerLayout(this)
-        drawer.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
-            val height = (180 * resources.displayMetrics.density).toInt()
-            val width = (24 * resources.displayMetrics.density).toInt()
-            val middle = view.height / 2
-            view.systemGestureExclusionRects = listOf(android.graphics.Rect(0, middle - height / 2, width, middle + height / 2))
-        }
-        drawer.addView(container, androidx.drawerlayout.widget.DrawerLayout.LayoutParams(-1, -1))
-        val menu = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setBackgroundColor(0xFF202020.toInt())
-            val padding = (24 * resources.displayMetrics.density).toInt()
-            setPadding(padding, padding * 2, padding, padding)
-        }
-        menu.addView(TextView(this).apply { text = if (sharedConsole) "当前虚拟机 · 直接控制台" else "实验室 · 独立虚拟机"; textSize = 18f; setTextColor(-1) })
-        fun menuAction(title: String, action: () -> Unit) {
-            menu.addView(android.widget.Button(this).apply {
-                text = title; isAllCaps = false
-                setOnClickListener { drawer.closeDrawers(); action() }
-            })
-        }
-        fun switchProbe(uboot: Boolean, disk: Boolean) {
-            android.app.AlertDialog.Builder(this)
-                .setMessage("停止当前实验虚拟机并切换？原来的终端虚拟机数据不受影响。")
-                .setPositiveButton("切换") { _, _ ->
-                    stopProbe()
-                    startActivity(android.content.Intent(this, ConsoleProbeActivity::class.java)
-                        .putExtra("lab", true).putExtra("uboot", uboot).putExtra("disk", disk))
-                    finish()
-                }.setNegativeButton(android.R.string.cancel, null).show()
-        }
-        menuAction("实验室：BusyBox / hvc0") { switchProbe(false, false) }
-        menuAction("实验室：U-Boot + Debian") { switchProbe(true, true) }
-        menuAction("实验室：当前 VM 屏幕（只读）") {
-            startActivity(android.content.Intent(this, VmScreenProbeActivity::class.java))
-        }
-        menuAction("粘贴") { client.onPasteTextFromClipboard(session) }
-        menuAction("打开键盘") { terminal.requestFocus(); client.onSingleTapUp(android.view.MotionEvent.obtain(0, 0, 0, 0f, 0f, 0)) }
-        menuAction("返回 ttyd 终端") {
-            if (sharedConsole) finish()
-            else { stopProbe(); startActivity(android.content.Intent(this, LauncherActivity::class.java)); finish() }
-        }
-        menuAction(if (sharedConsole) "关闭控制台页面" else "关闭实验") { finish() }
-        drawer.addView(menu, androidx.drawerlayout.widget.DrawerLayout.LayoutParams(
-            (300 * resources.displayMetrics.density).toInt(), -1, androidx.core.view.GravityCompat.START))
-        var gestureStartX = 0f
-        var gestureStartY = 0f
-        var drawerGesture = false
-        terminal.setOnTouchListener { view, event ->
-            when (event.actionMasked) {
-                android.view.MotionEvent.ACTION_DOWN -> {
-                    view.requestFocus()
-                    gestureStartX = event.x
-                    gestureStartY = event.y
-                    drawerGesture = false
-                }
-                android.view.MotionEvent.ACTION_MOVE -> {
-                    val dx = event.x - gestureStartX
-                    val dy = kotlin.math.abs(event.y - gestureStartY)
-                    val threshold = 72 * resources.displayMetrics.density
-                    if (!drawerGesture && event.pointerCount == 1 && dx > threshold && dx > dy * 2) {
-                        drawerGesture = true
-                        val cancel = android.view.MotionEvent.obtain(event)
-                        cancel.action = android.view.MotionEvent.ACTION_CANCEL
-                        terminal.onTouchEvent(cancel)
-                        cancel.recycle()
-                        drawer.openDrawer(androidx.core.view.GravityCompat.START)
-                    }
-                }
-            }
-            drawerGesture
-        }
-        setContentView(drawer)
+        setContentView(container)
         terminal.requestFocus()
         if (sharedConsole) {
             replayingConsole = true

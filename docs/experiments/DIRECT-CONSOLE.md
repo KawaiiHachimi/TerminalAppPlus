@@ -146,3 +146,12 @@ Shared-VM validation: ttyd and direct console both returned boot ID
 removed and serial-getty restarted with the distro defaults; original plus1
 cidata was restored on the device. No username/password policy remains in the
 implementation. Build and lint passed after the rollback.
+
+## Entry/appearance update
+
+The console drawer and its duplicate navigation/clipboard buttons were removed.
+Settings → Laboratory, above Recovery, now contains the BusyBox/hvc0, U-Boot +
+Debian, and current-VM screen prototype entries (debug builds). The regular toolbar
+console still attaches to the current VM. Pinch font size persists in
+terminal_console_appearance/font_size_sp and restores before the terminal is shown.
+The chosen font file and the existing terminal emulator remain unchanged.

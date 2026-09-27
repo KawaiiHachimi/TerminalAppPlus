@@ -19,4 +19,11 @@
     <string name="plus_direct_console">直接控制台（实验）</string>
     <string name="plus_display_connecting">正在连接虚拟机屏幕…</string>
     <string name="plus_display_service_required">正在等待虚拟机屏幕服务。终端 Plus 会为预构建 Debian 自动配置，准备就绪后自动连接。</string>
+    <string name="plus_laboratory">实验室</string>
+    <string name="plus_lab_console">BusyBox / hvc0</string>
+    <string name="plus_lab_console_hint">独立无磁盘虚拟机，需要已准备好的测试 initramfs。</string>
+    <string name="plus_lab_uboot">U-Boot + Debian</string>
+    <string name="plus_lab_uboot_hint">独立虚拟机，需要已准备好的引导程序和测试磁盘。</string>
+    <string name="plus_lab_display">当前 VM 屏幕原型</string>
+    <string name="plus_lab_display_hint">打开当前虚拟机的实验采集与渲染页面。</string>
 </resources>
