@@ -60,7 +60,7 @@ internal class KmsDisplayProvider(
         if (requestedSize == size) return
         requestedSize = size
         VmController.resizeDisplay(size.first, size.second,
-            (mainView.resources.configuration.densityDpi * resolution.scale).toInt(), 60)
+            (mainView.resources.configuration.densityDpi * resolution.scale).toInt(), 60, expectedVm = vm)
         mainView.holder.setFixedSize(size.first, size.second)
     }
     private fun start() {

@@ -7,6 +7,19 @@ import org.junit.Test
 class TerminalSessionRepositoryTest {
     @After fun reset() { TerminalSessionRepository.reset() }
 
+    @Test fun consoleStartupClearsPreviousTabsAndAllowsExplicitAdd() {
+        TerminalSessionRepository.reset()
+        TerminalSessionRepository.addSession()
+        TerminalSessionRepository.reset(openInitialTab = false)
+        assertTrue(TerminalSessionRepository.sessions.value.isEmpty())
+        assertEquals("", TerminalSessionRepository.selectedSessionId.value)
+        TerminalSessionRepository.addSession()
+        assertEquals(1, TerminalSessionRepository.sessions.value.size)
+        assertEquals(TerminalSessionRepository.sessions.value.single().id, TerminalSessionRepository.selectedSessionId.value)
+        TerminalSessionRepository.reset(openInitialTab = true)
+        assertEquals(1, TerminalSessionRepository.sessions.value.size)
+    }
+
     @Test fun closingLastSessionStaysEmptyUntilExplicitAdd() {
         TerminalSessionRepository.reset()
         val old = TerminalSessionRepository.selectedSessionId.value

@@ -27,6 +27,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -40,10 +41,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Ensure the app handles insets manually and the window background is black
-        // to prevent white flashes during IME animations or layout jumps.
+        // Insets are handled by the scaffold; terminal content paints its own black background.
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.setBackgroundDrawableResource(android.R.color.black)
 
         setContent {
             val darkTheme = isSystemInDarkTheme()
@@ -55,8 +54,11 @@ class MainActivity : ComponentActivity() {
             if (!view.isInEditMode) {
                 SideEffect {
                     val window = (view.context as Activity).window
-                    WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
-                        !darkTheme
+                    window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(colorScheme.surface.toArgb()))
+                    WindowCompat.getInsetsController(window, view).apply {
+                        isAppearanceLightStatusBars = !darkTheme
+                        isAppearanceLightNavigationBars = !darkTheme
+                    }
                 }
             }
 
@@ -64,7 +66,7 @@ class MainActivity : ComponentActivity() {
                 val viewModel: MainViewModel = viewModel()
                 val isFullscreen by viewModel.isFullscreen.collectAsStateWithLifecycle()
 
-                LaunchedEffect(isFullscreen) {
+                LaunchedEffect(isFullscreen, darkTheme) {
                     val window = (view.context as Activity).window
                     val insetsController =
                         WindowCompat.getInsetsController(window, window.decorView)

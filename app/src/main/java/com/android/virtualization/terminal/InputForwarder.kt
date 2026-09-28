@@ -34,6 +34,7 @@ internal class InputForwarder(
     touchReceiver: View,
     mouseReceiver: View,
     keyReceiver: DisplaySurfaceView,
+    private val config: android.system.virtualmachine.VirtualMachineCustomImageConfig = checkNotNull(vm.config.customImageConfig),
     private val onMouseLockRelease: () -> Unit,
 ) {
     private val virtualMachine: VirtualMachine = vm
@@ -41,10 +42,6 @@ internal class InputForwarder(
     private var isTabletMode = false
 
     init {
-        val config = vm.config.customImageConfig
-
-        checkNotNull(config)
-
         if (config.useTouch() == true) {
             setupTouchReceiver(touchReceiver)
         }
@@ -70,7 +67,7 @@ internal class InputForwarder(
 
     private fun setupTouchReceiver(receiver: View) {
         receiver.setOnTouchListener { v, event ->
-            virtualMachine.config.customImageConfig?.displayConfig?.let { displayConfig ->
+            config.displayConfig?.let { displayConfig ->
                 val displayWidth = displayConfig.width.toFloat()
                 val scale = displayWidth / v.width
                 virtualMachine.setTouchScale(scale)

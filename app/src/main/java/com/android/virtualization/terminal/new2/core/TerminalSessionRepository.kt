@@ -24,10 +24,10 @@ import kotlinx.coroutines.flow.asStateFlow
  * currently selected session.
  */
 object TerminalSessionRepository {
-    private val _sessions = MutableStateFlow<List<TerminalSession>>(listOf(TerminalSession()))
+    private val _sessions = MutableStateFlow<List<TerminalSession>>(emptyList())
     val sessions: StateFlow<List<TerminalSession>> = _sessions.asStateFlow()
 
-    private val _selectedSessionId = MutableStateFlow(_sessions.value.first().id)
+    private val _selectedSessionId = MutableStateFlow("")
     val selectedSessionId: StateFlow<String> = _selectedSessionId.asStateFlow()
 
     /** Adds a new terminal session and selects it. */
@@ -66,10 +66,10 @@ object TerminalSessionRepository {
         }
     }
 
-    /** Resets the sessions to a single new session. */
-    fun reset() {
-        val newSession = TerminalSession()
-        _sessions.value = listOf(newSession)
-        _selectedSessionId.value = newSession.id
+    /** Initialize tabs once per VM start, according to its configured landing page. */
+    fun reset(openInitialTab: Boolean = true) {
+        val newSession = if (openInitialTab) TerminalSession() else null
+        _sessions.value = listOfNotNull(newSession)
+        _selectedSessionId.value = newSession?.id ?: ""
     }
 }

@@ -114,8 +114,9 @@ fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
     val settingsViewModel: SettingsViewModel = viewModel()
     val resolution by settingsViewModel.displayResolution.collectAsStateWithLifecycle()
     val vm = VmController.virtualMachine ?: return
-    val touchWidth = vm.config.customImageConfig!!.displayConfig!!.width
-    val touchHeight = vm.config.customImageConfig!!.displayConfig!!.height
+    val inputConfig = VmController.displayConfigurationFor(vm) ?: return
+    val touchWidth = inputConfig.displayConfig!!.width
+    val touchHeight = inputConfig.displayConfig!!.height
     var displayStatus by remember(vm) { mutableStateOf<String?>(null) }
 
     var displaySurfaceView by remember { mutableStateOf<DisplaySurfaceView?>(null) }
@@ -239,7 +240,7 @@ fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                         // overwriting our listener
                         val dummyView = View(ctx)
                         val inputForwarder =
-                            InputForwarder(ctx, vm, dummyView, mainView, mainView) {
+                            InputForwarder(ctx, vm, dummyView, mainView, mainView, config = inputConfig) {
                                 viewModel.setMouseLocked(false)
                             }
                         container.tag = Pair(inputForwarder, displayProvider)

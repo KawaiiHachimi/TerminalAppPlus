@@ -103,6 +103,20 @@ object VmController {
                 initialValue = emptyList(),
             )
 
+    // UI must not call vm.config: it shares AVF's lock with blocking connectVsock calls.
+    @Volatile private var displayConfiguration: Pair<VirtualMachine, VirtualMachineCustomImageConfig>? = null
+    fun displayConfigurationFor(vm: VirtualMachine): VirtualMachineCustomImageConfig? =
+        displayConfiguration?.takeIf { it.first === vm }?.second
+
+    private data class ResizeRequest(val vm: VirtualMachine, val width: Int, val height: Int, val dpi: Int, val refreshRate: Int)
+    private val displayResizeRequests = kotlinx.coroutines.channels.Channel<ResizeRequest>(kotlinx.coroutines.channels.Channel.CONFLATED)
+    private val displayResizeWorker = repositoryScope.launch {
+        for (request in displayResizeRequests) {
+            if (virtualMachine !== request.vm || _vmState.value != VmState.Running) continue
+            applyDisplayResize(request)
+        }
+    }
+
     @Volatile var virtualMachine: VirtualMachine? = null
         private set
 
@@ -153,9 +167,14 @@ object VmController {
         repositoryScope.launch { _sessionDiscarded.emit(sessionId) }
     }
 
-    // It should add and then remove a display to reflect the change.
-    fun resizeDisplay(width: Int, height: Int, dpi: Int, refreshRate: Int) {
-        val vm = virtualMachine ?: return
+    // Never perform display Binder calls from a Surface callback on the main thread.
+    fun resizeDisplay(width: Int, height: Int, dpi: Int, refreshRate: Int, expectedVm: VirtualMachine? = virtualMachine) {
+        val vm = expectedVm ?: return
+        displayResizeRequests.trySend(ResizeRequest(vm, width, height, dpi, refreshRate))
+    }
+
+    private fun applyDisplayResize(request: ResizeRequest) {
+        val (vm, width, height, dpi, refreshRate) = request
         try {
             val displays = vm.getDisplays()
             if (displays.isNotEmpty()) {
@@ -163,6 +182,7 @@ object VmController {
                 if (
                     oldDisplay.config.width == width &&
                         oldDisplay.config.height == height &&
+                        oldDisplay.config.horizontalDpi == dpi && oldDisplay.config.verticalDpi == dpi &&
                         oldDisplay.config.refreshRate == refreshRate
                 ) {
                     return
@@ -198,6 +218,7 @@ object VmController {
                 try {
                     val profile = requestedProfile
                     runningProfile = profile
+                    TerminalSessionRepository.reset(openInitialTab = profile.screen != "console")
                     val configText = VmProfiles.readConfig(profile)
                     val document = VmConfigDocument.parse(configText)
                     VmConfigDocument.validateFiles(document, VmProfiles.payloadDirectory(profile))
@@ -220,6 +241,7 @@ object VmController {
                     }
 
                     val vm = vmm.create(vmName, config)
+                    displayConfiguration = vm to checkNotNull(config.customImageConfig)
                     virtualMachine = vm
                     com.android.virtualization.terminal.ForwarderHost.attach(vm)
                     com.android.virtualization.terminal.VmConsole.begin(vm)
@@ -361,7 +383,6 @@ object VmController {
                 }
             }
             VmProfiles.select(profile)
-            TerminalSessionRepository.reset()
             if (profile.isDefault && !VmProfiles.isInstalled(profile)) {
                 VmProfiles.requestOfficial()
                 _vmState.value = VmState.Ready

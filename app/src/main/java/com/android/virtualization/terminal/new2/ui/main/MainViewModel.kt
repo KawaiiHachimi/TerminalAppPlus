@@ -240,7 +240,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun restartVm() {
         hasVmEverStarted = false
-        TerminalSessionRepository.reset()
         if (VmController.vmState.value is VmState.Rebooting) {
             VmController.reset()
         } else {

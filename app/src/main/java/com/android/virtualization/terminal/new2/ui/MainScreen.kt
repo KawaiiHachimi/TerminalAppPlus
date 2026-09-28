@@ -170,36 +170,41 @@ fun RunningScreen(state: MainUiState.Running, viewModel: MainViewModel) {
 
     Column {
         if (!isFullscreen) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface),
+            androidx.compose.material3.Surface(
+                color = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
             ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    TerminalTabBar(
-                        tabs = tabs,
-                        selectedTabId =
-                            if (displayState == DisplayState.Normal) null else selectedTabId,
-                        onTabSelected = { viewModel.selectTab(it) },
-                        onTabClosed = { viewModel.closeTab(it) },
-                        onAddTab = { viewModel.addTab() },
-                    )
-                }
-                run {
-                    IconButton(onClick = {
-                        context.startActivity(Intent().setClassName(context.packageName,
-                            "com.android.virtualization.terminal.ConsoleProbeActivity"))
-                    }) {
-                        Icon(Icons.Default.Terminal, contentDescription = stringResource(R.string.plus_direct_console))
-                    }
-                }
-                DisplayController(viewModel = viewModel)
-                IconButton(
-                    onClick = {
-                        viewModel.setShowSettings(true)
-                        viewModel.setIsImeVisible(false)
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface),
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    Box(modifier = Modifier.weight(1f)) {
+                        TerminalTabBar(
+                            tabs = tabs,
+                            selectedTabId =
+                                if (displayState == DisplayState.Normal) null else selectedTabId,
+                            onTabSelected = { viewModel.selectTab(it) },
+                            onTabClosed = { viewModel.closeTab(it) },
+                            onAddTab = { viewModel.addTab() },
+                        )
+                    }
+                    run {
+                        IconButton(onClick = {
+                            context.startActivity(Intent().setClassName(context.packageName,
+                                "com.android.virtualization.terminal.ConsoleProbeActivity"))
+                        }) {
+                            Icon(Icons.Default.Terminal, contentDescription = stringResource(R.string.plus_direct_console))
+                        }
+                    }
+                    DisplayController(viewModel = viewModel)
+                    IconButton(
+                        onClick = {
+                            viewModel.setShowSettings(true)
+                            viewModel.setIsImeVisible(false)
+                        }
+                    ) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
                 }
             }
         }
