@@ -26,6 +26,10 @@ Android Studio 打开本目录，使用其内置 JDK 21，同步 Gradle 后运�
 自定义 U-Boot / Linux 镜像的 ttyd 安装、认证方式与开机启动配置见
 [自定义镜像接入 ttyd](docs/CUSTOM-TTYD.md)。
 
+## 自动构建与发布
+
+推送 `main` 自动构建检查；推送 `v17.0.1` 这样的版本标签后，GitHub Actions 自动签名 APK 并上传 Release，同时提供校验文件和 Guest 安装包。发布签名与当前本机 debug 签名不同，首次切换前请先备份 VM 数据。触发方式、签名与产物说明见 [发布指南](docs/RELEASING.md)。
+
 ## 安装与授权
 
 ```sh

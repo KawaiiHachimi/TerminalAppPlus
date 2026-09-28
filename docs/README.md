@@ -5,6 +5,7 @@
 | 文档 | 内容 |
 | --- | --- |
 | [项目 README](../README.md) | 构建、授权和功能入口 |
+| [自动构建与发布](RELEASING.md) | Actions、签名、标签和 Release 产物 |
 | [虚拟机管理](CUSTOM-VM.md) | 镜像导入、U-Boot/内核启动、切换、资源配置 |
 | [自定义镜像接入 ttyd](CUSTOM-TTYD.md) | 认证方式、临时启动、完整 systemd 配置和排查 |
 | [Guest 图形采集与端口代理](GUEST-SCREEN-SERVICE.md) | 安装包部署、完整 systemd 配置、图形限制和排查 |

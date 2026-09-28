@@ -1,0 +1,121 @@
+name: Android build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: 'platform-tools platforms;android-37.0 build-tools;36.0.0'
+      - name: Configure version
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [[ "$REF_TYPE" == tag ]]; then
+            [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]] || { echo 'Use a tag such as v17.0.1 or v17.0.1-beta.1'; exit 1; }
+            echo "ORG_GRADLE_PROJECT_plusVersionName=${REF_NAME#v}" >> "$GITHUB_ENV"
+          fi
+          echo "ORG_GRADLE_PROJECT_plusVersionCode=$((1000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+      - name: Build and verify
+        run: |
+          ./gradlew --no-daemon :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:lintDebug
+          python3 tools/verify-apk-assets.py
+          python3 tools/verify-apk-assets.py app/build/outputs/apk/release/app-release-unsigned.apk
+          python3 -m unittest discover -s tests -v
+          python3 -m unittest discover -s tools/tests -v
+      - name: Upload build outputs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: android-build
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verification-reports
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          retention-days: 14
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: 'build-tools;36.0.0'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: android-build
+          path: build-artifacts
+      - name: Sign release APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          : "${KEYSTORE_BASE64:?Missing release keystore}" "${KEYSTORE_PASSWORD:?Missing password}" "${KEY_PASSWORD:?Missing key password}" "${KEY_ALIAS:?Missing alias}"
+          keystore="$RUNNER_TEMP/terminal-plus-release.p12"
+          trap 'rm -f "$keystore"' EXIT
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore"
+          chmod 600 "$keystore"
+          mkdir -p release-assets
+          tools="$ANDROID_HOME/build-tools/36.0.0"
+          "$tools/zipalign" -P 16 -f 4 build-artifacts/release/app-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
+          "$tools/apksigner" sign --ks "$keystore" --ks-key-alias "$KEY_ALIAS" --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD --out "release-assets/TerminalPlus-${RELEASE_TAG}.apk" "$RUNNER_TEMP/aligned.apk"
+          "$tools/apksigner" verify --verbose --print-certs "release-assets/TerminalPlus-${RELEASE_TAG}.apk"
+          cp app/src/main/assets/guest-setup/guest-tools.bundle release-assets/
+          (cd release-assets && sha256sum ./*.apk guest-tools.bundle > SHA256SUMS)
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            extra=()
+            if [[ "$RELEASE_TAG" == *-* ]]; then extra+=(--prerelease); fi
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "Terminal Plus $RELEASE_TAG" --generate-notes "${extra[@]}"
+          fi
+          gh release upload "$RELEASE_TAG" release-assets/* --clobber
+          gh release edit "$RELEASE_TAG" --draft=false

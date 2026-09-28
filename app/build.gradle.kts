@@ -9,8 +9,8 @@ android {
         applicationId = "com.android.virtualization.terminal.plus"
         minSdk = 37
         targetSdk = 37
-        versionCode = 1
-        versionName = "17.0-plus.1"
+        versionCode = providers.gradleProperty("plusVersionCode").orNull?.toInt() ?: 1
+        versionName = providers.gradleProperty("plusVersionName").orNull ?: "17.0-plus.1"
     }
     buildFeatures { compose = true; aidl = false; buildConfig = true }
     compileOptions {
