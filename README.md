@@ -23,6 +23,8 @@ Android Studio 打开本目录，使用其内置 JDK 21，同步 Gradle 后运�
 
 屏幕服务的代码位置、自动配置机制及一键安装/修复命令见
 [虚拟机屏幕采集服务说明](docs/GUEST-SCREEN-SERVICE.md)。
+自定义 U-Boot / Linux 镜像的 ttyd 安装、认证方式与开机启动配置见
+[自定义镜像接入 ttyd](docs/CUSTOM-TTYD.md)。
 
 ## 安装与授权
 
@@ -37,7 +39,7 @@ adb shell pm grant com.android.virtualization.terminal.plus android.permission.U
 自动授予本应用的两个 AVF 权限，检查成功后进入终端。无需电脑输入命令。
 该功能不改变 SELinux 策略，也不解锁原生显示服务。
 随后按原版流程授予通知、本地网络和音频权限，下载约 628 MB Debian 镜像。
-默认 4 GB 内存（可在「设置 → 高级」调整），CPU 使用原版 match_host 拓扑。
+默认 4 GB 内存（可在「设置 → 虚拟机 → 配置」调整），CPU 使用原版 match_host 拓扑。
 没有使用 `su`、平台证书、sharedUserId 或系统分区安装。
 虚拟机里的 `sudo` 是 Debian 自身权限，与 Android 宿主 root 无关。
 
@@ -91,49 +93,46 @@ AOSP 来源、参考项目及移植边界见 [docs/UPSTREAM.md](docs/UPSTREAM.md
 保留原始 Apache 2.0 版权声明和 NOTICE。
 
 原版基线与分步移植提交说明见 [docs/HISTORY.md](docs/HISTORY.md)。
+当前工作区相对原版的改动及精简建议见 [源码核对](docs/SOURCE-AUDIT.md)。
 
-## 实验分支：AVF 原生控制台
+## 终端与图形
 
-`codex/feat-direct-console` 在 debug 构建中提供独立的控制台实验入口，
-用 AVF 输入输出流连接来宾串口，不依赖 ttyd。主界面设置按钮左侧的控制台按钮
-可进入同一台正在运行的 Debian VM 的串口终端；原有 ttyd 终端仍可使用。
-两个入口是不同 shell 会话，共用系统、磁盘和进程。关闭串口页面不会停止 VM。
-独立 BusyBox 和 U-Boot 镜像启动保留在侧栏实验室中。实验终端直接加载手机上的
-`/system/fonts/DroidSansMono.ttf`，避免厂商主题替换 monospace 字体别名；
-APK 不打包字体。设备缺少该文件时回退到系统等宽字体。
-实验步骤与实机结果见 [DIRECT-CONSOLE.md](docs/experiments/DIRECT-CONSOLE.md)。
+主界面提供 ttyd、串口控制台和虚拟显示器入口，操作同一台 VM。
+关闭最后一个 ttyd 标签后保留空白提示页，可点击加号重新打开；不会停止 VM。
+串口保留 Guest 原有登录流程，支持快捷键、文本选择和双指缩放，字号自动保存。
+直接加载 `/system/fonts/DroidSansMono.ttf`；缺失时回退到系统等宽字体，APK 不内置字体。
+串口不再自动同步 Guest TTY 尺寸，需要窗口尺寸协商的 TUI 可使用 ttyd 或 SSH。
 
-### Credit
+图形页面复用 AOSP 显示操作和输入逻辑，通过 Guest KMS 采集传输现有画面。
+支持重连、主平面和标准光标合成；使用 LZ4 优先的无损传输及最新帧队列。
+默认目标 30 fps，实际帧率受分辨率、Guest 渲染和设备负载影响。
+历史实机采样与限制见 [KMS 实验记录](docs/experiments/KMS-CAPTURE.md)。
 
-- [Termux](https://github.com/termux/termux-app)：实验界面的 `terminal-emulator`
+## 虚拟机管理
+
+“初始设置”支持官方下载、导入官方格式 Debian 镜像包，或导入 IMG/RAW 磁盘。
+“设置 → 虚拟机”统一管理切换、重命名、离线克隆、删除及每台 VM 的启动配置。
+支持 U-Boot 或直接内核启动，配置页提供默认页面、内存、CPU 拓扑和 JSON 编辑。
+具体格式、资源限制与配置恢复见 [虚拟机管理](docs/CUSTOM-VM.md)。
+
+## 文档
+
+- [虚拟机管理与导入](docs/CUSTOM-VM.md)
+- [自定义镜像接入 ttyd](docs/CUSTOM-TTYD.md)：认证、启动命令和 systemd 配置。
+- [Guest 图形采集与端口代理](docs/GUEST-SCREEN-SERVICE.md)：安装、完整 systemd 配置和排查。
+- [文档索引](docs/README.md)：当前使用指南、来源、兼容性和历史验证记录。
+
+## Credit
+
+- [Termux](https://github.com/termux/termux-app)：控制台的 `terminal-emulator`
   与 `terminal-view`，提供 ANSI 解析、终端渲染、键盘输入及文本选择。
   固定来源提交为 `8629e632fcb95da272221be327db653fb24befe9`。
 - [Android Terminal Emulator](https://github.com/jackpal/Android-Terminal-Emulator)：
   Termux 组件中的上游基础代码。
 - [Podroid](https://github.com/ExTV/Podroid)：AVF 控制台流连接方案参考；
-  本分支直接使用 Termux 官方组件，没有复制 Podroid 的 UI 或桥接实现。
+  本项目直接使用 Termux 官方组件，没有复制 Podroid 的 UI 或桥接实现。
 
 第三方许可及本地调整见 [third_party/termux/README.md](third_party/termux/README.md)。
 
-AOSP 显示分支复用原版全屏、缩放/平移、软键盘、触控板、鼠标捕获和剪贴板交互。
-图形分辨率按原版设置调整；启动时等待采集服务就绪并自动重连。
-新镜像通过 cidata 安装服务，已有预构建 Debian 通过独立的本地 ttyd 会话幂等升级。
-该升级只适用于 App 管理的已知 cidata 版本，需要来宾原有的非交互 sudo 权限；
-不重置磁盘、不改变账号或密码。自定义镜像仍需自行提供兼容采集服务。
-当前采集支持主平面及标准线性 ARGB 硬件光标叠加；通用叠加平面和特殊光标格式仍未覆盖。
-
-显示通道默认目标 30 fps，采用可复用缓冲区、最新帧队列、原始像素 GPU 色彩转换，
-以及 LZ4 优先的无损传输（无 liblz4 的来宾回退到 zlib/原始帧）。
-实际帧率受分辨率、来宾桌面渲染和设备负载影响；本机采样半分辨率接近 29 fps，
-全分辨率约 18–20 fps，尚不代表稳定 30/60 fps。
-压缩解码使用 [维护中的 LZ4 Java](https://github.com/yawkat/lz4-java) 1.12.0（Apache-2.0）。
-
-控制台双指缩放后的字号会自动保存，按 SP 还原，重新进入或重启 App 后继续使用。
-控制台不再带侧栏；三个实验入口统一放在「设置 → 实验室」（位于「恢复」上方）。
-实验室目前仅在 debug 构建显示。
-
-### 自定义虚拟机
-
-可在“设置 → 虚拟机”切换默认 Debian 与独立的 U-Boot 镜像；实验室仅保留镜像导入入口。格式限制、U-Boot 选择和切换说明见 [自定义 U-Boot 虚拟机](docs/CUSTOM-VM.md)。
-
-控制台现在显示实际列数、行数及 Guest 同步状态；缩放字体、旋转和软键盘变化通过统一的 `terminal-plus-guest.service` 同步到串口 TTY。点击尺寸状态可复制安装命令。该服务同时管理图形采集和端口代理，详见 [Guest 服务说明](docs/GUEST-SCREEN-SERVICE.md)。尺寸通知路线参考 Podroid，协议与服务独立实现。
+内置 U-Boot 的来源和许可见 [第三方说明](third_party/u-boot/README.md)。
+压缩解码使用 [LZ4 Java](https://github.com/yawkat/lz4-java) 1.12.0（Apache-2.0）。

@@ -177,14 +177,14 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
         val url = getTerminalServiceUrl(terminalAddress, ssl)
         Log.d("TtydView", "Loading URL: ${url.toString()}")
 
-        terminalAddress.key?.let { key ->
+        val key = terminalAddress.key
+        if (key != null) {
             val cookieManager = android.webkit.CookieManager.getInstance()
             cookieManager.setAcceptCookie(true)
-            cookieManager.setCookie(url.toString(), "access_token=$key")
-            cookieManager.flush()
-        }
-
-        loadUrl(url.toString())
+            cookieManager.setCookie(url.toString(), "access_token=$key; Path=/") { accepted ->
+                if (accepted) loadUrl(url.toString()) else onTerminalDisconnected?.invoke()
+            }
+        } else loadUrl(url.toString())
     }
 
     fun showSoftInput() {
@@ -297,13 +297,13 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
             error: WebResourceError,
         ) {
             Log.e("TtydWebViewClient", "WebView Error: ${error.errorCode} - ${error.description}")
-            // Consider errors like network loss, host lookup failure as disconnection
-            if (
+            // Subresource failures must not disconnect a working terminal.
+            if (request.isForMainFrame && (
                 error.errorCode == WebViewClient.ERROR_HOST_LOOKUP ||
                     error.errorCode == WebViewClient.ERROR_CONNECT ||
                     error.errorCode == WebViewClient.ERROR_TIMEOUT ||
                     error.errorCode == WebViewClient.ERROR_BAD_URL
-            ) {
+            )) {
                 this@TtydView.onTerminalDisconnected?.invoke()
             }
             super.onReceivedError(view, request, error)
@@ -321,14 +321,14 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
                         window.term.focus();
                         window.TerminalApp.onTerminalReady();
                     };
+                    var attempts = 0;
                     var check = function() {
                         var xterm = document.querySelector('.terminal.xterm');
                         if (window.term && xterm) {
                             console.log("xterm found");
                             setTimeout(notifyReady, 500);
                         } else {
-                            console.log("xterm not found. waiting...");
-                            setTimeout(check, 100);
+                            if (++attempts < 600) setTimeout(check, 100);
                         }
                     };
                     check();

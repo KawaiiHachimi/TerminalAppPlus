@@ -49,6 +49,7 @@ object TerminalSessionRepository {
         _sessions.value = currentList
 
         if (currentList.isEmpty()) {
+            _selectedSessionId.value = ""
             return
         }
 

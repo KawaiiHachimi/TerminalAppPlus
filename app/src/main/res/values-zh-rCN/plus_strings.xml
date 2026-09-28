@@ -16,7 +16,7 @@
     <string name="plus_adb_alternative">也可以通过 ADB 配置</string>
     <string name="plus_copy_commands">复制 ADB 命令</string>
     <string name="plus_commands_copied">命令已复制。在已连接 ADB 的电脑上执行后，点击「重新检查」。</string>
-    <string name="plus_direct_console">直接控制台（实验）</string>
+    <string name="plus_direct_console">控制台</string>
     <string name="plus_display_connecting">正在连接虚拟机屏幕…</string>
     <string name="plus_display_service_required">正在等待虚拟机屏幕服务。终端 Plus 会为预构建 Debian 自动配置，准备就绪后自动连接。</string>
     <string name="plus_laboratory">实验室</string>
@@ -27,7 +27,7 @@
     <string name="plus_lab_display">当前 VM 屏幕原型</string>
     <string name="plus_lab_display_hint">打开当前虚拟机的实验采集与渲染页面。</string>
     <string name="plus_terminal_unavailable">虚拟机正在运行，尚未连接到 ttyd。此镜像可能未提供 ttyd，你可以继续使用控制台或图形界面。</string>
-    <string name="plus_terminal_no_sessions">当前没有打开的终端会话，虚拟机仍在运行。</string>
+    <string name="plus_terminal_no_sessions">当前没有打开的 ttyd 标签页。\n点击左上角 ＋ 打开终端，或使用上方按钮进入控制台、虚拟显示器。\n虚拟机仍在运行。</string>
     <string name="plus_terminal_retry">重试连接</string>
     <string name="plus_terminal_new_session">新建终端</string>
     <string name="plus_virtual_machines">虚拟机</string>

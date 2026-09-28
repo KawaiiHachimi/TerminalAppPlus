@@ -26,7 +26,7 @@ fun TerminalServiceNotice(onRetry: () -> Unit, emptySession: Boolean = false) {
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
     ) {
         Text(stringResource(if (emptySession) R.string.plus_terminal_no_sessions else R.string.plus_terminal_unavailable))
-        if (BuildConfig.DEBUG) {
+        run {
             TextButton(onClick = {
                 context.startActivity(Intent().setClassName(context.packageName,
                     "com.android.virtualization.terminal.ConsoleProbeActivity"))

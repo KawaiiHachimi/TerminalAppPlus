@@ -73,8 +73,7 @@ object VmController {
     val terminalConnection: StateFlow<TerminalConnection> = _terminalConnection.asStateFlow()
     private var terminalConnectionJob: Job? = null
     private var terminalTimeoutSecs = 60L
-    var consoleDevice: String = "hvc0"
-        private set
+    private var runningImage: InstalledImage? = null
     private var runningProfile: VmProfile? = null
     private val _switching = MutableStateFlow(false)
     val switching = _switching.asStateFlow()
@@ -187,6 +186,7 @@ object VmController {
 
     @Synchronized fun start() {
         if (_vmState.value is VmState.Running || _vmState.value is VmState.Starting || _vmState.value is VmState.Stopping) return
+        val requestedProfile = VmProfiles.selected.value
         _terminalConnection.value = TerminalConnection.Connecting
         _vmState.value = VmState.Starting
 
@@ -196,9 +196,12 @@ object VmController {
             lifecycleMutex.withLock {
                 if (_vmState.value != VmState.Starting) return@withLock
                 try {
-                    val profile = VmProfiles.selected.value
+                    val profile = requestedProfile
                     runningProfile = profile
-                    val config = if (profile.isDefault) buildDefaultConfig() else buildCustomConfig(profile)
+                    val configText = VmProfiles.readConfig(profile)
+                    val document = VmConfigDocument.parse(configText)
+                    VmConfigDocument.validateFiles(document, VmProfiles.payloadDirectory(profile))
+                    val config = buildProfileConfig(profile, configText)
                     val vmm = context.getSystemService(VirtualMachineManager::class.java)!!
                     val vmName = config.customImageConfig!!.name!!
 
@@ -301,6 +304,7 @@ object VmController {
                         throw e
                     }
 
+                    runCatching { VmProfiles.markStarted(profile, configText) }
                     // Guest services are optional. AVF running is sufficient to expose console/display.
                     if (!_vmState.compareAndSet(VmState.Starting, VmState.Running)) return@withLock
                     retryTerminalConnection()
@@ -314,80 +318,37 @@ object VmController {
         }
     }
 
-    private fun buildDefaultConfig(): android.system.virtualmachine.VirtualMachineConfig {
-        val image = InstalledImage.getDefault(context)
-        val json = ConfigJson.from(context, image.configPath)
-        consoleDevice = json.consoleDevice()
+    private fun buildProfileConfig(profile: VmProfile, text: String): android.system.virtualmachine.VirtualMachineConfig {
+        val payload = VmProfiles.payloadDirectory(profile)
+        val json = ConfigJson.fromText(context, text, payload.toPath(), profile.isManaged)
         terminalTimeoutSecs = json.getBootTimeoutSecs().toLong() * (if (IS_EMULATOR) 10 else 1)
         val configBuilder = json.toConfigBuilder(context)
-        _guestAgentController.value =
-            GuestAgentController(context, image.isAidlGuestAgent(), repositoryScope)
-
-        val sharedPref =
-            context.getSharedPreferences(SettingsViewModel.PREFS_NAME, Context.MODE_PRIVATE)
-        val memoryMib =
-            sharedPref.getInt(
-                SettingsViewModel.KEY_MEMORY_MIB,
-                SettingsViewModel.DEFAULT_MEMORY_MIB,
-            )
-        configBuilder.setMemoryBytes(memoryMib.toLong() * 1024 * 1024)
         configBuilder.setVmConsoleInputSupported(true).setConnectVmConsole(false)
-
-        val customImageConfigBuilder = json.toCustomImageConfigBuilder(context)
-
-        // Convert rootfs disk into a sparse file for storage ballooning.
-        truncateDiskIfNecessary(image)
-
-        if (image.hasBackup()) {
-            customImageConfigBuilder.addDisk(
-                VirtualMachineCustomImageConfig.Disk.RWDisk(image.backupFile.toString())
-            )
+        val custom = json.toCustomImageConfigBuilder(context)
+        runningImage = if (profile.isManaged) InstalledImage.fromDirectory(payload) else null
+        _guestAgentController.value = null
+        runningImage?.let { image ->
+            _guestAgentController.value = GuestAgentController(context, image.isAidlGuestAgent(), repositoryScope)
+            truncateDiskIfNecessary(image)
+            if (image.hasBackup()) custom.addDisk(VirtualMachineCustomImageConfig.Disk.RWDisk(image.backupFile.toString()))
+            custom.addParam("debian_server_port=${_guestAgentController.value!!.startServer()}")
+            if (!json.hasAudio()) custom.setAudioConfig(VirtualMachineCustomImageConfig.AudioConfig.Builder().setUseSpeaker(true).setUseMicrophone(true).build())
         }
-
-        val port = _guestAgentController.value!!.startServer()
-        customImageConfigBuilder.addParam("debian_server_port=$port")
-
-        // Override config for Display
-        setDisplayConfig(customImageConfigBuilder)
-        setGpuConfig(context, customImageConfigBuilder)
-        customImageConfigBuilder.setAudioConfig(
-            VirtualMachineCustomImageConfig.AudioConfig.Builder()
-                .setUseSpeaker(true)
-                .setUseMicrophone(true)
-                .build()
-        )
-        configBuilder.setCustomImageConfig(customImageConfigBuilder.build())
-
+        if (!json.hasDisplay()) setDisplayConfig(custom)
+        configBuilder.setCustomImageConfig(custom.build())
         return configBuilder.build()
     }
 
-    private fun buildCustomConfig(profile: VmProfile): android.system.virtualmachine.VirtualMachineConfig {
-        _guestAgentController.value = null
-        consoleDevice = "ttyS0"
-        val directory = VmProfiles.directory(profile)
-        val custom = VirtualMachineCustomImageConfig.Builder()
-            .setName("plus-${profile.id}")
-            .setOsName("linux")
-            .useNetwork(true)
-            .setGpuConfig(VirtualMachineCustomImageConfig.GpuConfig.Builder().setBackend("2d").build())
-            .setBootloaderPath(java.io.File(directory, "u-boot.bin").path)
-            .addDisk(VirtualMachineCustomImageConfig.Disk.RWDisk(java.io.File(directory, "system.raw").path))
-        // Keep the existing AVF display/GPU/input backend; guest agents remain optional.
-        setDisplayConfig(custom)
-        setGpuConfig(context, custom)
-        return android.system.virtualmachine.VirtualMachineConfig.Builder(context)
-            .setProtectedVm(false)
-            .setMemoryBytes(2L * 1024 * 1024 * 1024)
-            .setCpuTopology(android.system.virtualmachine.VirtualMachineConfig.CPU_TOPOLOGY_MATCH_HOST)
-            .setDebugLevel(android.system.virtualmachine.VirtualMachineConfig.DEBUG_LEVEL_FULL)
-            .setVmOutputCaptured(true).setVmConsoleInputSupported(true).setConnectVmConsole(false)
-            .setConsoleInputDevice("ttyS0")
-            .setCustomImageConfig(custom.build()).build()
+    suspend fun <T> withStoppedProfile(profile: VmProfile, operation: suspend () -> T): T = lifecycleMutex.withLock {
+        check(!(runningProfile?.id == profile.id && (virtualMachine?.status == VirtualMachine.STATUS_RUNNING || _vmState.value.isAlive))) {
+            "请先关闭这台虚拟机，再克隆或删除"
+        }
+        check(!(_vmState.value == VmState.Starting && VmProfiles.selected.value.id == profile.id)) { "虚拟机正在启动" }
+        operation()
     }
 
     /** Caller confirms forced power-off before switching a running VM. Disk files are retained. */
     suspend fun switchTo(profile: VmProfile) {
-        require(!profile.isDefault || InstalledImage.getDefault(context).isInstalled()) { "默认 Debian 尚未安装" }
         check(_switching.compareAndSet(false, true)) { "正在切换虚拟机" }
         try {
             if (_vmState.value.isAlive || virtualMachine?.status == VirtualMachine.STATUS_RUNNING) {
@@ -401,7 +362,10 @@ object VmController {
             }
             VmProfiles.select(profile)
             TerminalSessionRepository.reset()
-            start()
+            if (profile.isDefault && !VmProfiles.isInstalled(profile)) {
+                VmProfiles.requestOfficial()
+                _vmState.value = VmState.Ready
+            } else start()
         } finally {
             _switching.value = false
         }
@@ -472,9 +436,9 @@ object VmController {
                     }
                     _terminalConnection.value = TerminalConnection.Endpoint(
                         TerminalAddress("localhost", port, bridge.secretKey))
-                    if (runningProfile?.isDefault == true) repositoryScope.launch {
+                    if (runningProfile?.isManaged == true) repositoryScope.launch {
                         runCatching {
-                            com.android.virtualization.terminal.GuestScreenSetup.ensure(context, port, bridge.secretKey) {
+                            com.android.virtualization.terminal.GuestScreenSetup.ensure(context, port, bridge.secretKey, VmProfiles.payloadDirectory(runningProfile!!)) {
                                 virtualMachine === vm && vm.status == VirtualMachine.STATUS_RUNNING
                             }
                         }.onFailure { Log.w(TAG, "Guest capture setup failed", it) }
@@ -528,8 +492,8 @@ object VmController {
     }
 
     private fun canUseTtydOverVsock(): Boolean {
-        if (runningProfile?.isDefault == false) return true
-        val buildId = InstalledImage.getDefault(context).buildInfo?.buildId ?: 0
+        if (runningProfile?.isManaged == false) return true
+        val buildId = runningImage?.buildInfo?.buildId ?: 0
         val FIRST_VERSION_SUPPORTS_TTYD_VSOCK = 5106
         return Flags.terminalVmCommunicationRefactoring() &&
             buildId >= FIRST_VERSION_SUPPORTS_TTYD_VSOCK

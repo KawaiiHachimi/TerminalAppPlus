@@ -47,6 +47,7 @@
         android:enabled="true"
         android:allowBackup="false"
         android:name=".Application">
+        <activity android:name=".ConsoleProbeActivity" android:exported="false" android:configChanges="orientation|screenSize|keyboard|keyboardHidden" android:label="终端 Plus · 控制台" android:windowSoftInputMode="adjustResize" />
         <provider android:name="rikka.shizuku.ShizukuProvider"
                   android:authorities="${applicationId}.shizuku"
                   android:exported="true"

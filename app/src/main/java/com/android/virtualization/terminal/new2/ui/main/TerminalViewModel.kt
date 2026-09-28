@@ -86,6 +86,13 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
             onSessionDiscard = null
             onTitleChanged = null
             terminalClose()
+            stopLoading()
+            // Dispose after Compose removes this view during recomposition.
+            post {
+                (parent as? android.view.ViewGroup)?.removeView(this)
+                removeJavascriptInterface("TerminalApp")
+                destroy()
+            }
         }
         ttydView = null
         loadedAddress = null

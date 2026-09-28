@@ -11,7 +11,7 @@ class PackagedCaptureTest(unittest.TestCase):
         expected = (root / 'tools/experiments/kms-capture-server.py').read_bytes()
         self.assertEqual((root / 'app/src/main/assets/guest-setup/terminal-plus-capture.py').read_bytes(), expected)
         self.assertEqual((root / 'guest/root_files/usr/local/bin/terminal-plus-capture.py').read_bytes(), expected)
-        unit = (root / 'guest/root_files/etc/systemd/system/terminal-plus-capture.service').read_text()
+        unit = (root / 'guest/root_files/etc/systemd/system/terminal-plus-guest.service').read_text()
         self.assertIn('WantedBy=multi-user.target', unit)
         self.assertNotIn('RuntimeMaxSec', unit)
 

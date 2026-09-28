@@ -58,6 +58,7 @@ internal data class ConfigJson(
     private val network: Boolean,
     private val input: InputJson?,
     private val audio: AudioJson?,
+    private val usb_config: UsbJson?,
     private val disks: Array<DiskJson>?,
     private val sharedPath: Array<SharedPathJson>?,
     private val display: DisplayJson?,
@@ -65,7 +66,9 @@ internal data class ConfigJson(
     private val auto_memory_balloon: Boolean,
     private val boot_timeout_secs: Int?,
 ) {
-    fun consoleDevice(): String = if (GuestKernelCompat.required) "hvc0" else console_input_device ?: "ttyS0"
+    @Transient var applyGuestCompatibility = true
+    fun hasDisplay() = display != null
+    fun hasAudio() = audio != null
 
     private fun getCpuTopology(): Int {
         return when (cpu_topology) {
@@ -90,7 +93,7 @@ internal data class ConfigJson(
             .setProtectedVm(isProtected)
             .setMemoryBytes(memory_mib.toLong() * 1024 * 1024)
             .setShouldUseHugepages(hugepages)
-            .setConsoleInputDevice(if (GuestKernelCompat.required) "hvc0" else console_input_device)
+            .setConsoleInputDevice(if (applyGuestCompatibility && GuestKernelCompat.required) "hvc0" else console_input_device)
             .setCpuTopology(getCpuTopology())
             .setCustomImageConfig(toCustomImageConfigBuilder(context).build())
             .setDebugLevel(getDebugLevel())
@@ -105,11 +108,12 @@ internal data class ConfigJson(
             .setName(name)
             .setOsName("debian")
             .setBootloaderPath(bootloader)
-            .setKernelPath(GuestKernelCompat.kernelPath(kernel, isProtected))
+            .setKernelPath(if (applyGuestCompatibility) GuestKernelCompat.kernelPath(kernel, isProtected) else kernel)
             .setInitrdPath(initrd)
             .useNetwork(network)
             .useAutoMemoryBalloon(auto_memory_balloon)
 
+        usb_config?.let { builder.setUsbConfig(VirtualMachineCustomImageConfig.UsbConfig(it.controller)) }
         if (input != null) {
             builder
                 .useTouch(input.touchscreen)
@@ -135,7 +139,7 @@ internal data class ConfigJson(
             builder.addParam("transparent_hugepage=always")
         }
 
-        val effectiveParams = if (GuestKernelCompat.required) {
+        val effectiveParams = if (applyGuestCompatibility && GuestKernelCompat.required) {
             params?.replace("console=ttyS0", "console=hvc0") + " earlycon"
         } else params
         effectiveParams?.split(" ".toRegex())?.filter { it.isNotEmpty() }?.forEach { builder.addParam(it) }
@@ -193,6 +197,8 @@ internal data class ConfigJson(
         val trackpad: Boolean,
     )
 
+    internal data class UsbJson(val controller: Boolean)
+
     internal data class AudioJson(private val microphone: Boolean, private val speaker: Boolean) {
 
         fun toConfig(): VirtualMachineCustomImageConfig.AudioConfig {
@@ -236,19 +242,16 @@ internal data class ConfigJson(
         private val height_pixels: Int = 0,
     ) {
         fun toConfig(context: Context): VirtualMachineCustomImageConfig.DisplayConfig {
-            val wm = context.getSystemService<WindowManager>(WindowManager::class.java)
-            val metrics = wm.currentWindowMetrics
-            val dispBounds = metrics.bounds
-
-            val width = if (width_pixels > 0) width_pixels else dispBounds.right
-            val height = if (height_pixels > 0) height_pixels else dispBounds.bottom
+            val metrics = context.resources.displayMetrics
+            val width = if (width_pixels > 0) width_pixels else metrics.widthPixels
+            val height = if (height_pixels > 0) height_pixels else metrics.heightPixels
 
             var dpi = (DisplayMetrics.DENSITY_DEFAULT * metrics.density).toInt()
             if (scale > 0.0f) {
                 dpi = (dpi * scale).toInt()
             }
 
-            var refreshRate = context.display.refreshRate.toInt()
+            var refreshRate = context.getSystemService(android.hardware.display.DisplayManager::class.java).getDisplay(android.view.Display.DEFAULT_DISPLAY)?.refreshRate?.toInt() ?: 60
             if (this.refresh_rate != 0) {
                 refreshRate = this.refresh_rate
             }
@@ -295,22 +298,18 @@ internal data class ConfigJson(
         const val DEFAULT_BOOT_TIMEOUT_SECS: Int = 60
 
         /** Parses JSON file at jsonPath */
-        fun from(context: Context, jsonPath: Path): ConfigJson {
-            try {
-                FileReader(jsonPath.toFile()).use { fileReader ->
-                    val content = replaceKeywords(fileReader, context)
-                    return Gson().fromJson(content, ConfigJson::class.java)
-                }
-            } catch (e: Exception) {
-                throw RuntimeException("Failed to parse $jsonPath", e)
-            }
+        fun from(context: Context, jsonPath: Path): ConfigJson = fromText(context, jsonPath.toFile().readText(), InstalledImage.getDefault(context).installDir, true)
+
+        fun fromText(context: Context, text: String, payloadDir: Path, managed: Boolean): ConfigJson {
+            val content = replaceKeywords(text.reader(), context, payloadDir)
+            return Gson().fromJson(content, ConfigJson::class.java).apply { applyGuestCompatibility = managed }
         }
 
         @Throws(IOException::class)
-        private fun replaceKeywords(r: Reader, context: Context): String {
+        private fun replaceKeywords(r: Reader, context: Context, payloadDir: Path): String {
             val rules: Map<String, String> =
                 mapOf(
-                    "\\\$PAYLOAD_DIR" to InstalledImage.getDefault(context).installDir.toString(),
+                    "\\\$PAYLOAD_DIR" to payloadDir.toString(),
                     "\\\$USER_ID" to (android.os.Process.myUid() / 100000).toString(),
                     "\\\$PACKAGE_NAME" to context.getPackageName(),
                     "\\\$APP_DATA_DIR" to context.getDataDir().toString(),

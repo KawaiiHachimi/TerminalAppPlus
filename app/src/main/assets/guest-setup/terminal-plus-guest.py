@@ -8,7 +8,7 @@ import subprocess
 import sys
 import time
 
-MODULES = ("console-resize", "capture", "proxy")
+MODULES = ("capture", "proxy")
 
 
 def proxy_user():

@@ -1,5 +1,7 @@
 # Direct AVF console feasibility probe
 
+> 历史记录：以下为早期实验记录，保留证据和实现演进；debug Activity 启动命令与实验侧栏不适用于当前 APK。当前控制台已使用同一台 VM，镜像导入见 [虚拟机管理](../CUSTOM-VM.md)。
+
 Branch: `codex/feat-direct-console`. Debug terminal UI only; the normal LauncherActivity still starts the existing
 Debian VM and ttyd. The toolbar console now attaches to that same VM. ConsoleProbeActivity is an engineering
 probe, not a complete terminal emulator or an image importer.

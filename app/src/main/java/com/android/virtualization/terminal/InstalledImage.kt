@@ -295,6 +295,8 @@ public class InstalledImage private constructor(val installDir: Path) {
         const val RELEASE_YEAR: Int = 2026
 
         /** Returns InstalledImage for a given app context */
+        internal fun fromDirectory(directory: java.io.File): InstalledImage = InstalledImage(directory.toPath())
+
         fun getDefault(context: Context): InstalledImage {
             val installDir = context.getFilesDir().toPath().resolve(INSTALL_DIRNAME)
             return InstalledImage(installDir)

@@ -1,9 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <activity android:name=".VmScreenProbeActivity" android:exported="true" android:permission="android.permission.DUMP" />
-        <activity android:name=".ConsoleProbeActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboard|keyboardHidden"
-            android:label="终端 Plus · 控制台实验" android:windowSoftInputMode="adjustResize">
 
-        </activity>
     </application>
 </manifest>

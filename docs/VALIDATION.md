@@ -1,5 +1,7 @@
 # Validation — 2026-09-27
 
+> 历史记录：以下为 2026-09-27 起的分阶段验证记录，不代表当前完整功能清单；旧单元名称、隐藏显示入口等描述只对应当时版本。当前用法见 [文档索引](README.md)。
+
 Device: PKB110, OP5A3DL1, MT6991, Android 17 API 37, arm64-v8a.
 AVF advertises `android.software.virtualization_framework`; crosvm selects GenieZone.
 The application runs with `u:r:untrusted_app`, not the original terminal's vmlauncher_app domain.

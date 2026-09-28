@@ -90,7 +90,11 @@ fun TerminalTabBar(
                 .height(TAB_BAR_HEIGHT)
                 .background(MaterialTheme.colorScheme.surface),
     ) {
-        key(tabs.size) {
+        if (tabs.isEmpty()) {
+            IconButton(onClick = onAddTab) {
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.terminal_hint_btn_add_tab))
+            }
+        } else key(tabs.size) {
             val selectedTabIndex = tabs.indexOfFirst { it.id == selectedTabId }.coerceAtLeast(0)
             SecondaryScrollableTabRow(
                 selectedTabIndex = selectedTabIndex,
@@ -250,7 +254,7 @@ fun TerminalScreen(terminalAddress: TerminalAddress, tabId: String, mainViewMode
     LaunchedEffect(ttydView, terminalUiState, retryGeneration) {
         connectionTimedOut = false
         if (terminalUiState is TerminalUiState.Connecting || terminalUiState is TerminalUiState.Initializing) {
-            kotlinx.coroutines.delay(15_000)
+            kotlinx.coroutines.delay(60_000)
             connectionTimedOut = true
         }
     }
@@ -305,50 +309,56 @@ fun TerminalScreen(terminalAddress: TerminalAddress, tabId: String, mainViewMode
             modifier = Modifier.fillMaxSize().padding(bottom = stablePadding),
             contentAlignment = Alignment.Center,
         ) {
-            if (connectionTimedOut || terminalUiState is TerminalUiState.Disconnected) {
-                TerminalServiceNotice(onRetry = retryConnection)
-            } else when (terminalUiState) {
-                is TerminalUiState.Ready -> {
-                    key(tabId) {
-                        DisposableEffect(ttydView) {
-                            ttydView.onResume()
-                            onDispose { ttydView.onPause() }
-                        }
-                        AndroidView(
-                            factory = {
-                                ttydView.apply {
-                                    setOnFocusChangeListener { _, hasFocus ->
-                                        isFocused = hasFocus
-                                        if (!hasFocus) disableCtrlKey()
-                                    }
-                                }
+            // Attach while loading so xterm has a viewport and WebView callbacks can run.
+            key(tabId, ttydView) {
+                DisposableEffect(ttydView) {
+                    ttydView.onResume()
+                    onDispose { ttydView.onPause() }
+                }
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = {
+                        ttydView.apply {
+                            setOnFocusChangeListener { _, hasFocus ->
+                                isFocused = hasFocus
+                                if (!hasFocus) disableCtrlKey()
                             }
-                        )
+                        }
+                    },
+                )
+            }
+            if (terminalUiState !is TerminalUiState.Ready) Box(
+                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (connectionTimedOut || terminalUiState is TerminalUiState.Disconnected) {
+                    TerminalServiceNotice(onRetry = retryConnection)
+                } else when (terminalUiState) {
+                    is TerminalUiState.Ready -> Unit
+                    is TerminalUiState.Connecting -> {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(text = stringResource(R.string.terminal_message_connecting))
+                        }
                     }
-                }
-                is TerminalUiState.Connecting -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = stringResource(R.string.terminal_message_connecting))
+                    is TerminalUiState.Disconnected -> {
+                        Text(text = stringResource(R.string.terminal_message_disconnected))
                     }
-                }
-                is TerminalUiState.Disconnected -> {
-                    Text(text = stringResource(R.string.terminal_message_disconnected))
-                }
-                else -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = stringResource(R.string.terminal_message_initializing))
+                    else -> {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(text = stringResource(R.string.terminal_message_initializing))
+                        }
                     }
                 }
             }

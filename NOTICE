@@ -187,3 +187,5 @@
       of your accepting any such warranty or additional liability.
 
    END OF TERMS AND CONDITIONS
+
+Bundled ARM64 crosvm U-Boot: U-Boot contributors / AOSP external/u-boot, GPL-2.0. See third_party/u-boot/COPYING and README.md for the exact revision and source archive.

@@ -17,8 +17,8 @@ internal object GuestScreenSetup {
     private val client = OkHttpClient.Builder().connectTimeout(3, TimeUnit.SECONDS)
         .readTimeout(0, TimeUnit.SECONDS).build()
 
-    fun ensure(context: Context, port: Int, token: String, current: () -> Boolean) {
-        val id = java.io.File(context.filesDir, "linux/cidata.build_id").readText().trim()
+    fun ensure(context: Context, port: Int, token: String, payloadDir: java.io.File = java.io.File(context.filesDir, "linux"), current: () -> Boolean) {
+        val id = java.io.File(payloadDir, "cidata.build_id").readText().trim()
         if (id != "15101902-plus-display1") return
         val script = GuestTools.installScript(context) + "\nprintf '\\n$READY\\n'\n"
         val encoded = Base64.encodeToString(script.toByteArray(), Base64.NO_WRAP)

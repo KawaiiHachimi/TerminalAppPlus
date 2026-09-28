@@ -69,6 +69,7 @@ fun MainScreen(viewModel: MainViewModel) {
     val installState by Installer.installState.collectAsStateWithLifecycle()
     val showSettings by viewModel.showSettings.collectAsStateWithLifecycle()
     val profile by com.android.virtualization.terminal.new2.core.VmProfiles.selected.collectAsStateWithLifecycle()
+    val officialRequested by com.android.virtualization.terminal.new2.core.VmProfiles.officialRequested.collectAsStateWithLifecycle()
     val switching by com.android.virtualization.terminal.new2.core.VmController.switching.collectAsStateWithLifecycle()
     val isFullscreen by viewModel.isFullscreen.collectAsStateWithLifecycle()
     val hasMandatoryPermissions by viewModel.hasMandatoryPermissions.collectAsStateWithLifecycle()
@@ -91,12 +92,17 @@ fun MainScreen(viewModel: MainViewModel) {
     }
 
     LaunchedEffect(uiState is MainUiState.Running, profile.id) {
-        if (uiState is MainUiState.Running && !profile.isDefault && BuildConfig.DEBUG) {
+        if (uiState is MainUiState.Running) {
             viewModel.setShowSettings(false)
-            context.startActivity(Intent().setClassName(context.packageName,
-                "com.android.virtualization.terminal.ConsoleProbeActivity"))
+            when (profile.screen) {
+                "console" -> context.startActivity(Intent().setClassName(context.packageName,
+                    "com.android.virtualization.terminal.ConsoleProbeActivity"))
+                "display" -> if (viewModel.displayState.value != DisplayState.Normal) viewModel.toggleDisplay()
+                else -> if (viewModel.displayState.value != DisplayState.Hidden) viewModel.toggleDisplay()
+            }
         }
     }
+    LaunchedEffect(officialRequested) { if (officialRequested) viewModel.setShowSettings(false) }
 
     Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }) { innerPadding ->
         val padding = if (isFullscreen) PaddingValues(0.dp) else innerPadding
@@ -106,7 +112,13 @@ fun MainScreen(viewModel: MainViewModel) {
                 if (!hasMandatoryPermissions) {
                     PermissionScreen(viewModel = viewModel)
                 } else if (profile.isDefault && installState !is InstallState.Installed) {
-                    InstallScreen(snackbarHostState = snackbarHostState)
+                    if (officialRequested || installState.isStarted()) {
+                        Column(Modifier.fillMaxSize()) {
+                            androidx.compose.material3.TextButton(onClick = { com.android.virtualization.terminal.new2.core.VmProfiles.requestOfficial(false) }, enabled = !installState.isStarted()) { androidx.compose.material3.Text("更改系统来源") }
+                            Box(Modifier.weight(1f)) { InstallScreen(snackbarHostState = snackbarHostState) }
+                        }
+                    } else if (installState is InstallState.Checking) BootingScreen()
+                    else VmManagementPage(firstSetup = true)
                 } else
                     when (val state = uiState) {
                         is MainUiState.Ready -> {
@@ -172,7 +184,7 @@ fun RunningScreen(state: MainUiState.Running, viewModel: MainViewModel) {
                         onAddTab = { viewModel.addTab() },
                     )
                 }
-                if (BuildConfig.DEBUG) {
+                run {
                     IconButton(onClick = {
                         context.startActivity(Intent().setClassName(context.packageName,
                             "com.android.virtualization.terminal.ConsoleProbeActivity"))
@@ -202,7 +214,11 @@ fun RunningScreen(state: MainUiState.Running, viewModel: MainViewModel) {
         } else {
             val connection = state.terminalConnection
             if (tabs.isEmpty()) {
-                TerminalServiceNotice(onRetry = { viewModel.addTab() }, emptySession = true)
+                Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                    androidx.compose.material3.Text(stringResource(R.string.plus_terminal_no_sessions),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             } else if (connection is com.android.virtualization.terminal.new2.core.TerminalConnection.Endpoint) {
                 TerminalScreen(connection.address, selectedTabId, viewModel)
             } else {

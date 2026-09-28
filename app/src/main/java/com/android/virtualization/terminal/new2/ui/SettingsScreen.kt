@@ -106,10 +106,9 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 enum class SettingsDestination(val title: Int, val icon: ImageVector) {
-    PortControl(R.string.settings_port_title, Icons.Default.Security),
     VirtualMachines(R.string.plus_virtual_machines, Icons.Default.Memory),
+    PortControl(R.string.settings_port_title, Icons.Default.Security),
     Advanced(R.string.settings_advanced_title, Icons.Default.Tune),
-    Laboratory(R.string.plus_laboratory, Icons.Default.Science),
     Recovery(R.string.settings_recovery_title, Icons.Default.Restore),
 }
 
@@ -144,8 +143,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: MainViewModel = viewModel()) {
     val selectedProfile by com.android.virtualization.terminal.new2.core.VmProfiles.selected.collectAsStateWithLifecycle()
     val destinations = remember(selectedProfile) {
         SettingsDestination.entries.filter {
-            (BuildConfig.DEBUG || (it != SettingsDestination.Laboratory && it != SettingsDestination.VirtualMachines)) &&
-                (selectedProfile.isDefault || it != SettingsDestination.Recovery)
+            (selectedProfile.isDefault || it != SettingsDestination.Recovery)
         }
     }
 
@@ -280,8 +278,7 @@ fun SettingsDetailPane(
         Box(modifier = Modifier.padding(innerPadding)) {
             when (destination) {
                 SettingsDestination.PortControl -> PortControlPage()
-                SettingsDestination.Advanced -> AdvancedPage(onCloseSettings)
-                SettingsDestination.Laboratory -> LaboratoryPage()
+                SettingsDestination.Advanced -> AdvancedPage()
                 SettingsDestination.VirtualMachines -> VmManagementPage()
                 SettingsDestination.Recovery -> RecoveryPage()
             }
@@ -291,194 +288,30 @@ fun SettingsDetailPane(
 
 @Composable
 fun AdvancedPage(
-    onCloseSettings: () -> Unit,
-    mainViewModel: MainViewModel = viewModel(),
     settingsViewModel: SettingsViewModel = viewModel(),
 ) {
-    val selectedProfile by com.android.virtualization.terminal.new2.core.VmProfiles.selected.collectAsStateWithLifecycle()
-    val currentType = VmController.graphicsAccelerationType
-    var showSelectionDialog by remember { mutableStateOf(false) }
-    var showRebootDialog by remember { mutableStateOf(false) }
-    var selectedType by remember { mutableStateOf(currentType) }
-
-    val currentMemoryMb by settingsViewModel.currentMemoryMb.collectAsStateWithLifecycle()
-    var showMemoryDialog by remember { mutableStateOf(false) }
-
     val displayResolution by settingsViewModel.displayResolution.collectAsStateWithLifecycle()
     var showResolutionDialog by remember { mutableStateOf(false) }
-
     val keepAwakeMinutes by settingsViewModel.keepAwakeMinutes.collectAsStateWithLifecycle()
     val showKeepAwakeDialog by settingsViewModel.showKeepAwakeDialog.collectAsStateWithLifecycle()
-
-    val typeToName =
-        mapOf(
-            GraphicsManager.AccelerationType.Lavapipe to
-                stringResource(R.string.settings_graphics_renderer_software),
-            GraphicsManager.AccelerationType.Gfxstream to
-                stringResource(R.string.settings_graphics_renderer_gpu),
-        )
-
-    if (showSelectionDialog) {
-        AlertDialog(
-            onDismissRequest = { showSelectionDialog = false },
-            title = { Text(stringResource(R.string.settings_graphics_title)) },
-            text = {
-                Column(Modifier.selectableGroup()) {
-                    GraphicsManager.AccelerationType.values().forEach { type ->
-                        Row(
-                            Modifier.fillMaxWidth()
-                                .height(56.dp)
-                                .selectable(
-                                    selected = (type == selectedType),
-                                    onClick = { selectedType = type },
-                                    role = Role.RadioButton,
-                                )
-                                .padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(selected = (type == selectedType), onClick = null)
-                            Text(
-                                text = typeToName[type] ?: "",
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.padding(start = 16.dp),
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showSelectionDialog = false
-                        if (currentType != selectedType) {
-                            VmController.setGraphicsAccelerationType(selectedType)
-                            showRebootDialog = true
-                        }
-                    }
-                ) {
-                    Text(stringResource(android.R.string.ok))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSelectionDialog = false }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
-            },
-        )
-    }
-
-    if (showMemoryDialog) {
-        MemorySizeDialog(
-            currentMemoryMb = currentMemoryMb,
-            minMemoryMb = SettingsViewModel.MIN_MEMORY_MIB,
-            maxMemoryMb = settingsViewModel.maxMemoryMb,
-            onDismissRequest = { showMemoryDialog = false },
-            onConfirm = {
-                settingsViewModel.setMemoryMb(it)
-                showMemoryDialog = false
-                showRebootDialog = true
-            },
-        )
-    }
-
-    if (showKeepAwakeDialog) {
-        KeepAwakeDialog(
-            currentMinutes = keepAwakeMinutes,
-            onDismissRequest = { settingsViewModel.setShowKeepAwakeDialog(false) },
-            onConfirm = {
-                settingsViewModel.setKeepAwakeMinutes(it)
-                settingsViewModel.setShowKeepAwakeDialog(false)
-            },
-        )
-    }
-
-    if (showResolutionDialog) {
-        DisplayResolutionDialog(
-            currentResolution = displayResolution,
-            onDismissRequest = { showResolutionDialog = false },
-            onConfirm = {
-                settingsViewModel.setDisplayResolution(it)
-                showResolutionDialog = false
-            },
-        )
-    }
-
-    if (showRebootDialog) {
-        AlertDialog(
-            onDismissRequest = { showRebootDialog = false },
-            title = { Text(stringResource(R.string.settings_graphics_dlg_title_restart)) },
-            text = { Text(stringResource(R.string.settings_graphics_dlg_message_restart)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showRebootDialog = false
-                        mainViewModel.restartVm()
-                        onCloseSettings()
-                    }
-                ) {
-                    Text(stringResource(R.string.settings_graphics_dlg_btn_restart))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRebootDialog = false }) {
-                    Text(stringResource(R.string.settings_graphics_dlg_btn_later))
-                }
-            },
-        )
-    }
-
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    if (showKeepAwakeDialog) KeepAwakeDialog(keepAwakeMinutes,
+        { settingsViewModel.setShowKeepAwakeDialog(false) },
+        { settingsViewModel.setKeepAwakeMinutes(it); settingsViewModel.setShowKeepAwakeDialog(false) })
+    if (showResolutionDialog) DisplayResolutionDialog(displayResolution,
+        { showResolutionDialog = false }, { settingsViewModel.setDisplayResolution(it); showResolutionDialog = false })
+    LazyColumn(Modifier.fillMaxSize()) {
         item {
-            ListItem(
-                headlineContent = {
-                    Text(stringResource(R.string.settings_display_resolution_title))
-                },
+            ListItem(headlineContent = { Text(stringResource(R.string.settings_display_resolution_title)) },
                 supportingContent = { Text(formatDisplayResolution(displayResolution)) },
-                leadingContent = {
-                    Icon(imageVector = Icons.Default.DisplaySettings, contentDescription = null)
-                },
-                modifier = Modifier.clickable { showResolutionDialog = true },
-            )
-            HorizontalDivider()
-        }
-        if (VmController.isGraphicsAccelerationSupported) {
-            item {
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.settings_graphics_title)) },
-                    supportingContent = { Text(typeToName[currentType] ?: "") },
-                    leadingContent = {
-                        Icon(imageVector = Icons.Default.Speed, contentDescription = null)
-                    },
-                    modifier =
-                        Modifier.clickable {
-                            selectedType = currentType
-                            showSelectionDialog = true
-                        },
-                )
-                HorizontalDivider()
-            }
-        }
-        item {
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_advanced_memory_title)) },
-                supportingContent = { Text(if (selectedProfile.isDefault) formatMemorySize(currentMemoryMb) else "2 GiB · 自定义镜像，资源编辑将在后续版本开放") },
-                leadingContent = {
-                    Icon(imageVector = Icons.Default.Memory, contentDescription = null)
-                },
-                modifier = Modifier.clickable(enabled = selectedProfile.isDefault) { showMemoryDialog = true },
-            )
+                leadingContent = { Icon(Icons.Default.DisplaySettings, null) },
+                modifier = Modifier.clickable { showResolutionDialog = true })
             HorizontalDivider()
         }
         item {
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_keep_awake_title)) },
+            ListItem(headlineContent = { Text(stringResource(R.string.settings_keep_awake_title)) },
                 supportingContent = { Text(formatKeepAwakeTime(keepAwakeMinutes)) },
-                leadingContent = {
-                    Icon(imageVector = Icons.Default.Power, contentDescription = null)
-                },
-                modifier = Modifier.clickable { settingsViewModel.setShowKeepAwakeDialog(true) },
-            )
-            HorizontalDivider()
+                leadingContent = { Icon(Icons.Default.Power, null) },
+                modifier = Modifier.clickable { settingsViewModel.setShowKeepAwakeDialog(true) })
         }
     }
 }

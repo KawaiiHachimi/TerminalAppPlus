@@ -23,7 +23,7 @@ dependencies {
     implementation("at.yawk.lz4:lz4-java:1.12.0")
     testImplementation("junit:junit:4.13.2")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    debugImplementation(project(":terminal-view"))
+    implementation(project(":terminal-view"))
     implementation(project(":guest-protocol"))
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")

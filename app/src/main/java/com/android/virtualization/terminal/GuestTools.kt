@@ -7,7 +7,7 @@ import android.util.Base64
 internal object GuestTools {
     /** Only fixed packaged files; installation is never injected into the serial console. */
     fun installScript(context: Context): String {
-        val encoded = context.assets.open("guest-setup/guest-tools.tar.gz").use {
+        val encoded = context.assets.open("guest-setup/guest-tools.bundle").use {
             Base64.encodeToString(it.readBytes(), Base64.NO_WRAP)
         }.chunked(76).joinToString("\n")
         return """
@@ -21,8 +21,4 @@ sh "${'$'}tmp/install-guest-tools.sh" "${'$'}tmp"
 """.trimIndent()
     }
 
-    fun manualCommand(context: Context): String {
-        val script = installScript(context).replace("'", "'\\''")
-        return "sh -c '$script'\n"
-    }
 }

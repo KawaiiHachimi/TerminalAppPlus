@@ -137,6 +137,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun openVmSettings() { _settingsRequest.value = SettingsDestination.VirtualMachines; _showSettings.value = true }
+
     fun clearSettingsRequest() {
         _settingsRequest.value = null
     }
@@ -172,10 +174,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addTab() {
         TerminalSessionRepository.addSession()
+        _displayState.value = DisplayState.Hidden
     }
 
     fun closeTab(id: String) {
         TerminalSessionRepository.removeSession(id)
+        if (TerminalSessionRepository.sessions.value.isEmpty()) _isImeVisible.value = false
     }
 
     fun selectTab(id: String) {
@@ -200,13 +204,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     is VmState.Rebooting -> MainUiState.Booting
                     is VmState.Running -> MainUiState.Running(terminalConnection)
                     is VmState.Stopping -> MainUiState.Stopping
-                    is VmState.Stopped -> {
-                        if (hasVmEverStarted) {
-                            MainUiState.Stopped
-                        } else {
-                            MainUiState.Ready
-                        }
-                    }
+                    is VmState.Stopped -> MainUiState.Stopped
                     is VmState.Error -> {
                         setIsImeVisible(false)
                         MainUiState.Error(MainUiState.ErrorHandler.ReportBug(vmState.cause))
@@ -310,13 +308,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             !profile.isDefault || installState is InstallState.Installed
                         }.collectLatest { ready ->
                             if (ready) {
-                                // Reset sessions to start fresh upon installation completion.
-                                TerminalSessionRepository.reset()
-
                                 // Once installed, start observing UI state and trigger VM startup
                                 // whenever it returns to a Ready state.
-                                uiState.collect { state ->
-                                    if (state is MainUiState.Ready) {
+                                VmController.vmState.collect { state ->
+                                    if (state is VmState.Ready) {
                                         startVm()
                                     }
                                 }

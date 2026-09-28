@@ -1,5 +1,7 @@
 # Existing virtual-screen capture (read-only experiment)
 
+> 历史记录：以下按阶段保留实验过程，早期 PNG 协议、临时 Activity 和侧栏入口已被替代。当前安装与完整服务配置见 [Guest 图形采集](../GUEST-SCREEN-SERVICE.md)，不要混用旧探测命令。
+
 This probe captures the guest's existing DRM primary-plane framebuffer. It does
 not start a second desktop, VNC/RDP session or host native-display service.
 
@@ -204,4 +206,4 @@ LZ4 Java dependency: https://github.com/yawkat/lz4-java at Maven
 
 ## Unified guest service
 
-The former capture/proxy units have been superseded by `terminal-plus-guest.service`, which also provides serial-console size synchronization. Use the [current guest service guide](../GUEST-SCREEN-SERVICE.md) for installation and migration.
+The former capture/proxy units have been superseded by `terminal-plus-guest.service`, which manages capture and port proxy. Serial-console size synchronization has since been removed. Use the [current guest service guide](../GUEST-SCREEN-SERVICE.md) for installation and migration.
