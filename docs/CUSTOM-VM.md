@@ -26,6 +26,7 @@
 
 长按提供：
 
+- **强制停止**：仅当前运行中的 VM 可用，确认后立即停止，未保存的工作可能丢失。停止后可扩容磁盘。
 - **重命名**：只修改显示名称，内部 VM 标识不变。
 - **克隆**：源 VM 关机后复制独立磁盘和配置。官方 Debian 也可克隆；利用文件系统空洞避免把大容量稀疏磁盘展开成实体空间。进度按已处理的逻辑字节统计。
 - **删除**：关机后再次确认，永久删除该 VM 的私有磁盘和配置，外部源文件与其他 VM 不变。默认 Debian 删除后可重新下载。
@@ -37,6 +38,10 @@
 条目右侧“配置”可设置默认打开 ttyd、控制台或图形界面，修改内存与 CPU，或编辑 `vm_config.json`。
 资源表单直接编辑同一份 JSON。保存后下次启动生效，不再被旧的全局内存偏好覆盖。
 当前 CPU 支持 `one_cpu` / `match_host`，尚不提供未经设备验证的任意 vCPU 数值。
+
+自定义 img/raw VM 的资源设置中提供“扩容磁盘”。先关闭 VM，选择已保存配置引用的可写镜像，输入目标整数容量（GiB）。仅允许扩大当前 VM 私有目录中的磁盘文件，不支持缩小；多磁盘可分别选择。操作立即生效，与配置页“保存/取消”独立。
+
+App 只调整稀疏文件的逻辑长度，不预分配全部新增空间，也不修改分区表或文件系统。进入 Guest 后需自行扩展分区（如有）及文件系统；GPT、LVM 等布局可能还需额外操作。实际写入受手机剩余空间限制。官方格式 images.tar.gz 镜像包保持原有自动容量管理，不显示此入口。
 
 保存检查 JSON、字段、内存范围、启动方式、文件可读性和可写磁盘边界。
 `kernel` 与 `bootloader` 必须二选一；U-Boot 模式不能另外指定 initrd。
@@ -50,6 +55,44 @@ AOSP 旧模板的 `platform_version` 不由这里的 Java Builder 应用，迁�
 图形页面仍根据窗口及显示分辨率设置动态更新显示尺寸；共享目录仍受 Android 文件访问权限限制。
 
 原默认磁盘保持 `files/linux`。配置与显示偏好位于 `files/virtual-machines/<ID>/`，自定义文件也位于其目录；官方克隆的磁盘在 `payload/`。
+
+## 扩容后调整 Guest 根分区
+
+以下示例适用于 Debian/Ubuntu 自定义 raw 镜像：App 已将磁盘扩到 8 GiB，但 `lsblk` 中 `/dev/vda1` 根分区仍约 2.9 GiB。命令在 **Guest 内**执行，root 无需 sudo；普通用户执行安装和扩容命令时需加 sudo。
+
+先确认根分区和文件系统类型：
+
+```sh
+lsblk -f
+findmnt -no SOURCE,FSTYPE /
+```
+
+仅当根文件系统为 `/dev/vda1` 上的 **ext4** 时，使用下面的步骤。其他设备名称、XFS、Btrfs、LVM 或加密卷需按实际布局处理，不要直接照抄。
+
+安装工具：
+
+```sh
+apt install -y cloud-guest-utils e2fsprogs
+```
+
+扩大第 1 分区（`/dev/vda` 与 `1` 之间有空格）：
+
+```sh
+growpart /dev/vda 1
+```
+
+确认命令成功且 `lsblk` 显示 `vda1` 已变大，再扩大 ext4 文件系统并查看结果：
+
+```sh
+resize2fs /dev/vda1
+df -h /
+```
+
+ext4 通常支持在线扩容。根目录可用容量会小于整盘的 8 GiB，因为还存在其他分区及文件系统开销。不要修改 EFI 分区 `vda15` 或只读工具盘 `vdb`；分区编号并不代表其在磁盘上的物理顺序。
+
+如果 `growpart` 报错或提示 `NOCHANGE`，先停止后续操作，检查 `lsblk` 和分区布局；这既可能表示分区已经扩大，也可能表示后方没有连续空间。如果提示内核未能更新分区信息，先正常重启 Guest，再核对分区大小。不要通过删除分区、格式化或对已挂载根文件系统运行 `e2fsck` 来强行处理。
+
+参考：[Debian growpart 文档](https://manpages.debian.org/unstable/cloud-guest-utils/growpart.1.en.html)、[resize2fs 文档](https://dyn.manpages.debian.org/bookworm-backports/e2fsprogs/resize2fs.8.en.html)。
 
 ## Guest 工具
 
