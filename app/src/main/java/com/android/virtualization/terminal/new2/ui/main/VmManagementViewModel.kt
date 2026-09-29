@@ -18,6 +18,16 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     var archiveImport by mutableStateOf(true)
     var qcowImport by mutableStateOf(false); private set
     var formatReady by mutableStateOf(false); private set
+    var cloudEnabled by mutableStateOf(false)
+    var cloudUsername by mutableStateOf("droid")
+    var cloudPassword by mutableStateOf("")
+    var cloudConfirm by mutableStateOf("")
+    var cloudHostname by mutableStateOf("")
+    var cloudKeys by mutableStateOf("")
+    var cloudSshPassword by mutableStateOf(false)
+    var cloudDialog by mutableStateOf(false)
+    var cloudLocked by mutableStateOf(false); private set
+    internal var cloudExistingHash by mutableStateOf(""); private set
     var firmware by mutableStateOf<Uri?>(null)
     var directBoot by mutableStateOf(false)
     var kernel by mutableStateOf<Uri?>(null)
@@ -44,6 +54,7 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     private var job: Job? = null
 
     fun chooseImage(uri: Uri) {
+        resetCloud()
         choosingImport = false
         image = uri
         name = runCatching { VmProfiles.displayName(uri).substringBeforeLast('.') }.getOrDefault("自定义镜像")
@@ -55,7 +66,7 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
             formatReady = true
         }
     }
-    fun dismissImport() { if (!importing) image = null }
+    fun dismissImport() { if (!importing) { image = null; resetCloud() } }
     fun cancelImport() { job?.cancel() }
     private fun work(label: String, action: suspend () -> Unit) {
         if (importing) return
@@ -77,10 +88,11 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
         val chosenKernel = if (directBoot) kernel else null
         val chosenInitrd = if (directBoot) initrd else null; val chosenParams = params
         work("导入镜像") {
+            val cloud = if (chosenArchive) null else prepareCloud("pending")
             val result = if (chosenArchive) VmProfiles.importDebianArchive(uri, chosenName) { importedBytes = it }
             else VmProfiles.importImage(uri, chosenFirmware, chosenName, chosenKernel, chosenInitrd, chosenParams,
-                allowConversion = convertQcow, status = { operation = it }) { importedBytes = it }
-            image = null; switchTarget = result
+                allowConversion = convertQcow, cloudInit = cloud, status = { operation = it }) { importedBytes = it }
+            image = null; resetCloud(); switchTarget = result
         }
     }
     fun clone(profile: VmProfile) { work("克隆磁盘") { VmProfiles.clone(profile) { importedBytes = it } } }
@@ -91,6 +103,12 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
             configDraft = withContext(Dispatchers.IO) { VmProfiles.readConfig(profile) }
             disks = withContext(Dispatchers.IO) { if (profile.isManaged) emptyList() else VmProfiles.customDisks(profile) }
             diskMessage = null; resizingDisk = false
+            resetCloud()
+            cloudLocked = withContext(Dispatchers.IO) { CloudInit.locked(VmProfiles.directory(profile)) }
+            if (!profile.isManaged) withContext(Dispatchers.IO) { VmProfiles.cloudInit(profile) }?.let {
+                cloudEnabled = true; cloudUsername = it.username; cloudHostname = it.hostname
+                cloudExistingHash = it.passwordHash; cloudKeys = it.publicKeys.joinToString("\n"); cloudSshPassword = it.sshPassword
+            }
             screenDraft = profile.screen; jsonMode = false; editTarget = profile
         }
     }
@@ -100,6 +118,27 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
             if (key == "memory_mib" && value.toIntOrNull() != null) json.addProperty(key, value.toInt()) else json.addProperty(key, value)
             configDraft = VmConfigDocument.format(json)
         }.onFailure { error = "请先修复 JSON 语法" }
+    }
+    private fun resetCloud() {
+        cloudEnabled = false; cloudUsername = "droid"; cloudPassword = ""; cloudConfirm = ""
+        cloudHostname = ""; cloudKeys = ""; cloudSshPassword = false; cloudExistingHash = ""
+        cloudDialog = false; cloudLocked = false
+    }
+    private suspend fun prepareCloud(id: String): CloudInitConfig? {
+        if (!cloudEnabled) return null
+        require(cloudPassword == cloudConfirm) { "两次输入的密码不一致" }
+        val user = cloudUsername.trim(); val password = cloudPassword; val host = cloudHostname.trim()
+        val keys = cloudKeys; val ssh = cloudSshPassword; val oldHash = cloudExistingHash
+        val config = withContext(Dispatchers.IO) { CloudInit.config(user, password, host, keys, ssh, id, oldHash) }
+        cloudExistingHash = config.passwordHash; cloudPassword = ""; cloudConfirm = ""
+        return config
+    }
+    fun saveCloud() {
+        val profile = editTarget ?: return
+        work("保存初始配置") {
+            VmProfiles.saveCloudInit(profile, prepareCloud(profile.id))
+            cloudDialog = false
+        }
     }
     fun openDiskResize() {
         val disk = disks.firstOrNull() ?: return

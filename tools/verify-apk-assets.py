@@ -21,6 +21,8 @@ with zipfile.ZipFile(apk) as archive:
     for source, expected in json.loads(manifest).items():
         assert hashlib.sha256(Path(source).read_bytes()).hexdigest() == expected, 'Rebuild guest-tools.iso: ' + source
     executable = archive.read('lib/arm64-v8a/libqemu-img.so')
+    for name in ('template.iso', 'layout.json'):
+        assert archive.read('assets/cloud-init/' + name) == Path('app/src/main/assets/cloud-init', name).read_bytes()
     assert hashlib.sha256(executable).hexdigest() == Path('third_party/qemu-img/binary.sha256').read_text().strip()
     for notice in Path('third_party/qemu-img').rglob('*'):
         if notice.is_file():

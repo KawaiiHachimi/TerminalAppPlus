@@ -145,6 +145,7 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
                     if (model.firmware != null) TextButton(onClick = { model.firmware = null }) { Text("恢复内置 U-Boot") }
                 }
                 Text("创建独立副本，保留源文件。默认 2 GiB、CPU 匹配宿主，可在导入后的配置页修改。")
+                CloudInitFields(model)
                 }
                 if (model.importing) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("${model.operation} · ${model.importedBytes / (1024 * 1024)} MiB") }
                 model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -216,6 +217,8 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("配置保存后下次启动生效。恢复只改配置草稿，不回滚磁盘。")
                 if (model.editTarget?.isManaged == false) {
+                    TextButton(onClick = { model.cloudDialog = true }, enabled = !model.importing) { Text("初始配置（cloud-init）") }
+                    if (model.cloudLocked) Text("已启动过：初始配置已锁定。修改用户请进入系统操作。", style = MaterialTheme.typography.bodySmall)
                     Text("Guest 工具", style = MaterialTheme.typography.titleMedium)
                     Text("在 Debian/Ubuntu 控制台执行下方命令，安装 ttyd 和图形采集服务。首次使用前请重启虚拟机，安装依赖需要联网。")
                     FilterChip(selected = useSudo, onClick = { useSudo = !useSudo }, label = { Text("使用 sudo") })
@@ -290,5 +293,44 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
             },
             confirmButton = { TextButton(onClick = model::growDisk, enabled = canResize && disk != null && size != null && size > disk.bytes) { Text("扩容") } },
             dismissButton = { TextButton(onClick = { model.resizingDisk = false }, enabled = !model.importing) { Text("取消") } })
+    }
+    if (model.cloudDialog) AlertDialog(
+        onDismissRequest = { if (!model.importing) model.cloudDialog = false },
+        title = { Text("初始配置（cloud-init）") },
+        text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (model.cloudLocked) Text("此 VM 已启动过。初始配置不再修改，也不代表 Guest 已成功完成初始化。")
+            CloudInitFields(model, !model.cloudLocked)
+            model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        } },
+        confirmButton = { TextButton(onClick = model::saveCloud, enabled = !model.cloudLocked && !model.importing) { Text("保存初始配置") } },
+        dismissButton = { TextButton(onClick = { model.cloudDialog = false }, enabled = !model.importing) { Text("返回") } })
+}
+
+@Composable
+private fun CloudInitFields(model: VmManagementViewModel, editable: Boolean = true) {
+    val enabled = editable && !model.importing
+    var showPassword by remember { mutableStateOf(false) }
+    HorizontalDivider()
+    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Checkbox(checked = model.cloudEnabled, onCheckedChange = { model.cloudEnabled = it }, enabled = enabled)
+        Text("初始配置（cloud-init）")
+    }
+    Text("适用于支持 NoCloud 的云镜像，在首次启动时设置账户。普通镜像可能不生效。", style = MaterialTheme.typography.bodySmall)
+    if (model.cloudEnabled) {
+        OutlinedTextField(value = model.cloudUsername, onValueChange = { model.cloudUsername = it }, label = { Text("用户名") }, singleLine = true, enabled = enabled)
+        if (model.cloudUsername.trim() == "root") Text("将设置已有 root 账户。SSH 是否允许 root 登录仍由镜像策略决定。", style = MaterialTheme.typography.bodySmall)
+        val transformation = if (showPassword) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation()
+        OutlinedTextField(value = model.cloudPassword, onValueChange = { model.cloudPassword = it }, label = { Text(if (model.cloudExistingHash.isEmpty()) "密码" else "新密码（留空保留）") }, singleLine = true, enabled = enabled, visualTransformation = transformation,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password))
+        OutlinedTextField(value = model.cloudConfirm, onValueChange = { model.cloudConfirm = it }, label = { Text("确认密码") }, singleLine = true, enabled = enabled, visualTransformation = transformation,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password))
+        TextButton(onClick = { showPassword = !showPassword }, enabled = enabled) { Text(if (showPassword) "隐藏密码" else "显示密码") }
+        OutlinedTextField(value = model.cloudHostname, onValueChange = { model.cloudHostname = it }, label = { Text("主机名（可选）") }, singleLine = true, enabled = enabled)
+        OutlinedTextField(value = model.cloudKeys, onValueChange = { model.cloudKeys = it }, label = { Text("SSH 公钥（可选，每行一个）") }, enabled = enabled, minLines = 2)
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Checkbox(checked = model.cloudSshPassword, onCheckedChange = { model.cloudSshPassword = it }, enabled = enabled)
+            Text("允许 SSH 密码登录")
+        }
+        Text("设置密码或 SSH 公钥至少一项。普通用户拥有 sudo 权限；密码不明文保存。", style = MaterialTheme.typography.bodySmall)
     }
 }

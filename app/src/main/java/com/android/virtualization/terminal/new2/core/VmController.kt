@@ -321,7 +321,10 @@ object VmController {
                         }
 
                     vm.setCallback(callbackExecutor, callback)
-                    try { vm.run() } catch (e: Exception) {
+                    try {
+                        if (!profile.isManaged) java.io.File(VmProfiles.directory(profile), "cloud-init.booted").writeText("")
+                        vm.run()
+                    } catch (e: Exception) {
                         callbackExecutor.shutdown()
                         throw e
                     }
@@ -350,6 +353,8 @@ object VmController {
         if (!profile.isManaged) {
             val toolsDisk = com.android.virtualization.terminal.GuestToolsDisk.prepare(context)
             custom.addDisk(VirtualMachineCustomImageConfig.Disk.RODisk(toolsDisk.absolutePath))
+            val seed = CloudInit.file(VmProfiles.directory(profile))
+            if (seed.isFile) custom.addDisk(VirtualMachineCustomImageConfig.Disk.RODisk(seed.absolutePath))
         }
         runningImage = if (profile.isManaged) InstalledImage.fromDirectory(payload) else null
         _guestAgentController.value = null

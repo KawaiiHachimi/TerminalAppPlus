@@ -179,7 +179,7 @@ object VmProfiles {
             }
         }
     }
-    suspend fun importImage(uri: Uri, bootloader: Uri?, name: String, kernel: Uri? = null, initrd: Uri? = null, params: String = "console=ttyS0 root=/dev/vda1 rw", allowConversion: Boolean = false, status: (String) -> Unit = {}, progress: (Long) -> Unit): VmProfile = withContext(Dispatchers.IO) {
+    internal suspend fun importImage(uri: Uri, bootloader: Uri?, name: String, kernel: Uri? = null, initrd: Uri? = null, params: String = "console=ttyS0 root=/dev/vda1 rw", allowConversion: Boolean = false, cloudInit: CloudInitConfig? = null, status: (String) -> Unit = {}, progress: (Long) -> Unit): VmProfile = withContext(Dispatchers.IO) {
         require(name.trim().isNotEmpty()) { "请输入虚拟机名称" }
         val profile = VmProfile(UUID.randomUUID().toString(), name.trim().take(80))
         val staging = File(root, ".import-${profile.id}")
@@ -215,6 +215,7 @@ object VmProfiles {
                 status("完成转换")
             }
             require(disk.length() >= 1024 * 1024 && disk.length() % 512 == 0L) { "磁盘至少应为 1 MiB，且大小须为 512 字节的整数倍" }
+            CloudInit.save(context, staging, cloudInit?.copy(instanceId = "terminal-plus-${profile.id}"))
             atomicWrite(File(staging, "vm_config.json"), defaultConfig(profile.id, kernel != null, params, initrd != null))
             atomicWrite(File(staging, "profile.json"), gson.toJson(profile))
             currentCoroutineContext().ensureActive()
@@ -225,6 +226,11 @@ object VmProfiles {
     internal fun customDisks(profile: VmProfile): List<CustomDiskSize.Disk> {
         require(!profile.isManaged) { "官方格式镜像包的磁盘由系统自动管理" }
         return CustomDiskSize.disks(readConfig(profile), payloadDirectory(profile))
+    }
+    internal fun cloudInit(profile: VmProfile) = CloudInit.read(context, directory(profile))
+    internal suspend fun saveCloudInit(profile: VmProfile, config: CloudInitConfig?) = withContext(Dispatchers.IO) {
+        require(!profile.isManaged)
+        VmController.withStoppedProfile(profile) { CloudInit.save(context, directory(profile), config) }
     }
 
     internal suspend fun growDisk(profile: VmProfile, path: String, bytes: Long) = withContext(Dispatchers.IO) {
@@ -254,6 +260,10 @@ object VmProfiles {
                     }
                 }
                 val config = JsonParser.parseString(readConfig(profile).replace(source.absolutePath, "\$PAYLOAD_DIR")).asJsonObject
+                if (!copy.isManaged) {
+                    if (CloudInit.locked(source)) File(stage, "cloud-init.booted").writeText("")
+                    else CloudInit.read(context, source)?.let { CloudInit.save(context, stage, it.copy(instanceId = "terminal-plus-${copy.id}")) }
+                }
                 config.addProperty("name", "plus-${copy.id}")
                 atomicWrite(File(stage, "vm_config.json"), VmConfigDocument.format(config))
                 atomicWrite(File(stage, "profile.json"), gson.toJson(copy))

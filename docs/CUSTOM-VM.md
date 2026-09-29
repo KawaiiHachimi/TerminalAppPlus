@@ -94,6 +94,8 @@ ext4 通常支持在线扩容。根目录可用容量会小于整盘的 8 GiB，
 
 参考：[Debian growpart 文档](https://manpages.debian.org/unstable/cloud-guest-utils/growpart.1.en.html)、[resize2fs 文档](https://dyn.manpages.debian.org/bookworm-backports/e2fsprogs/resize2fs.8.en.html)。
 
+自定义磁盘可在导入时启用 [初始配置 cloud-init](CLOUD-INIT.md)，为兼容云镜像预设账户。
+
 ## qcow2 导入
 
 在“导入自定义镜像 → IMG / RAW / QCOW2 磁盘镜像”选择文件。App 读取文件头识别实际格式，不依赖扩展名；gzip 文件先解压再识别，因此 `.img` 也可能提示“转换并导入”。
