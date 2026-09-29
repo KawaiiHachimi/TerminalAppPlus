@@ -227,12 +227,6 @@ object VmProfiles {
         require(!profile.isManaged) { "官方格式镜像包的磁盘由系统自动管理" }
         return CustomDiskSize.disks(readConfig(profile), payloadDirectory(profile))
     }
-    internal fun cloudInit(profile: VmProfile) = CloudInit.read(context, directory(profile))
-    internal suspend fun saveCloudInit(profile: VmProfile, config: CloudInitConfig?) = withContext(Dispatchers.IO) {
-        require(!profile.isManaged)
-        VmController.withStoppedProfile(profile) { CloudInit.save(context, directory(profile), config) }
-    }
-
     internal suspend fun growDisk(profile: VmProfile, path: String, bytes: Long) = withContext(Dispatchers.IO) {
         require(!profile.isManaged) { "官方格式镜像包的磁盘由系统自动管理" }
         VmController.withStoppedProfile(profile) {

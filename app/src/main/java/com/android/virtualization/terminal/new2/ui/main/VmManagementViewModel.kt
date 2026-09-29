@@ -25,8 +25,6 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     var cloudHostname by mutableStateOf("")
     var cloudKeys by mutableStateOf("")
     var cloudSshPassword by mutableStateOf(false)
-    var cloudDialog by mutableStateOf(false)
-    var cloudLocked by mutableStateOf(false); private set
     internal var cloudExistingHash by mutableStateOf(""); private set
     var firmware by mutableStateOf<Uri?>(null)
     var directBoot by mutableStateOf(false)
@@ -104,11 +102,6 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
             disks = withContext(Dispatchers.IO) { if (profile.isManaged) emptyList() else VmProfiles.customDisks(profile) }
             diskMessage = null; resizingDisk = false
             resetCloud()
-            cloudLocked = withContext(Dispatchers.IO) { CloudInit.locked(VmProfiles.directory(profile)) }
-            if (!profile.isManaged) withContext(Dispatchers.IO) { VmProfiles.cloudInit(profile) }?.let {
-                cloudEnabled = true; cloudUsername = it.username; cloudHostname = it.hostname
-                cloudExistingHash = it.passwordHash; cloudKeys = it.publicKeys.joinToString("\n"); cloudSshPassword = it.sshPassword
-            }
             screenDraft = profile.screen; jsonMode = false; editTarget = profile
         }
     }
@@ -122,7 +115,6 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     private fun resetCloud() {
         cloudEnabled = false; cloudUsername = "droid"; cloudPassword = ""; cloudConfirm = ""
         cloudHostname = ""; cloudKeys = ""; cloudSshPassword = false; cloudExistingHash = ""
-        cloudDialog = false; cloudLocked = false
     }
     private suspend fun prepareCloud(id: String): CloudInitConfig? {
         if (!cloudEnabled) return null
@@ -132,13 +124,6 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
         val config = withContext(Dispatchers.IO) { CloudInit.config(user, password, host, keys, ssh, id, oldHash) }
         cloudExistingHash = config.passwordHash; cloudPassword = ""; cloudConfirm = ""
         return config
-    }
-    fun saveCloud() {
-        val profile = editTarget ?: return
-        work("保存初始配置") {
-            VmProfiles.saveCloudInit(profile, prepareCloud(profile.id))
-            cloudDialog = false
-        }
     }
     fun openDiskResize() {
         val disk = disks.firstOrNull() ?: return

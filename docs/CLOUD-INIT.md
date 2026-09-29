@@ -8,7 +8,7 @@
 
 App 将生成独立、只读、卷标为 `CIDATA` 的 ISO，包含 `user-data` 和 `meta-data`，首次启动由 Guest 读取。它与 `PLUS_TOOLS` 工具盘独立，不安装 ttyd、桌面或采集服务。默认不写网络配置，使用镜像/cloud-init 原有的网络初始化行为。
 
-首次启动前，可在“虚拟机 → 配置 → 初始配置”修改或关闭。密码不回显，留空保留已保存密码；“保存初始配置”立即保存配置盘，与资源配置的保存按钮独立。密码仅以加盐 SHA-512 crypt 哈希写入私有目录中的 ISO，不保存明文；配置盘仍应视作敏感数据。
+初始配置仅在添加虚拟机时提供，已有虚拟机的配置页不提供编辑入口。密码仅以加盐 SHA-512 crypt 哈希写入私有目录中的 ISO，不保存明文；配置盘仍应视作敏感数据。
 
 ## 生命周期与限制
 
@@ -33,6 +33,6 @@ lsblk -f
 
 配置盘模板由 `tools/build-cloud-init-template.py` 生成，Android 在固定文件槽中写入带注释填充的 YAML（JSON 子集），保留 ISO9660/Rock Ridge 文件结构。表单禁止输入任意脚本。
 
-已验证密码哈希、稳定 instance-id、输入校验、首次启动锁定、模板文件读取以及 cloud-init 官方 schema；不同发行版首次启动仍需实测。
+已验证密码哈希、稳定 instance-id、输入校验、首次启动锁定、模板文件读取以及 cloud-init 官方 schema。AlmaLinux 10.2（cloud-init 24.4）已实测识别 NoCloud 配置盘、创建 droid 用户并通过密码登录。该设备上 NetworkManager 的 DHCP 获取仍有兼容性问题，初始化成功不代表网络就绪；其他发行版仍需实测。
 
 参考：[NoCloud 数据源](https://docs.cloud-init.io/en/latest/reference/datasources/nocloud.html)。

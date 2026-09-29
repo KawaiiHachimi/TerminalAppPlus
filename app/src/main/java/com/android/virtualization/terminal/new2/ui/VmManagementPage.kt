@@ -217,8 +217,6 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("配置保存后下次启动生效。恢复只改配置草稿，不回滚磁盘。")
                 if (model.editTarget?.isManaged == false) {
-                    TextButton(onClick = { model.cloudDialog = true }, enabled = !model.importing) { Text("初始配置（cloud-init）") }
-                    if (model.cloudLocked) Text("已启动过：初始配置已锁定。修改用户请进入系统操作。", style = MaterialTheme.typography.bodySmall)
                     Text("Guest 工具", style = MaterialTheme.typography.titleMedium)
                     Text("在 Debian/Ubuntu 控制台执行下方命令，安装 ttyd 和图形采集服务。首次使用前请重启虚拟机，安装依赖需要联网。")
                     FilterChip(selected = useSudo, onClick = { useSudo = !useSudo }, label = { Text("使用 sudo") })
@@ -294,21 +292,12 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
             confirmButton = { TextButton(onClick = model::growDisk, enabled = canResize && disk != null && size != null && size > disk.bytes) { Text("扩容") } },
             dismissButton = { TextButton(onClick = { model.resizingDisk = false }, enabled = !model.importing) { Text("取消") } })
     }
-    if (model.cloudDialog) AlertDialog(
-        onDismissRequest = { if (!model.importing) model.cloudDialog = false },
-        title = { Text("初始配置（cloud-init）") },
-        text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (model.cloudLocked) Text("此 VM 已启动过。初始配置不再修改，也不代表 Guest 已成功完成初始化。")
-            CloudInitFields(model, !model.cloudLocked)
-            model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        } },
-        confirmButton = { TextButton(onClick = model::saveCloud, enabled = !model.cloudLocked && !model.importing) { Text("保存初始配置") } },
-        dismissButton = { TextButton(onClick = { model.cloudDialog = false }, enabled = !model.importing) { Text("返回") } })
+
 }
 
 @Composable
-private fun CloudInitFields(model: VmManagementViewModel, editable: Boolean = true) {
-    val enabled = editable && !model.importing
+private fun CloudInitFields(model: VmManagementViewModel) {
+    val enabled = !model.importing
     var showPassword by remember { mutableStateOf(false) }
     HorizontalDivider()
     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
