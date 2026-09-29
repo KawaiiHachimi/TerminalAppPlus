@@ -12,6 +12,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.text.selection.SelectionContainer
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.widget.Toast
+import com.android.virtualization.terminal.GuestToolsDisk
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -181,11 +187,26 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
 
 @Composable
 private fun VmConfigurationDialog(model: VmManagementViewModel) {
+    val context = LocalContext.current
     val json = remember(model.configDraft) { runCatching { JsonParser.parseString(model.configDraft).asJsonObject }.getOrNull() }
     AlertDialog(onDismissRequest = { if (!model.importing) model.editTarget = null }, title = { Text("${model.editTarget!!.name} · 配置") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("配置保存后下次启动生效。恢复只改配置草稿，不回滚磁盘。")
+                if (model.editTarget?.isManaged == false) {
+                    Text("Guest 工具", style = MaterialTheme.typography.titleMedium)
+                    Text("启动时会挂载只读工具盘。Debian/Ubuntu 用户可在控制台登录普通用户后执行下方命令，安装 ttyd 和图形采集服务并启用开机启动。已有运行中的虚拟机需先重启。缺少依赖时需要联网。")
+                    SelectionContainer {
+                        Text(GuestToolsDisk.INSTALL_COMMAND, style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace))
+                    }
+                    TextButton(onClick = {
+                        context.getSystemService(ClipboardManager::class.java).setPrimaryClip(
+                            ClipData.newPlainText("安装 Guest 工具", GuestToolsDisk.INSTALL_COMMAND))
+                        Toast.makeText(context, "安装命令已复制", Toast.LENGTH_SHORT).show()
+                    }) { Text("复制安装命令") }
+                    Text("已有 ttyd 时可追加 --skip-ttyd。采集服务不安装桌面，需要内核支持 vsock、virtio-gpu 和 DRM debugfs。", style = MaterialTheme.typography.bodySmall)
+                    HorizontalDivider()
+                }
                 Text("启动后打开")
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("ttyd" to "ttyd", "console" to "控制台", "display" to "图形").forEach { (key, label) ->

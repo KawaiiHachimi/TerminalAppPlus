@@ -347,6 +347,10 @@ object VmController {
         val configBuilder = json.toConfigBuilder(context)
         configBuilder.setVmConsoleInputSupported(true).setConnectVmConsole(false)
         val custom = json.toCustomImageConfigBuilder(context)
+        if (!profile.isManaged) {
+            val toolsDisk = com.android.virtualization.terminal.GuestToolsDisk.prepare(context)
+            custom.addDisk(VirtualMachineCustomImageConfig.Disk.RODisk(toolsDisk.absolutePath))
+        }
         runningImage = if (profile.isManaged) InstalledImage.fromDirectory(payload) else null
         _guestAgentController.value = null
         runningImage?.let { image ->
