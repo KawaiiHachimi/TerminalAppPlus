@@ -218,7 +218,7 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
                 Text("配置保存后下次启动生效。恢复只改配置草稿，不回滚磁盘。")
                 if (model.editTarget?.isManaged == false) {
                     Text("Guest 工具", style = MaterialTheme.typography.titleMedium)
-                    Text("在 Debian/Ubuntu 控制台执行下方命令，安装 ttyd 和图形采集服务。首次使用前请重启虚拟机，安装依赖需要联网。")
+                    Text("在 Debian/Ubuntu、Fedora 等支持的系统中执行下方命令，安装 ttyd 和图形采集服务。首次使用前请重启虚拟机，安装依赖需要联网。")
                     FilterChip(selected = useSudo, onClick = { useSudo = !useSudo }, label = { Text("使用 sudo") })
                     SelectionContainer {
                         Text(installCommand, style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace))

@@ -1,6 +1,6 @@
 # 自定义镜像 Guest 工具盘（实验）
 
-适用于 Debian/Ubuntu、systemd，以及支持 virtio-vsock 的 Guest 内核。App 在启动自定义 img/raw 虚拟机时，将只读 `PLUS_TOOLS` ISO 追加到已有磁盘之后，支持 U-Boot 和直接内核启动；不改变原系统磁盘顺序，不修改保存的 vm_config.json。官方格式镜像包继续使用原来的 cidata 路线。
+适用于 Debian/Ubuntu 和 Fedora/RHEL 系发行版，需要 systemd 与支持 virtio-vsock 的 Guest 内核。App 在启动自定义 img/raw 虚拟机时，将只读 `PLUS_TOOLS` ISO 追加到已有磁盘之后，支持 U-Boot 和直接内核启动；不改变原系统磁盘顺序，不修改保存的 vm_config.json。官方格式镜像包继续使用原来的 cidata 路线。
 
 ## 首次安装
 
@@ -22,7 +22,9 @@ sudo sh -c 'mkdir -p /mnt/plus && mount -o ro LABEL=PLUS_TOOLS /mnt/plus && sh /
 
 `/mnt/plus` 为专用工具盘目录，勿用于其他挂载。如果工具盘已经挂载，只执行 `sh /mnt/plus/install.sh`（普通用户加 sudo）。安装器自动读取当前用户或 SUDO_USER，支持 root；指定其他用户可用 `--user USER`，已有 ttyd 时可用 `--skip-ttyd`。这些参数加在 install.sh 后，使用 sudo sh -c 时放在单引号内。
 
-脚本按需安装依赖、配置 ttyd 和图形采集/端口代理服务并启用开机启动。缺少依赖时需要联网。本次新安装 ttyd 软件包启动的默认服务会被停用以避免端口冲突；原有 ttyd 服务保留。脚本不创建账户或修改密码。
+脚本读取 `/etc/os-release`：Debian/Ubuntu 使用 apt，Fedora/RHEL/AlmaLinux/Rocky 使用 dnf（无 dnf 时尝试 yum）；只安装缺少的依赖。RPM 系使用 `lz4-libs`，Debian 系使用 `liblz4-1`。RHEL 衍生版的 ttyd 可能需要匹配版本的 EPEL，脚本不会自动启用额外软件源；缺包时会提示，也可用 `--skip-ttyd`。
+
+脚本配置 ttyd 和图形采集/端口代理服务并启用开机启动。缺少依赖时需要联网。本次新安装 ttyd 软件包启动的默认服务会被停用以避免端口冲突；原有 ttyd 服务保留。脚本不创建账户或修改密码；支持 SELinux 文件标签恢复，不关闭 SELinux，也不修改防火墙。
 
 ## 后续检查、修复与更新
 
@@ -38,6 +40,10 @@ terminal-plus-setup --force
 App 提供新版工具盘时，正常关闭 Guest 再启动，重新挂载并执行盘上的 install.sh 来更新；本地修复命令不会自行下载新版本。覆盖安装会重启 ttyd，请在控制台执行。
 
 安装器仅检查 systemd 服务状态，active 不代表图形已成功采集或 App 已连接。脚本不自动执行 AOSP init.sh、不安装桌面或 AOSP Guest agent、不自动扩容磁盘。
+
+## 已验证环境
+
+Fedora 45 Beta ARM64：自动识别 RPM 系、通过 dnf 安装 ttyd/socat、三个服务启动、同版本状态检查、App ttyd shell 和 TTY 图形采集均通过；SELinux 保持 Enforcing。AlmaLinux/Rocky/RHEL 的包管理路径已实现，但尚未逐一实机验证，且 ttyd 可能依赖 EPEL。
 
 ## 状态与排查
 

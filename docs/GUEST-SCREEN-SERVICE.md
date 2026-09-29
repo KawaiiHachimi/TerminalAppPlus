@@ -32,6 +32,7 @@ Guest virtio-gpu DRM/KMS 画面与光标
 ```sh
 sudo apt update
 sudo apt install python3 liblz4-1
+# Fedora / RHEL 系：sudo dnf install python3 lz4-libs
 ls -l /dev/dri/card0
 mountpoint -q /sys/kernel/debug || sudo mount -t debugfs debugfs /sys/kernel/debug
 sudo ls /sys/kernel/debug/dri

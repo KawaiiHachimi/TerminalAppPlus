@@ -1,6 +1,6 @@
 # 自定义镜像接入 ttyd
 
-适用于通过 U-Boot 或直接内核启动的自定义 Linux 镜像。以下命令在 **Guest 内**执行，示例面向 Debian/Ubuntu；不会修改 Android 宿主。
+适用于通过 U-Boot 或直接内核启动的自定义 Linux 镜像。以下命令在 **Guest 内**执行，示例面向 Debian/Ubuntu 和 Fedora/RHEL 系；不会修改 Android 宿主。
 
 当前 App 的连接路径：
 
@@ -29,6 +29,7 @@ Guest 内核必须支持 virtio-vsock。只在 Guest 开放 TCP 7681 不够，Ap
 ```sh
 sudo apt update
 sudo apt install ttyd socat
+# Fedora / RHEL 系：sudo dnf install ttyd socat（RHEL 衍生版可能需 EPEL）
 
 nohup ttyd -i 127.0.0.1 -p 7681 -W bash -l \
   >"$HOME/ttyd.log" 2>&1 &

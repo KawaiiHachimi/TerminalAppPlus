@@ -9,6 +9,7 @@ import json
 root = Path(__file__).resolve().parents[1]
 assets = root / 'app/src/main/assets'
 sources = {
+    'guest-packages.sh': root / 'tools/guest-packages.sh',
     'install.sh': root / 'tools/install-custom-guest.sh',
     'install-guest-tools.sh': root / 'tools/install-guest-tools.sh',
     'terminal-plus-guest.service': root / 'guest/root_files/etc/systemd/system/terminal-plus-guest.service',

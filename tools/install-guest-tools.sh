@@ -26,6 +26,9 @@ for name in capture console-resize proxy kms-probe; do
     systemctl disable --now "terminal-plus-$name.service" 2>/dev/null || true
 done
 rm -f /usr/local/bin/terminal-plus-console-resize.py
+if command -v restorecon >/dev/null; then
+    restorecon /usr/local/bin/terminal-plus-guest.py /usr/local/bin/terminal-plus-capture.py /usr/local/bin/terminal-plus-proxy.py /etc/systemd/system/terminal-plus-guest.service
+fi
 systemctl daemon-reload
 systemctl enable --now terminal-plus-guest.service
 if [ "$changed" = 1 ]; then systemctl restart terminal-plus-guest.service; fi

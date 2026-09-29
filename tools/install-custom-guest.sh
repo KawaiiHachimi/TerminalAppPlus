@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: Apache-2.0
-# Debian/Ubuntu + systemd bootstrap, executed explicitly inside the guest.
+# Debian/Ubuntu and Fedora/RHEL-family + systemd bootstrap, executed explicitly inside the guest.
 set -eu
 fail() { printf '%s\n' "$*" >&2; exit 1; }
 terminal_user=${SUDO_USER:-$(id -un)}
@@ -24,7 +24,7 @@ done
 [ "$(id -u)" = 0 ] || fail 'Run this installer with sudo or as root.'
 command -v systemctl >/dev/null || fail 'This installer requires systemd.'
 [ -d /run/systemd/system ] || fail 'systemd must be running.'
-payloads='install.sh install-guest-tools.sh terminal-plus-guest.service terminal-plus-guest.py terminal-plus-capture.py terminal-plus-proxy.py'
+payloads='install.sh guest-packages.sh install-guest-tools.sh terminal-plus-guest.service terminal-plus-guest.py terminal-plus-capture.py terminal-plus-proxy.py'
 for file in $payloads; do [ -r "$script_dir/$file" ] || fail "Missing payload: $file"; done
 version=$(cd "$script_dir" && sha256sum $payloads | sha256sum | cut -d' ' -f1)
 signature="$version:$terminal_user:$install_ttyd"
@@ -55,24 +55,32 @@ if [ "$install_ttyd" = 1 ]; then
         fi
     done
 fi
-command -v apt-get >/dev/null || fail 'Automatic dependency installation currently supports Debian/Ubuntu only.'
-packages='python3 liblz4-1'
-[ "$install_ttyd" = 0 ] || packages="$packages ttyd socat"
+. "$script_dir/guest-packages.sh"
+[ -r /etc/os-release ] || fail 'Missing /etc/os-release.'
+. /etc/os-release
+family=$(guest_package_family "${ID:-}" "${ID_LIKE:-}") || fail "Unsupported distribution: ${ID:-unknown}. Supports Debian/Ubuntu and Fedora/RHEL-family."
+case "$family" in
+    deb) command -v apt-get >/dev/null && command -v dpkg-query >/dev/null || fail 'apt-get/dpkg-query is required.' ;;
+    rpm) command -v rpm >/dev/null || fail 'rpm is required.' ;;
+esac
+printf 'Detected %s (%s).\n' "${PRETTY_NAME:-$ID}" "$family"
+packages=$(guest_packages "$family" "$install_ttyd")
 missing=0
+missing_packages=''
 new_ttyd=0
 for package in $packages; do
-    if [ "$(dpkg-query -W -f='${Status}' "$package" 2>/dev/null || true)" != 'install ok installed' ]; then
+    if ! guest_package_installed "$family" "$package"; then
         missing=1
+        missing_packages="$missing_packages $package"
         [ "$package" != ttyd ] || new_ttyd=1
     fi
 done
 if [ "$missing" = 1 ]; then
-    apt-get update
-    apt-get install -y $packages
+    guest_install_packages "$family" $missing_packages || fail 'Dependency installation failed. Check network and enabled repositories; RHEL/AlmaLinux/Rocky may need the matching EPEL repository for ttyd. No repositories were added automatically.'
 fi
 # Debian starts its packaged ttyd unit on installation, using the same TCP port.
 # Only replace that newly installed default, never a pre-existing user service.
-if [ "$new_ttyd" = 1 ]; then
+if [ "$new_ttyd" = 1 ] && systemctl cat ttyd.service >/dev/null 2>&1; then
     systemctl disable --now ttyd.service
 fi
 # Drivers may be built in; inability to load a module alone is not a failure.
@@ -131,6 +139,9 @@ RestartSec=2
 [Install]
 WantedBy=multi-user.target
 UNIT
+    if command -v restorecon >/dev/null; then
+        restorecon /etc/systemd/system/terminal-plus-ttyd.service /etc/systemd/system/terminal-plus-ttyd-vsock.service
+    fi
     systemctl daemon-reload
     systemctl enable terminal-plus-ttyd.service terminal-plus-ttyd-vsock.service
     systemctl restart terminal-plus-ttyd.service terminal-plus-ttyd-vsock.service
@@ -161,6 +172,9 @@ if [ "$(id -u)" != 0 ]; then exec sudo sh "$0" "$@"; fi
 exec sh /usr/local/share/terminal-plus-tools/install.sh "$@"
 SH
 chmod 755 /usr/local/bin/terminal-plus-setup
+if command -v restorecon >/dev/null; then
+    restorecon -R "$cache" /usr/local/bin/terminal-plus-setup /etc/systemd/system/terminal-plus-guest.service.d
+fi
 printf '%s\n' "$signature" > "$cache/installed"
 if [ ! -e /dev/dri/card0 ]; then
     printf '%s\n' 'Installed. No /dev/dri/card0: graphics needs virtio-gpu and an active KMS output.'
