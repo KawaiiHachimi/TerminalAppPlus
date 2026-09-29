@@ -8,10 +8,9 @@ import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
 /** Read-only installation media, appended after the user's custom VM disks. */
 internal object GuestToolsDisk {
-    const val INSTALL_COMMAND = "(plus_sudo=; [ \"\$(id -u)\" = 0 ] || plus_sudo=sudo; " +
-        "\$plus_sudo mkdir -p /mnt/terminal-plus && " +
-        "(mountpoint -q /mnt/terminal-plus || \$plus_sudo mount -o ro /dev/disk/by-label/PLUS_TOOLS /mnt/terminal-plus) && " +
-        "\$plus_sudo sh /mnt/terminal-plus/install.sh --user \"\$(id -un)\")"
+    const val INSTALL_COMMAND = "mkdir -p /mnt/plus && mount -o ro LABEL=PLUS_TOOLS /mnt/plus && sh /mnt/plus/install.sh"
+    fun installCommand(useSudo: Boolean): String =
+        if (useSudo) "sudo sh -c '$INSTALL_COMMAND'" else INSTALL_COMMAND
 
     // Called on the VM lifecycle IO worker before starting a custom VM.
     fun prepare(context: Context): File {

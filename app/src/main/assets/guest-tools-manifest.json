@@ -1,9 +1,9 @@
 {
-  "tools/install-custom-guest.sh": "f8c6ac4207634e740a105a78c048cc7682365cd975a01a2fc4cd463bad381db2",
+  "tools/install-custom-guest.sh": "d560aed86ceebc2bd0269e8b3a2b32d6ae404064ce80f5c530075f5a8a963f4f",
   "tools/install-guest-tools.sh": "94ce8debeb60d7f7d19ee584553350f925f053d8fc87672d4b6f4fe7615a0dc0",
   "guest/root_files/etc/systemd/system/terminal-plus-guest.service": "b2f81c85a6009399fc90a1c9c897cb99307e6db679465cca7589323415c042b7",
   "guest/root_files/usr/local/bin/terminal-plus-guest.py": "66bb80e5964d09227ee85d8e4afef4431e44967990cfc6c7ce2de767dbfbe451",
   "guest/root_files/usr/local/bin/terminal-plus-proxy.py": "9eb15ed867b5ed5278f42e6f176b37f962257ea1c623ec756717a0db42606f47",
   "tools/experiments/kms-capture-server.py": "80bf941a23540583252312445564c96bd9311dcc6df1603ea1bdf5b8f40726a4",
-  "app/src/main/assets/guest-tools.iso": "395b0f670f61caec03a12bd68feb1de461427d07f3fbf5c1f04e69d3635ca2ae"
+  "app/src/main/assets/guest-tools.iso": "b7624dd40e609f8347a34c2d2f50a9edfff9046f63425db8c120c1d70fe99f2d"
 }

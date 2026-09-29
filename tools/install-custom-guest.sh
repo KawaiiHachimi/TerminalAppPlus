@@ -5,16 +5,42 @@ set -eu
 fail() { printf '%s\n' "$*" >&2; exit 1; }
 terminal_user=${SUDO_USER:-$(id -un)}
 install_ttyd=1
+force=0
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cache=/usr/local/share/terminal-plus-tools
+# Updates and the installed entry point preserve the selected shell user/mode.
+if [ -f "$cache/user" ] && [ -f "$cache/ttyd" ]; then
+    terminal_user=$(cat "$cache/user")
+    install_ttyd=$(cat "$cache/ttyd")
+fi
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --user) [ "$#" -ge 2 ] || fail 'Missing --user value'; terminal_user=$2; shift 2 ;;
         --skip-ttyd) install_ttyd=0; shift ;;
-        *) fail 'Usage: sudo sh install.sh --user USER [--skip-ttyd]' ;;
+        --force) force=1; shift ;;
+        *) fail 'Usage: sh install.sh [--user USER] [--skip-ttyd] [--force]' ;;
     esac
 done
 [ "$(id -u)" = 0 ] || fail 'Run this installer with sudo or as root.'
 command -v systemctl >/dev/null || fail 'This installer requires systemd.'
 [ -d /run/systemd/system ] || fail 'systemd must be running.'
+payloads='install.sh install-guest-tools.sh terminal-plus-guest.service terminal-plus-guest.py terminal-plus-capture.py terminal-plus-proxy.py'
+for file in $payloads; do [ -r "$script_dir/$file" ] || fail "Missing payload: $file"; done
+version=$(cd "$script_dir" && sha256sum $payloads | sha256sum | cut -d' ' -f1)
+signature="$version:$terminal_user:$install_ttyd"
+services='terminal-plus-guest.service'
+[ "$install_ttyd" = 0 ] || services="$services terminal-plus-ttyd.service terminal-plus-ttyd-vsock.service"
+if [ "$force" = 0 ] && [ -f "$cache/installed" ] && [ "$(cat "$cache/installed")" = "$signature" ]; then
+    printf '%s\n' 'Already installed (same version). Service status:'
+    healthy=1
+    for service in $services; do
+        printf '%s: ' "$service"
+        systemctl is-active "$service" || healthy=0
+    done
+    printf '%s\n' 'To reinstall: terminal-plus-setup --force (ordinary users: sudo).'
+    [ "$healthy" = 1 ] || exit 1
+    exit 0
+fi
 if [ "$install_ttyd" = 1 ]; then
     case "$terminal_user" in ''|*[!a-zA-Z0-9_-]*|-*) fail 'Specify an existing user with --user USER.' ;; esac
     id -u "$terminal_user" >/dev/null || fail 'User does not exist.'
@@ -56,7 +82,6 @@ import socket
 s = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
 s.close()
 PY
-script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 if [ "$install_ttyd" = 1 ]; then
     [ -x /usr/bin/ttyd ] && [ -x /usr/bin/socat ] || fail 'Expected /usr/bin/ttyd and /usr/bin/socat.'
     # Refuse occupied ports unless they belong to our already-running units.
@@ -119,9 +144,24 @@ After=sys-kernel-debug.mount
 UNIT
 sh "$script_dir/install-guest-tools.sh" "$script_dir"
 systemctl restart terminal-plus-guest.service
-if [ "$install_ttyd" = 1 ]; then
-    systemctl is-active --quiet terminal-plus-ttyd.service terminal-plus-ttyd-vsock.service
-fi
+for service in $services; do systemctl is-active --quiet "$service"; done
+# Keep a local repair kit; no mounted ISO is needed to check or reinstall later.
+mkdir -p "$cache" /usr/local/bin
+for file in $payloads; do
+    if ! cmp -s "$script_dir/$file" "$cache/$file"; then
+        install -m 644 "$script_dir/$file" "$cache/$file"
+    fi
+done
+printf '%s\n' "$terminal_user" > "$cache/user"
+printf '%s\n' "$install_ttyd" > "$cache/ttyd"
+cat > /usr/local/bin/terminal-plus-setup <<'SH'
+#!/bin/sh
+set -eu
+if [ "$(id -u)" != 0 ]; then exec sudo sh "$0" "$@"; fi
+exec sh /usr/local/share/terminal-plus-tools/install.sh "$@"
+SH
+chmod 755 /usr/local/bin/terminal-plus-setup
+printf '%s\n' "$signature" > "$cache/installed"
 if [ ! -e /dev/dri/card0 ]; then
     printf '%s\n' 'Installed. No /dev/dri/card0: graphics needs virtio-gpu and an active KMS output.'
 else

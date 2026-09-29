@@ -188,6 +188,8 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
 @Composable
 private fun VmConfigurationDialog(model: VmManagementViewModel) {
     val context = LocalContext.current
+    var useSudo by remember { mutableStateOf(false) }
+    val installCommand = GuestToolsDisk.installCommand(useSudo)
     val json = remember(model.configDraft) { runCatching { JsonParser.parseString(model.configDraft).asJsonObject }.getOrNull() }
     AlertDialog(onDismissRequest = { if (!model.importing) model.editTarget = null }, title = { Text("${model.editTarget!!.name} · 配置") },
         text = {
@@ -196,15 +198,16 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
                 if (model.editTarget?.isManaged == false) {
                     Text("Guest 工具", style = MaterialTheme.typography.titleMedium)
                     Text("启动时会挂载只读工具盘。Debian/Ubuntu 用户可在控制台登录后执行下方命令，安装 ttyd 和图形采集服务并启用开机启动。支持 root；普通用户使用 sudo。已有运行中的虚拟机需先重启。缺少依赖时需要联网。")
+                    FilterChip(selected = useSudo, onClick = { useSudo = !useSudo }, label = { Text("使用 sudo（普通用户）") })
                     SelectionContainer {
-                        Text(GuestToolsDisk.INSTALL_COMMAND, style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace))
+                        Text(installCommand, style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace))
                     }
                     TextButton(onClick = {
                         context.getSystemService(ClipboardManager::class.java).setPrimaryClip(
-                            ClipData.newPlainText("安装 Guest 工具", GuestToolsDisk.INSTALL_COMMAND))
+                            ClipData.newPlainText("安装 Guest 工具", installCommand))
                         Toast.makeText(context, "安装命令已复制", Toast.LENGTH_SHORT).show()
                     }) { Text("复制安装命令") }
-                    Text("已有 ttyd 时可追加 --skip-ttyd。采集服务不安装桌面，需要内核支持 vsock、virtio-gpu 和 DRM debugfs。", style = MaterialTheme.typography.bodySmall)
+                    Text("安装后运行 terminal-plus-setup 检查状态，追加 --force 覆盖安装。普通用户加 sudo。采集服务不安装桌面。", style = MaterialTheme.typography.bodySmall)
                     HorizontalDivider()
                 }
                 Text("启动后打开")

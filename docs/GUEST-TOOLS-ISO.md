@@ -8,25 +8,36 @@
 
 在 Guest 控制台登录后（支持 root 和普通用户）执行：
 
-```sh
-(plus_sudo=; [ "$(id -u)" = 0 ] || plus_sudo=sudo
-  $plus_sudo mkdir -p /mnt/terminal-plus &&
-  (mountpoint -q /mnt/terminal-plus || $plus_sudo mount -o ro /dev/disk/by-label/PLUS_TOOLS /mnt/terminal-plus) &&
-  $plus_sudo sh /mnt/terminal-plus/install.sh --user "$(id -un)")
-```
-
-ttyd 使用当前登录用户运行 shell；root 无需 sudo。也可以将 `"$(id -un)"` 替换为其他已有用户名。脚本不会创建账户或修改密码。
-
-脚本从工具盘读取本地服务代码，按需通过 apt 安装 python3、liblz4-1、ttyd 和 socat。缺少软件包时需要联网。本次新安装 ttyd 软件包自动启动的默认 ttyd.service 会被停用，避免与 Plus 的 7681 端口冲突；安装前已运行的 ttyd 仍会触发保护检查。它配置 ttyd 的指定用户 shell、vsock 7681 桥接，以及统一图形采集/端口代理服务，并启用开机启动。再次执行可覆盖安装 Plus 自己的服务配置；请从控制台执行，因为重启 ttyd 会断开网页终端。
-
-已有其他 ttyd 服务时，使用以下命令只安装图形采集和端口代理：
+root 执行：
 
 ```sh
-sh /mnt/terminal-plus/install.sh --skip-ttyd
-# 普通用户在命令前加 sudo
+mkdir -p /mnt/plus && mount -o ro LABEL=PLUS_TOOLS /mnt/plus && sh /mnt/plus/install.sh
 ```
 
-安装成功后回到 App 打开 ttyd 或虚拟显示器。文件已经复制到 Guest 系统盘，后续启动无需重复安装；工具盘仍会附加，供手动更新使用。App 不会自动执行该脚本。
+普通用户在 App 中启用“使用 sudo”，复制的命令为：
+
+```sh
+sudo sh -c 'mkdir -p /mnt/plus && mount -o ro LABEL=PLUS_TOOLS /mnt/plus && sh /mnt/plus/install.sh'
+```
+
+`/mnt/plus` 为专用工具盘目录，勿用于其他挂载。如果工具盘已经挂载，只执行 `sh /mnt/plus/install.sh`（普通用户加 sudo）。安装器自动读取当前用户或 SUDO_USER，支持 root；指定其他用户可用 `--user USER`，已有 ttyd 时可用 `--skip-ttyd`。这些参数加在 install.sh 后，使用 sudo sh -c 时放在单引号内。
+
+脚本按需安装依赖、配置 ttyd 和图形采集/端口代理服务并启用开机启动。缺少依赖时需要联网。本次新安装 ttyd 软件包启动的默认服务会被停用以避免端口冲突；原有 ttyd 服务保留。脚本不创建账户或修改密码。
+
+## 后续检查、修复与更新
+
+成功安装后，Guest 内保存一份工具和安装器，无需再次挂载 ISO：
+
+```sh
+terminal-plus-setup
+terminal-plus-setup --force
+```
+
+第一条检查安装版本与服务状态，同版本不重复安装或重启服务；第二条使用本地安装包覆盖安装。普通用户会自动通过 sudo 提权。已安装的终端用户和是否安装 ttyd 的选择会保留，除非显式使用 `--user` 或 `--skip-ttyd`。
+
+App 提供新版工具盘时，正常关闭 Guest 再启动，重新挂载并执行盘上的 install.sh 来更新；本地修复命令不会自行下载新版本。覆盖安装会重启 ttyd，请在控制台执行。
+
+安装器仅检查 systemd 服务状态，active 不代表图形已成功采集或 App 已连接。脚本不自动执行 AOSP init.sh、不安装桌面或 AOSP Guest agent、不自动扩容磁盘。
 
 ## 状态与排查
 
