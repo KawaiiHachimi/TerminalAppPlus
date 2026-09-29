@@ -150,6 +150,14 @@ sudo python3 tools/experiments/fix-aosp-display-seat.py
 
 **帧率低：** 先降低 App 显示分辨率，确认已安装 `liblz4-1`，再查看 Guest 负载。采集、压缩传输与 App 绘制都有开销；GPU 后端存在不等于来宾硬件 3D 加速已验证，也不保证稳定 30/60 fps。
 
+### Debian sid 的 GDM 登录界面反复崩溃
+
+2026-09-29 实测：GNOME Shell/Mutter 50.5、Mesa 26.2.3、LLVM 22.1 在当前设备的自定义 VM 中出现 `status=4/ILL`。GDB 捕获到 SVE 指令 `index z1.s, #0, #1`；Guest 未提供 SVE，LLVM 却识别 CPU 为 `cortex-x925`，证据指向 JIT 的 CPU 目标与可用指令集不匹配。停用采集服务仍复现，与先安装 Guest 工具还是桌面的顺序无关。
+
+**已验证的临时绕过：** 仅对 GDM 的 GNOME Shell 使用 `LD_PRELOAD` 小型兼容库，将 `llvm::sys::getHostCPUName()` 返回值改为 `generic`，保留 llvmpipe 后登录窗口正常显示。测试库及 systemd 用户单元覆盖配置位于 `/run`，重启 Guest 后失效；这是针对该版本的诊断性绕过，尚未集成到安装器，后续确认用户桌面 `org.gnome.Shell@user.service` 也会因相同 SIGILL 退出（表现为认证成功后返回 GDM），已将临时覆盖配置扩展到该单元，但尚未验证完整桌面登录。单独切换 softpipe 虽避免崩溃，但实测白屏。
+
+反复崩溃还可能遗留 X11 锁文件，继而报“尝试 50 次锁定失败”。清理锁文件不能解决原始 SIGILL；仅在停止 GDM、确认对应进程已退出后处理残留文件。
+
 ## 实现和来源
 
 - [统一管理进程](../guest/root_files/usr/local/bin/terminal-plus-guest.py)、[systemd 单元](../guest/root_files/etc/systemd/system/terminal-plus-guest.service)
