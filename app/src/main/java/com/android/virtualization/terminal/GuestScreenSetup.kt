@@ -23,7 +23,11 @@ internal object GuestScreenSetup {
         val script = GuestTools.installScript(context) + "\nprintf '\\n$READY\\n'\n"
         val encoded = Base64.encodeToString(script.toByteArray(), Base64.NO_WRAP)
         // Fixed packaged installer, no guest-controlled command text. Separate ttyd session.
-        val command = "printf '%s' '$encoded' | base64 -d | sudo -n sh\r"
+        // This private Bash session shares the user's history file. Disable persistence
+        // before its next prompt (which may run `history -a`), then stop recording input.
+        // Keep this on a separate line so the payload never enters in-memory history.
+        val command = "unset HISTFILE; set +o history\r" +
+            "printf '%s' '$encoded' | base64 -d | sudo -n sh\r"
         repeat(12) {
             if (!current()) return
             val done = CountDownLatch(1)

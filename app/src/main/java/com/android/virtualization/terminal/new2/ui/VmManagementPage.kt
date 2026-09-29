@@ -40,14 +40,26 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
     val initrdPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) model.initrd = uri }
     LazyColumn(Modifier.fillMaxSize()) {
         item {
-            Text(if (firstSetup) "初始设置" else "虚拟机", Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge)
+            if (firstSetup) {
+                Text("初始设置", Modifier.padding(16.dp), style = MaterialTheme.typography.headlineSmall)
+            } else {
+                Spacer(Modifier.height(16.dp))
+            }
             Text(if (firstSetup) "下载 Android 官方 Debian，或导入已有镜像开始使用。" else "每次运行一台，磁盘独立保存。点击切换，长按重命名、克隆或删除。", Modifier.padding(horizontal = 16.dp))
         }
         items(profiles, key = { it.id }) { profile ->
             Box {
                 ListItem(
                     headlineContent = { Text(profile.name) },
-                    supportingContent = { Text(if (!VmProfiles.isInstalled(profile)) "尚未下载 · Android 官方预构建 Debian" else (if (profile.isManaged) "Android Debian" else "自定义镜像") + if (profile.id == selected.id) " · 当前" else "") },
+                    supportingContent = {
+                        val description = when {
+                            !VmProfiles.isInstalled(profile) -> "尚未下载 · Android 官方预构建 Debian"
+                            profile.isDefault -> "Android Debian"
+                            profile.managedDebian -> "导入的镜像包"
+                            else -> "自定义镜像"
+                        }
+                        Text(description + if (VmProfiles.isInstalled(profile) && profile.id == selected.id) " · 当前" else "")
+                    },
                     trailingContent = {
                         if (VmProfiles.isInstalled(profile)) TextButton(onClick = { model.edit(profile) }, enabled = !busy) { Text("配置") }
                     },
@@ -133,8 +145,11 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
         AlertDialog(onDismissRequest = { model.switchTarget = null }, title = { Text(if (VmProfiles.isInstalled(target)) "启动 ${target.name}" else "下载官方 Debian") },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(if (vmState.isAlive) "切换会强制停止当前 VM，未保存的工作可能丢失。建议先在系统内正常关机。磁盘会保留。" else "使用独立的系统磁盘和配置，原虚拟机保持不变。")
+                    if (vmState.isAlive) {
+                        Text("切换会强制停止当前虚拟机，未保存的工作可能丢失。建议先在系统内正常关机。")
+                    }
                     if (!VmProfiles.isInstalled(target)) {
+                        Text("下载 Android 官方预构建的 Debian 镜像。")
                         val downloadUrl = remember { ImageArchive.fromInternet().getPath() }
                         Text("下载地址", style = MaterialTheme.typography.labelLarge)
                         Text(buildAnnotatedString {
@@ -142,7 +157,7 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
                                 style = SpanStyle(color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)
                             ))) { append(downloadUrl) }
                         }, style = MaterialTheme.typography.bodyMedium)
-                        Text("初始用户名：droid\n初始密码：droid\n用于控制台登录，输入密码时不显示字符。", style = MaterialTheme.typography.bodyMedium)
+                        Text("初始用户名和密码均为 droid", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             },
