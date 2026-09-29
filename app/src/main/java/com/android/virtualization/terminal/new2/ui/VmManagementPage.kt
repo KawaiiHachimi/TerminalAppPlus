@@ -107,8 +107,8 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
                 }
                 OutlinedCard(onClick = { model.archiveImport = false; picker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("IMG / RAW 磁盘镜像", style = MaterialTheme.typography.titleMedium)
-                        Text("支持 .img、.raw 及 gzip 压缩磁盘。使用 U-Boot 或自选内核启动。", style = MaterialTheme.typography.bodyMedium)
+                        Text("IMG / RAW / QCOW2 磁盘镜像", style = MaterialTheme.typography.titleMedium)
+                        Text("按文件内容识别格式，支持 gzip 压缩。qcow2 转换后导入，使用 U-Boot 或自选内核启动。", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
@@ -125,6 +125,9 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
                 if (model.archiveImport) {
                     Text("自动解压并读取包内 vm_config.json、内核和磁盘，默认进入 ttyd。创建独立虚拟机，保留原始镜像包。")
                 } else {
+                if (model.qcowImport) {
+                    Text("检测到 qcow2 镜像，需要先转换为 RAW。转换会保留原文件，临时副本和转换结果需要额外存储空间。", color = MaterialTheme.colorScheme.primary)
+                }
                 Row {
                     FilterChip(selected = !model.directBoot, onClick = { model.directBoot = false }, label = { Text("U-Boot") }, enabled = !model.importing)
                     Spacer(Modifier.width(8.dp))
@@ -137,17 +140,17 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
                     if (model.initrd != null) TextButton(onClick = { model.initrd = null }) { Text("不使用 initrd") }
                     OutlinedTextField(value = model.params, onValueChange = { model.params = it }, label = { Text("内核参数") }, enabled = !model.importing)
                 } else {
-                    Text("需要 ARM64 raw 可启动整盘镜像。默认使用系统 APEX 的 U-Boot，无法读取时使用 APK 内置版本。")
+                    Text("需要 ARM64 可启动整盘镜像，qcow2 会先转换为 RAW。默认使用系统 APEX 的 U-Boot，无法读取时使用 APK 内置版本。")
                     TextButton(onClick = { firmwarePicker.launch(arrayOf("*/*")) }, enabled = !model.importing) { Text(if (model.firmware == null) "可选：替换 U-Boot" else "已选择自定义 U-Boot") }
                     if (model.firmware != null) TextButton(onClick = { model.firmware = null }) { Text("恢复内置 U-Boot") }
                 }
                 Text("创建独立副本，保留源文件。默认 2 GiB、CPU 匹配宿主，可在导入后的配置页修改。")
                 }
-                if (model.importing) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("${model.importedBytes / (1024 * 1024)} MiB") }
+                if (model.importing) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("${model.operation} · ${model.importedBytes / (1024 * 1024)} MiB") }
                 model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
-        confirmButton = { TextButton(onClick = model::import, enabled = !busy && model.name.isNotBlank() && (model.archiveImport || !model.directBoot || model.kernel != null)) { Text("导入") } },
+        confirmButton = { TextButton(onClick = model::import, enabled = !busy && model.formatReady && model.name.isNotBlank() && (model.archiveImport || !model.directBoot || model.kernel != null)) { Text(if (model.qcowImport) "转换并导入" else "导入") } },
         dismissButton = { TextButton(onClick = { if (model.importing) model.cancelImport() else model.dismissImport() }) { Text("取消") } },
     )
     model.switchTarget?.let { target ->

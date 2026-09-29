@@ -13,6 +13,8 @@ android {
         versionName = providers.gradleProperty("plusVersionName").orNull ?: "17.0-plus.1"
     }
     buildFeatures { compose = true; aidl = false; buildConfig = true }
+    packaging.jniLibs.useLegacyPackaging = true
+    packaging.jniLibs.keepDebugSymbols += "**/libqemu-img.so"
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

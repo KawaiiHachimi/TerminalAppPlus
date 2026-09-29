@@ -20,4 +20,9 @@ with zipfile.ZipFile(apk) as archive:
     assert manifest == Path('app/src/main/assets/guest-tools-manifest.json').read_bytes()
     for source, expected in json.loads(manifest).items():
         assert hashlib.sha256(Path(source).read_bytes()).hexdigest() == expected, 'Rebuild guest-tools.iso: ' + source
+    executable = archive.read('lib/arm64-v8a/libqemu-img.so')
+    assert hashlib.sha256(executable).hexdigest() == Path('third_party/qemu-img/binary.sha256').read_text().strip()
+    for notice in Path('third_party/qemu-img').rglob('*'):
+        if notice.is_file():
+            assert archive.read('assets/qemu-img/' + str(notice.relative_to('third_party/qemu-img'))) == notice.read_bytes()
 print('APK runtime payload names, bytes and bootloader verified')

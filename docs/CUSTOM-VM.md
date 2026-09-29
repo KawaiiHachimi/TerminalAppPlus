@@ -94,6 +94,14 @@ ext4 通常支持在线扩容。根目录可用容量会小于整盘的 8 GiB，
 
 参考：[Debian growpart 文档](https://manpages.debian.org/unstable/cloud-guest-utils/growpart.1.en.html)、[resize2fs 文档](https://dyn.manpages.debian.org/bookworm-backports/e2fsprogs/resize2fs.8.en.html)。
 
+## qcow2 导入
+
+在“导入自定义镜像 → IMG / RAW / QCOW2 磁盘镜像”选择文件。App 读取文件头识别实际格式，不依赖扩展名；gzip 文件先解压再识别，因此 `.img` 也可能提示“转换并导入”。
+
+qcow2 会先复制到临时目录，再使用 APK 内置的 ARM64 qemu-img 转换为稀疏 RAW；原文件不变。转换显示进度，取消或失败会清理临时副本和未完成结果。需要同时容纳临时输入与实际写入的 RAW 数据，逻辑磁盘容量并不等于实际占用。
+
+第一版支持独立 qcow2 v2/v3，包括 zlib/zstd 压缩；拒绝 backing file、外部数据文件、加密或标记损坏的镜像。增量镜像应先在电脑上合并。转换不改变 Guest 架构，U-Boot 启动仍需要 ARM64 可启动整盘。工具来源、许可及源码获取见 [qemu-img](../third_party/qemu-img/README.md)。
+
 ## Guest 工具
 
 自定义镜像的 ttyd 临时启动命令、systemd 配置和认证说明见 [接入 ttyd](CUSTOM-TTYD.md)。

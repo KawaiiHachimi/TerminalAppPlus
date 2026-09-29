@@ -171,7 +171,15 @@ object VmProfiles {
             refresh(); profile
         } finally { staging.deleteRecursively() }
     }
-    suspend fun importImage(uri: Uri, bootloader: Uri?, name: String, kernel: Uri? = null, initrd: Uri? = null, params: String = "console=ttyS0 root=/dev/vda1 rw", progress: (Long) -> Unit): VmProfile = withContext(Dispatchers.IO) {
+    internal suspend fun inspectQcow(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        context.contentResolver.openInputStream(uri)!!.use { source ->
+            QcowImage.decoded(source).use { input ->
+                val header = input.readNBytes(104)
+                QcowImage.isQcow(header).also { if (it) QcowImage.validate(header) }
+            }
+        }
+    }
+    suspend fun importImage(uri: Uri, bootloader: Uri?, name: String, kernel: Uri? = null, initrd: Uri? = null, params: String = "console=ttyS0 root=/dev/vda1 rw", allowConversion: Boolean = false, status: (String) -> Unit = {}, progress: (Long) -> Unit): VmProfile = withContext(Dispatchers.IO) {
         require(name.trim().isNotEmpty()) { "请输入虚拟机名称" }
         val profile = VmProfile(UUID.randomUUID().toString(), name.trim().take(80))
         val staging = File(root, ".import-${profile.id}")
@@ -183,14 +191,28 @@ object VmProfiles {
             } else if (bootloader != null) smallFile(bootloader, File(staging, "u-boot.bin"), 16 * 1024 * 1024)
             else defaultBootloader(File(staging, "u-boot.bin"))
             val disk = File(staging, "system.raw")
-            context.contentResolver.openInputStream(uri)!!.buffered().use { source ->
-                source.mark(2)
-                val gzip = source.read() == 0x1f && source.read() == 0x8b
-                source.reset()
-                val input = if (gzip) java.util.zip.GZIPInputStream(source) else source
+            var convert = false
+            var convertedSize = 0L
+            val qcow = File(staging, "source.qcow2")
+            context.contentResolver.openInputStream(uri)!!.use { source ->
+                QcowImage.decoded(source).use { input ->
                 val header = input.readNBytes(64 * 1024)
-                RawDiskFormat.validate(header, requireBootSector = kernel == null)
-                SparseFiles.copyStream(SequenceInputStream(ByteArrayInputStream(header), input), disk, progress)
+                convert = QcowImage.isQcow(header)
+                if (convert) {
+                    require(allowConversion) { "检测到 qcow2，请重新选择文件并确认转换" }
+                    convertedSize = QcowImage.validate(header)
+                    status("复制 qcow2")
+                } else RawDiskFormat.validate(header, requireBootSector = kernel == null)
+                SparseFiles.copyStream(SequenceInputStream(ByteArrayInputStream(header), input), if (convert) qcow else disk, progress)
+                }
+            }
+            if (convert) {
+                status("转换 qcow2")
+                QemuImageConverter.convert(context, qcow, disk, status)
+                check(disk.length() == convertedSize) { "转换结果容量与 qcow2 声明不一致" }
+                disk.inputStream().use { RawDiskFormat.validate(it.readNBytes(65536), requireBootSector = kernel == null) }
+                check(qcow.delete()) { "无法清理转换临时文件" }
+                status("完成转换")
             }
             require(disk.length() >= 1024 * 1024 && disk.length() % 512 == 0L) { "磁盘至少应为 1 MiB，且大小须为 512 字节的整数倍" }
             atomicWrite(File(staging, "vm_config.json"), defaultConfig(profile.id, kernel != null, params, initrd != null))

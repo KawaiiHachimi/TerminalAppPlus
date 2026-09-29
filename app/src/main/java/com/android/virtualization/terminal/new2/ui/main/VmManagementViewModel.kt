@@ -16,6 +16,8 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     var name by mutableStateOf("")
     var choosingImport by mutableStateOf(false)
     var archiveImport by mutableStateOf(true)
+    var qcowImport by mutableStateOf(false); private set
+    var formatReady by mutableStateOf(false); private set
     var firmware by mutableStateOf<Uri?>(null)
     var directBoot by mutableStateOf(false)
     var kernel by mutableStateOf<Uri?>(null)
@@ -47,6 +49,11 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
         name = runCatching { VmProfiles.displayName(uri).substringBeforeLast('.') }.getOrDefault("自定义镜像")
         firmware = null; kernel = null; initrd = null; directBoot = false
         error = null; importedBytes = 0
+        qcowImport = false; formatReady = archiveImport
+        if (!archiveImport) work("识别镜像格式") {
+            qcowImport = VmProfiles.inspectQcow(uri)
+            formatReady = true
+        }
     }
     fun dismissImport() { if (!importing) image = null }
     fun cancelImport() { job?.cancel() }
@@ -62,14 +69,17 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     }
     fun import() {
         val uri = image ?: return
+        if (!formatReady) return
         if (!archiveImport && directBoot && kernel == null) { error = "请选择内核"; return }
         val chosenArchive = archiveImport
+        val convertQcow = qcowImport
         val chosenFirmware = firmware; val chosenName = name
         val chosenKernel = if (directBoot) kernel else null
         val chosenInitrd = if (directBoot) initrd else null; val chosenParams = params
         work("导入镜像") {
             val result = if (chosenArchive) VmProfiles.importDebianArchive(uri, chosenName) { importedBytes = it }
-            else VmProfiles.importImage(uri, chosenFirmware, chosenName, chosenKernel, chosenInitrd, chosenParams) { importedBytes = it }
+            else VmProfiles.importImage(uri, chosenFirmware, chosenName, chosenKernel, chosenInitrd, chosenParams,
+                allowConversion = convertQcow, status = { operation = it }) { importedBytes = it }
             image = null; switchTarget = result
         }
     }

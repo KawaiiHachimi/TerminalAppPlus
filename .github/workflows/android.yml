@@ -105,7 +105,10 @@ jobs:
           "$tools/apksigner" sign --ks "$keystore" --ks-key-alias "$KEY_ALIAS" --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD --out "release-assets/app-release.apk" "$RUNNER_TEMP/aligned.apk"
           "$tools/apksigner" verify --verbose --print-certs "release-assets/app-release.apk"
           cp app/src/main/assets/guest-setup/guest-tools.bundle release-assets/
-          (cd release-assets && sha256sum ./*.apk guest-tools.bundle > SHA256SUMS)
+      - name: Include qemu-img corresponding sources
+        run: |
+          python3 tools/qemu-img/source-bundle.py --output release-assets/qemu-img-sources.tar.gz
+          (cd release-assets && sha256sum app-release.apk guest-tools.bundle qemu-img-sources.tar.gz > SHA256SUMS)
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
