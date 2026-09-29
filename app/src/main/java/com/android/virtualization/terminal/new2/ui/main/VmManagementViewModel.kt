@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.android.virtualization.terminal.new2.core.*
 import com.google.gson.JsonParser
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 
 class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     var image by mutableStateOf<Uri?>(null); private set
@@ -28,10 +29,16 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     var menuTarget by mutableStateOf<VmProfile?>(null)
     var renameTarget by mutableStateOf<VmProfile?>(null)
     var deleteTarget by mutableStateOf<VmProfile?>(null)
+    var stopTarget by mutableStateOf<VmProfile?>(null)
     var editTarget by mutableStateOf<VmProfile?>(null)
     var configDraft by mutableStateOf("")
     var screenDraft by mutableStateOf("console")
     var jsonMode by mutableStateOf(false)
+    internal var disks by mutableStateOf<List<CustomDiskSize.Disk>>(emptyList()); private set
+    var resizingDisk by mutableStateOf(false)
+    var diskPath by mutableStateOf("")
+    var diskGiB by mutableStateOf("")
+    var diskMessage by mutableStateOf<String?>(null); private set
     private var job: Job? = null
 
     fun chooseImage(uri: Uri) {
@@ -72,6 +79,8 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     fun edit(profile: VmProfile) {
         work("读取配置") {
             configDraft = withContext(Dispatchers.IO) { VmProfiles.readConfig(profile) }
+            disks = withContext(Dispatchers.IO) { if (profile.isManaged) emptyList() else VmProfiles.customDisks(profile) }
+            diskMessage = null; resizingDisk = false
             screenDraft = profile.screen; jsonMode = false; editTarget = profile
         }
     }
@@ -81,6 +90,21 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
             if (key == "memory_mib" && value.toIntOrNull() != null) json.addProperty(key, value.toInt()) else json.addProperty(key, value)
             configDraft = VmConfigDocument.format(json)
         }.onFailure { error = "请先修复 JSON 语法" }
+    }
+    fun openDiskResize() {
+        val disk = disks.firstOrNull() ?: return
+        diskPath = disk.path; diskGiB = ""; error = null; resizingDisk = true
+    }
+    fun growDisk() {
+        val profile = editTarget ?: return
+        val path = diskPath
+        val size = runCatching { CustomDiskSize.targetBytes(diskGiB) }.getOrElse { error = it.message; return }
+        work("扩容磁盘") {
+            VmProfiles.growDisk(profile, path, size)
+            disks = withContext(Dispatchers.IO) { VmProfiles.customDisks(profile) }
+            resizingDisk = false
+            diskMessage = "虚拟磁盘已扩容至 ${size / CustomDiskSize.GIB} GiB。进入系统后，请自行扩展分区（如有）和文件系统，才能使用新增空间。"
+        }
     }
     fun restore() {
         val profile = editTarget ?: return
@@ -101,5 +125,19 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
         val target = switchTarget ?: return
         switchTarget = null
         work("切换虚拟机") { VmController.switchTo(target) }
+    }
+    fun forceStop() {
+        val target = stopTarget ?: return
+        stopTarget = null
+        work("强制停止") {
+            check(VmProfiles.selected.value.id == target.id && VmController.vmState.value == VmState.Running) {
+                "虚拟机状态已改变，请重新操作"
+            }
+            VmController.stop()
+            withTimeout(30_000) {
+                VmController.vmState.first { it != VmState.Stopping }
+            }
+            check(VmController.vmState.value == VmState.Stopped) { "虚拟机未能停止，请重试" }
+        }
     }
 }

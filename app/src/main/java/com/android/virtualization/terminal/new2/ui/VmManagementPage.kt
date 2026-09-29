@@ -51,7 +51,7 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
             } else {
                 Spacer(Modifier.height(16.dp))
             }
-            Text(if (firstSetup) "下载 Android 官方 Debian，或导入已有镜像开始使用。" else "每次运行一台，磁盘独立保存。点击切换，长按重命名、克隆或删除。", Modifier.padding(horizontal = 16.dp))
+            Text(if (firstSetup) "下载 Android 官方 Debian，或导入已有镜像开始使用。" else "每次运行一台，磁盘独立保存。点击切换，长按可强制停止、重命名、克隆或删除。", Modifier.padding(horizontal = 16.dp))
         }
         items(profiles, key = { it.id }) { profile ->
             Box {
@@ -74,6 +74,9 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
                         onLongClick = { model.menuTarget = profile }),
                 )
                 DropdownMenu(expanded = model.menuTarget?.id == profile.id, onDismissRequest = { model.menuTarget = null }) {
+                    DropdownMenuItem(text = { Text("强制停止") },
+                        enabled = !busy && profile.id == selected.id && vmState == VmState.Running,
+                        onClick = { model.menuTarget = null; model.stopTarget = profile })
                     DropdownMenuItem(text = { Text("重命名") }, onClick = { model.menuTarget = null; model.name = profile.name; model.renameTarget = profile })
                     DropdownMenuItem(text = { Text("克隆") }, enabled = VmProfiles.isInstalled(profile) && !(profile.id == selected.id && vmState.isAlive), onClick = { model.menuTarget = null; model.clone(profile) })
                     DropdownMenuItem(text = { Text("删除") }, enabled = !(profile.id == selected.id && vmState.isAlive), onClick = { model.menuTarget = null; model.deleteTarget = profile })
@@ -182,12 +185,26 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
             confirmButton = { TextButton(onClick = { model.delete(target) }, enabled = !busy) { Text("删除") } },
             dismissButton = { TextButton(onClick = { model.deleteTarget = null }) { Text("取消") } })
     }
+    model.stopTarget?.let { target ->
+        AlertDialog(onDismissRequest = { model.stopTarget = null },
+            title = { Text("强制停止 ${target.name}？") },
+            text = { Text("将立即停止这台虚拟机，未保存的工作可能丢失。") },
+            confirmButton = {
+                TextButton(onClick = model::forceStop,
+                    enabled = !busy && target.id == selected.id && vmState == VmState.Running) { Text("强制停止") }
+            },
+            dismissButton = { TextButton(onClick = { model.stopTarget = null }) { Text("取消") } })
+    }
     if (model.editTarget != null) VmConfigurationDialog(model)
 }
 
 @Composable
 private fun VmConfigurationDialog(model: VmManagementViewModel) {
     val context = LocalContext.current
+    val vmState by VmController.vmState.collectAsStateWithLifecycle()
+    val selected by VmProfiles.selected.collectAsStateWithLifecycle()
+    val switching by VmController.switching.collectAsStateWithLifecycle()
+    val canResize = !model.importing && !switching && !(selected.id == model.editTarget?.id && vmState.isAlive)
     var useSudo by remember { mutableStateOf(false) }
     val installCommand = GuestToolsDisk.installCommand(useSudo)
     val json = remember(model.configDraft) { runCatching { JsonParser.parseString(model.configDraft).asJsonObject }.getOrNull() }
@@ -235,10 +252,40 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
                         }
                     }
                     Text("支持单核或使用宿主 CPU 拓扑。")
+                    if (model.editTarget?.isManaged == false) {
+                        HorizontalDivider(Modifier.padding(top = 6.dp))
+                        FilledTonalButton(onClick = model::openDiskResize, enabled = canResize && model.disks.isNotEmpty()) { Text("扩容磁盘") }
+                        Text(if (!canResize) "关闭虚拟机后可扩容磁盘。" else "仅扩大磁盘文件，分区和文件系统需在 Guest 内自行扩容。", style = MaterialTheme.typography.bodySmall)
+                        model.diskMessage?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                    }
                 }
                 TextButton(onClick = model::restore, enabled = !model.importing) { Text("恢复上次启动／保存的配置") }
                 model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         }, confirmButton = { TextButton(onClick = model::save, enabled = !model.importing) { Text("保存") } },
         dismissButton = { TextButton(onClick = { model.editTarget = null }, enabled = !model.importing) { Text("取消") } })
+    if (model.resizingDisk) {
+        val disk = model.disks.firstOrNull { it.path == model.diskPath }
+        val size = runCatching { CustomDiskSize.targetBytes(model.diskGiB) }.getOrNull()
+        AlertDialog(onDismissRequest = { if (!model.importing) model.resizingDisk = false },
+            title = { Text("扩容磁盘") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("选择已保存配置中的磁盘。操作立即生效，不随配置页的取消撤销。")
+                    model.disks.forEach { item ->
+                        FilterChip(selected = item.path == model.diskPath,
+                            onClick = { model.diskPath = item.path }, enabled = !model.importing,
+                            label = { Text(item.path.removePrefix("\$PAYLOAD_DIR/")) })
+                    }
+                    disk?.let { Text("当前逻辑容量：${String.format(java.util.Locale.ROOT, "%.2f", it.bytes.toDouble() / CustomDiskSize.GIB)} GiB（${it.bytes} 字节）") }
+                    OutlinedTextField(value = model.diskGiB, onValueChange = { model.diskGiB = it },
+                        label = { Text("目标容量（GiB）") }, singleLine = true, enabled = !model.importing,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number))
+                    Text("只支持扩大，不支持缩小。新增容量按写入占用手机空间；完成后需自行扩展分区和文件系统。")
+                    model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                }
+            },
+            confirmButton = { TextButton(onClick = model::growDisk, enabled = canResize && disk != null && size != null && size > disk.bytes) { Text("扩容") } },
+            dismissButton = { TextButton(onClick = { model.resizingDisk = false }, enabled = !model.importing) { Text("取消") } })
+    }
 }

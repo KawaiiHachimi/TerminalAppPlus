@@ -200,6 +200,18 @@ object VmProfiles {
             refresh(); profile
         } finally { staging.deleteRecursively() }
     }
+    internal fun customDisks(profile: VmProfile): List<CustomDiskSize.Disk> {
+        require(!profile.isManaged) { "官方格式镜像包的磁盘由系统自动管理" }
+        return CustomDiskSize.disks(readConfig(profile), payloadDirectory(profile))
+    }
+
+    internal suspend fun growDisk(profile: VmProfile, path: String, bytes: Long) = withContext(Dispatchers.IO) {
+        require(!profile.isManaged) { "官方格式镜像包的磁盘由系统自动管理" }
+        VmController.withStoppedProfile(profile) {
+            CustomDiskSize.grow(readConfig(profile), payloadDirectory(profile), path, bytes)
+        }
+    }
+
     suspend fun clone(profile: VmProfile, progress: (Long) -> Unit): VmProfile = withContext(Dispatchers.IO) {
         VmController.withStoppedProfile(profile) {
             require(isInstalled(profile)) { "系统尚未安装" }

@@ -367,7 +367,7 @@ object VmController {
 
     suspend fun <T> withStoppedProfile(profile: VmProfile, operation: suspend () -> T): T = lifecycleMutex.withLock {
         check(!(runningProfile?.id == profile.id && (virtualMachine?.status == VirtualMachine.STATUS_RUNNING || _vmState.value.isAlive))) {
-            "请先关闭这台虚拟机，再克隆或删除"
+            "请先关闭这台虚拟机，再操作磁盘"
         }
         check(!(_vmState.value == VmState.Starting && VmProfiles.selected.value.id == profile.id)) { "虚拟机正在启动" }
         operation()
