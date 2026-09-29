@@ -102,8 +102,8 @@ jobs:
           mkdir -p release-assets
           tools="$ANDROID_HOME/build-tools/36.0.0"
           "$tools/zipalign" -P 16 -f 4 build-artifacts/release/app-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
-          "$tools/apksigner" sign --ks "$keystore" --ks-key-alias "$KEY_ALIAS" --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD --out "release-assets/TerminalPlus-${RELEASE_TAG}.apk" "$RUNNER_TEMP/aligned.apk"
-          "$tools/apksigner" verify --verbose --print-certs "release-assets/TerminalPlus-${RELEASE_TAG}.apk"
+          "$tools/apksigner" sign --ks "$keystore" --ks-key-alias "$KEY_ALIAS" --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD --out "release-assets/app-release.apk" "$RUNNER_TEMP/aligned.apk"
+          "$tools/apksigner" verify --verbose --print-certs "release-assets/app-release.apk"
           cp app/src/main/assets/guest-setup/guest-tools.bundle release-assets/
           (cd release-assets && sha256sum ./*.apk guest-tools.bundle > SHA256SUMS)
       - name: Publish GitHub Release

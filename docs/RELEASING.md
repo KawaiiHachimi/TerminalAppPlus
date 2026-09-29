@@ -21,7 +21,7 @@ git push origin v17.0.1
 
 Release 包含：
 
-- `TerminalPlus-v版本.apk`：使用专用发布密钥签名的非 debuggable APK。
+- `app-release.apk`：使用专用发布密钥签名的非 debuggable APK。
 - `guest-tools.bundle`：Guest 图形采集/端口代理的离线安装包。
 - `SHA256SUMS`：以上附件的校验值。
 - GitHub 自动提供该标签对应的源代码归档；第三方来源和许可保留在仓库中。
