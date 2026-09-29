@@ -3,7 +3,7 @@
 # Debian/Ubuntu + systemd bootstrap, executed explicitly inside the guest.
 set -eu
 fail() { printf '%s\n' "$*" >&2; exit 1; }
-terminal_user=${SUDO_USER:-}
+terminal_user=${SUDO_USER:-$(id -un)}
 install_ttyd=1
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -16,9 +16,8 @@ done
 command -v systemctl >/dev/null || fail 'This installer requires systemd.'
 [ -d /run/systemd/system ] || fail 'systemd must be running.'
 if [ "$install_ttyd" = 1 ]; then
-    case "$terminal_user" in ''|*[!a-zA-Z0-9_-]*|-*) fail 'Specify an existing ordinary user with --user USER.' ;; esac
-    uid=$(id -u "$terminal_user") || fail 'User does not exist.'
-    [ "$uid" != 0 ] || fail 'Choose an ordinary user, not root, for ttyd.'
+    case "$terminal_user" in ''|*[!a-zA-Z0-9_-]*|-*) fail 'Specify an existing user with --user USER.' ;; esac
+    id -u "$terminal_user" >/dev/null || fail 'User does not exist.'
     home_dir=$(getent passwd "$terminal_user" | cut -d: -f6)
     case "$home_dir" in /*) ;; *) fail 'Invalid user home directory.' ;; esac
     # Restrict generated systemd paths to a safe literal subset.
@@ -34,12 +33,21 @@ command -v apt-get >/dev/null || fail 'Automatic dependency installation current
 packages='python3 liblz4-1'
 [ "$install_ttyd" = 0 ] || packages="$packages ttyd socat"
 missing=0
+new_ttyd=0
 for package in $packages; do
-    [ "$(dpkg-query -W -f='${Status}' "$package" 2>/dev/null || true)" = 'install ok installed' ] || missing=1
+    if [ "$(dpkg-query -W -f='${Status}' "$package" 2>/dev/null || true)" != 'install ok installed' ]; then
+        missing=1
+        [ "$package" != ttyd ] || new_ttyd=1
+    fi
 done
 if [ "$missing" = 1 ]; then
     apt-get update
     apt-get install -y $packages
+fi
+# Debian starts its packaged ttyd unit on installation, using the same TCP port.
+# Only replace that newly installed default, never a pre-existing user service.
+if [ "$new_ttyd" = 1 ]; then
+    systemctl disable --now ttyd.service
 fi
 # Drivers may be built in; inability to load a module alone is not a failure.
 modprobe vmw_vsock_virtio_transport 2>/dev/null || true

@@ -195,7 +195,7 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
                 Text("配置保存后下次启动生效。恢复只改配置草稿，不回滚磁盘。")
                 if (model.editTarget?.isManaged == false) {
                     Text("Guest 工具", style = MaterialTheme.typography.titleMedium)
-                    Text("启动时会挂载只读工具盘。Debian/Ubuntu 用户可在控制台登录普通用户后执行下方命令，安装 ttyd 和图形采集服务并启用开机启动。已有运行中的虚拟机需先重启。缺少依赖时需要联网。")
+                    Text("启动时会挂载只读工具盘。Debian/Ubuntu 用户可在控制台登录后执行下方命令，安装 ttyd 和图形采集服务并启用开机启动。支持 root；普通用户使用 sudo。已有运行中的虚拟机需先重启。缺少依赖时需要联网。")
                     SelectionContainer {
                         Text(GuestToolsDisk.INSTALL_COMMAND, style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace))
                     }
