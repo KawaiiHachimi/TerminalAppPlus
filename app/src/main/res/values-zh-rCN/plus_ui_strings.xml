@@ -202,4 +202,6 @@
     <string name="plus_vm_state_changed">"虚拟机状态已改变，请重新操作"</string>
     <string name="plus_vm_stop_failed">"虚拟机未能停止，请重试"</string>
     <string name="plus_console_title">"终端 Plus · 控制台"</string>
+    <string name="plus_console_device">"控制台输入设备"</string>
+    <string name="plus_console_device_hint">"hvc0：virtio 控制台；ttyS0：模拟串口。重启虚拟机后生效。Guest 需支持所选设备并启用登录服务；不会修改引导程序设置或输出路由。"</string>
 </resources>

@@ -202,4 +202,6 @@
     <string name="plus_vm_state_changed">"VM 상태가 변경되었습니다. 다시 시도하세요."</string>
     <string name="plus_vm_stop_failed">"VM을 종료할 수 없습니다. 다시 시도하세요."</string>
     <string name="plus_console_title">"Terminal Plus · 콘솔"</string>
+    <string name="plus_console_device">"콘솔 입력 장치"</string>
+    <string name="plus_console_device_hint">"hvc0는 virtio 콘솔, ttyS0는 에뮬레이션 직렬 포트입니다. VM 재시작 후 적용됩니다. 게스트가 장치를 지원하고 로그인 서비스를 제공해야 합니다. 부트로더 설정과 출력 경로는 변경하지 않습니다."</string>
 </resources>

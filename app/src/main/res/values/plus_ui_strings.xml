@@ -202,4 +202,6 @@
     <string name="plus_vm_state_changed">"The VM state has changed. Try again."</string>
     <string name="plus_vm_stop_failed">"The virtual machine could not stop. Try again."</string>
     <string name="plus_console_title">"Terminal Plus · Console"</string>
+    <string name="plus_console_device">"Console input device"</string>
+    <string name="plus_console_device_hint">"hvc0: virtio console; ttyS0: emulated serial port. Applies after restarting the VM. The guest must support the selected device and provide a login service; bootloader settings and output routing are not changed."</string>
 </resources>

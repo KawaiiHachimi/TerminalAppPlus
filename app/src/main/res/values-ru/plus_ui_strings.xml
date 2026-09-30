@@ -202,4 +202,6 @@
     <string name="plus_vm_state_changed">"Состояние ВМ изменилось. Повторите попытку."</string>
     <string name="plus_vm_stop_failed">"Не удалось остановить ВМ. Повторите попытку."</string>
     <string name="plus_console_title">"Terminal Plus · Консоль"</string>
+    <string name="plus_console_device">"Устройство ввода консоли"</string>
+    <string name="plus_console_device_hint">"hvc0 — консоль virtio; ttyS0 — эмулируемый последовательный порт. Применяется после перезапуска ВМ. Нужны поддержка устройства и служба входа в госте. Настройки загрузчика и маршрутизация вывода не меняются."</string>
 </resources>

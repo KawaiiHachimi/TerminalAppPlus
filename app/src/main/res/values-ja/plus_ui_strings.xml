@@ -202,4 +202,6 @@
     <string name="plus_vm_state_changed">"VM の状態が変わりました。再試行してください。"</string>
     <string name="plus_vm_stop_failed">"仮想マシンを停止できませんでした。再試行してください。"</string>
     <string name="plus_console_title">"Terminal Plus · コンソール"</string>
+    <string name="plus_console_device">"コンソール入力デバイス"</string>
+    <string name="plus_console_device_hint">"hvc0 は virtio コンソール、ttyS0 はエミュレートされたシリアルポートです。VM の再起動後に適用されます。ゲストのデバイス対応とログインサービスが必要です。ブートローダー設定や出力経路は変更しません。"</string>
 </resources>

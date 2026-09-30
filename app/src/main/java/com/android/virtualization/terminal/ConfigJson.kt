@@ -93,7 +93,7 @@ internal data class ConfigJson(
             .setProtectedVm(isProtected)
             .setMemoryBytes(memory_mib.toLong() * 1024 * 1024)
             .setShouldUseHugepages(hugepages)
-            .setConsoleInputDevice(if (applyGuestCompatibility && GuestKernelCompat.required) "hvc0" else console_input_device)
+            .setConsoleInputDevice(console_input_device ?: if (applyGuestCompatibility && GuestKernelCompat.required) "hvc0" else null)
             .setCpuTopology(getCpuTopology())
             .setCustomImageConfig(toCustomImageConfigBuilder(context).build())
             .setDebugLevel(getDebugLevel())
@@ -140,7 +140,7 @@ internal data class ConfigJson(
         }
 
         val effectiveParams = if (applyGuestCompatibility && GuestKernelCompat.required) {
-            params?.replace("console=ttyS0", "console=hvc0") + " earlycon"
+            (if (console_input_device == "ttyS0") params.orEmpty() else params.orEmpty().replace("console=ttyS0", "console=hvc0")) + " earlycon"
         } else params
         effectiveParams?.split(" ".toRegex())?.filter { it.isNotEmpty() }?.forEach { builder.addParam(it) }
 

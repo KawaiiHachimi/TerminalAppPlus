@@ -202,4 +202,6 @@
     <string name="plus_vm_state_changed">"VM स्थिति बदल गई। फिर प्रयास करें।"</string>
     <string name="plus_vm_stop_failed">"VM नहीं रोकी जा सकी। फिर प्रयास करें।"</string>
     <string name="plus_console_title">"Terminal Plus · कंसोल"</string>
+    <string name="plus_console_device">"कंसोल इनपुट उपकरण"</string>
+    <string name="plus_console_device_hint">"hvc0: virtio कंसोल; ttyS0: अनुकरण किया हुआ सीरियल पोर्ट। VM पुनः शुरू करने पर लागू होता है। गेस्ट में उपकरण समर्थन और लॉगिन सेवा चाहिए। बूटलोडर सेटिंग या आउटपुट मार्ग नहीं बदलता।"</string>
 </resources>

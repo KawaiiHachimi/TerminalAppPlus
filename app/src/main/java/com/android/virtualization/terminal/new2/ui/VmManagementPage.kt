@@ -260,6 +260,15 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
                         }
                     }
                     Text(stringResource(R.string.plus_cpu_hint))
+                    Text(stringResource(R.string.plus_console_device), style = MaterialTheme.typography.titleSmall)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("hvc0", "ttyS0").forEach { device ->
+                            FilterChip(selected = json.get("console_input_device")?.takeIf { it.isJsonPrimitive }?.asString == device,
+                                onClick = { model.property("console_input_device", device) }, label = { Text(device) })
+                        }
+                    }
+                    Text(stringResource(R.string.plus_console_device_hint), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (model.editTarget?.isManaged == false) {
                     HorizontalDivider(Modifier.padding(top = 6.dp))
