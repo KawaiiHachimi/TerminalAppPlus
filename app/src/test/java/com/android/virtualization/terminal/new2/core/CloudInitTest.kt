@@ -21,6 +21,12 @@ class CloudInitTest {
         assertEquals(first.passwordHash, parsed.getAsJsonArray("users")[0].asJsonObject["hashed_passwd"].asString)
         val assets = File("src/main/assets/cloud-init")
         val iso = CloudInit.fill(File(assets, "template.iso").readBytes(), File(assets, "layout.json").readText(), user, meta)
+        // Filling account slots must preserve the standalone NoCloud network document.
+        val network = File(assets, "network-config").readText()
+        assertTrue(String(iso, Charsets.ISO_8859_1).contains(network))
+        assertTrue(network.contains("name: \"en*\""))
+        assertFalse(network.contains("macaddress"))
+        assertFalse(network.contains("set-name"))
         File("build/cloud-init-test.iso").writeBytes(iso)
         File("build/cloud-init-test-user-data").writeText(user)
         File("build/cloud-init-test-meta-data").writeText(meta)

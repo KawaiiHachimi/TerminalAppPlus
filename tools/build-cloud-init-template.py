@@ -12,6 +12,10 @@ iso.new(vol_ident='CIDATA', rock_ridge='1.09')
 for name, ident, size in [('user-data', 'USER.;1', 65536), ('meta-data', 'META.;1', 4096)]:
     data = b'#' + b' ' * (size - 2) + b'\n'
     iso.add_fp(BytesIO(data), size, iso_path='/' + ident, rr_name=name, file_mode=0o100600)
+# NoCloud reads networking separately, before user-data modules run.
+network = (assets / 'network-config').read_bytes()
+iso.add_fp(BytesIO(network), len(network), iso_path='/NETWORK.;1',
+           rr_name='network-config', file_mode=0o100600)
 p = assets / 'template.iso'
 iso.write(str(p)); iso.close()
 iso = pycdlib.PyCdlib(); iso.open(str(p))

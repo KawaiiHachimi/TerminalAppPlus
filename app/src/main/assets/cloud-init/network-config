@@ -1,0 +1,8 @@
+version: 2
+ethernets:
+  avf:
+    match:
+      name: "en*"
+    dhcp4: true
+    dhcp6: false
+    accept-ra: false
