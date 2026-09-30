@@ -11,6 +11,12 @@ internal class ProbeTerminalClient(private val view: com.termux.view.TerminalVie
     var control = false
     var alt = false
     var onModifiersChanged: () -> Unit = {}
+    fun releaseModifiers() {
+        if (!control && !alt) return
+        control = false
+        alt = false
+        onModifiersChanged()
+    }
     override fun onTextChanged(session: TerminalSession) { view.onScreenUpdated() }
     override fun onTitleChanged(session: TerminalSession) {}
     override fun onSessionFinished(session: TerminalSession) {}
@@ -60,7 +66,12 @@ internal class ProbeTerminalClient(private val view: com.termux.view.TerminalVie
     override fun readAltKey() = alt
     override fun readShiftKey() = false
     override fun readFnKey() = false
-    override fun onCodePoint(codePoint: Int, ctrlDown: Boolean, session: TerminalSession) = false
+    override fun onCodePoint(codePoint: Int, ctrlDown: Boolean, session: TerminalSession): Boolean {
+        // TerminalView has already captured Ctrl/Alt for this code point. IMEs
+        // can commit text without key events, so consume the latch here too.
+        releaseModifiers()
+        return false
+    }
     override fun onEmulatorSet() {}
     override fun logError(tag: String, message: String) { android.util.Log.e(tag, message) }
     override fun logWarn(tag: String, message: String) { android.util.Log.w(tag, message) }

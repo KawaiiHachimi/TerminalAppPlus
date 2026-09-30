@@ -8,6 +8,7 @@ import java.util.concurrent.Executors
 /** Terminal UI for the current VM. Closing this Activity never stops the VM. */
 class ConsoleProbeActivity : Activity() {
     private lateinit var terminal: com.termux.view.TerminalView
+    private lateinit var client: ProbeTerminalClient
     private lateinit var session: com.termux.terminal.AvfTerminalSession
     private val writer = Executors.newSingleThreadExecutor()
     private var replayingConsole = false
@@ -18,7 +19,19 @@ class ConsoleProbeActivity : Activity() {
         super.onCreate(state)
         window.statusBarColor = android.graphics.Color.BLACK
         window.navigationBarColor = android.graphics.Color.BLACK
-        terminal = com.termux.view.TerminalView(this, null).apply {
+        terminal = object : com.termux.view.TerminalView(this, null) {
+            override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent): Boolean {
+                try {
+                    return super.onKeyDown(keyCode, event)
+                } finally {
+                    // Also covers arrows, Tab and IME backspace, which may not
+                    // produce a code point or a matching key-up event.
+                    if (!android.view.KeyEvent.isModifierKey(keyCode) && !event.isSystem) {
+                        client.releaseModifiers()
+                    }
+                }
+            }
+        }.apply {
             setBackgroundColor(android.graphics.Color.BLACK)
             isFocusable = true
             isFocusableInTouchMode = true
@@ -31,7 +44,7 @@ class ConsoleProbeActivity : Activity() {
                 android.graphics.Typeface.MONOSPACE
             })
         }
-        val client = ProbeTerminalClient(terminal)
+        client = ProbeTerminalClient(terminal)
         terminal.setTerminalViewClient(client)
         session = com.termux.terminal.AvfTerminalSession(client) { bytes ->
             if (!replayingConsole) writer.execute { runCatching {
@@ -65,7 +78,7 @@ class ConsoleProbeActivity : Activity() {
             }
             container.addView(row)
         }
-        row(listOf(key("ESC", 111), " / " to { session.write("/") }, " - " to { session.write("-") }, key("HOME", 122), key("↑", 19), key("END", 123), key("PGUP", 92)))
+        row(listOf(key("ESC", 111), " / " to { terminal.inputCodePoint(0, '/'.code, false, false) }, " - " to { terminal.inputCodePoint(0, '-'.code, false, false) }, key("HOME", 122), key("↑", 19), key("END", 123), key("PGUP", 92)))
         row(listOf(
             key("TAB", 61),
             "Ctrl" to { client.control = !client.control; client.onModifiersChanged() },
