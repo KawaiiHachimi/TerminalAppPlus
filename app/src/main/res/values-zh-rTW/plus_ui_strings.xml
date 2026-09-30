@@ -20,7 +20,7 @@
     <string name="plus_debian_archive">"Debian 映象包"</string>
     <string name="plus_debian_archive_summary">"官方格式 images.tar.gz，包含系統磁碟、核心和配置。按包內配置啟動。"</string>
     <string name="plus_disk_image_formats">"IMG / RAW / QCOW2 磁碟映象"</string>
-    <string name="plus_disk_image_summary">"按檔案內容識別格式，支援 gzip 壓縮。qcow2 轉換後匯入，使用 U-Boot 或自選核心啟動。"</string>
+    <string name="plus_disk_image_summary">"按檔案內容識別格式，支援 gzip 壓縮。qcow2 將轉換後匯入，使用 U-Boot 或自選核心啟動。"</string>
     <string name="plus_import_debian_archive">"匯入 Debian 映象包"</string>
     <string name="plus_import_disk_image">"匯入磁碟映象"</string>
     <string name="plus_vm_name">"虛擬機器名稱"</string>

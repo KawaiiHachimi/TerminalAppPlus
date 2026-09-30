@@ -20,7 +20,7 @@
     <string name="plus_debian_archive">"Debian 鏡像包"</string>
     <string name="plus_debian_archive_summary">"官方格式 images.tar.gz，包含系統磁盤、內核和配置。按包內配置啓動。"</string>
     <string name="plus_disk_image_formats">"IMG / RAW / QCOW2 磁盤鏡像"</string>
-    <string name="plus_disk_image_summary">"按文件內容識別格式，支持 gzip 壓縮。qcow2 轉換後導入，使用 U-Boot 或自選內核啓動。"</string>
+    <string name="plus_disk_image_summary">"按文件內容識別格式，支持 gzip 壓縮。qcow2 將轉換後導入，使用 U-Boot 或自選內核啓動。"</string>
     <string name="plus_import_debian_archive">"導入 Debian 鏡像包"</string>
     <string name="plus_import_disk_image">"導入磁盤鏡像"</string>
     <string name="plus_vm_name">"虛擬機名稱"</string>
