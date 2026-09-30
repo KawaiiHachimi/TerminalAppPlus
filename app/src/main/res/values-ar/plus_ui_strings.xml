@@ -204,4 +204,5 @@
     <string name="plus_console_title">"Terminal Plus · وحدة التحكم"</string>
     <string name="plus_console_device">"جهاز إدخال وحدة التحكم"</string>
     <string name="plus_console_device_hint">"hvc0 وحدة تحكم virtio؛ وttyS0 منفذ تسلسلي محاكى. يُطبّق بعد إعادة تشغيل الآلة. يجب أن يدعم الضيف الجهاز وخدمة تسجيل الدخول. لا يغيّر إعدادات محمّل الإقلاع أو مسار الإخراج."</string>
+    <string name="plus_json_editor">محرر JSON</string>
 </resources>

@@ -218,14 +218,18 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
     val json = remember(model.configDraft) { runCatching { JsonParser.parseString(model.configDraft).asJsonObject }.getOrNull() }
     AlertDialog(onDismissRequest = { if (!model.importing) model.editTarget = null }, title = { Text(stringResource(R.string.plus_vm_configuration_title , model.editTarget!!.name)) },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(stringResource(R.string.plus_configuration_summary))
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.plus_configuration_summary), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (model.editTarget?.isManaged == false) {
                     Text(stringResource(R.string.plus_guest_tools), style = MaterialTheme.typography.titleMedium)
                     Text(stringResource(R.string.plus_guest_tools_summary))
                     FilterChip(selected = useSudo, onClick = { useSudo = !useSudo }, label = { Text(stringResource(R.string.plus_use_sudo)) })
-                    SelectionContainer {
-                        Text(installCommand, style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, textDirection = androidx.compose.ui.text.style.TextDirection.Ltr))
+                    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHighest) {
+                        SelectionContainer {
+                            Text(installCommand, modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace,
+                                    textDirection = androidx.compose.ui.text.style.TextDirection.Ltr))
+                        }
                     }
                     Button(colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -236,30 +240,41 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
                         Toast.makeText(context, copiedMessage, Toast.LENGTH_SHORT).show()
                     }) { Text(stringResource(R.string.plus_copy_install_command)) }
                     Text(stringResource(R.string.plus_guest_tools_repair_hint), style = MaterialTheme.typography.bodySmall)
-                    HorizontalDivider()
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
                 }
-                Text(stringResource(R.string.plus_startup_screen))
+                Text(stringResource(R.string.plus_startup_screen), style = MaterialTheme.typography.titleSmall)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("ttyd" to "ttyd", "console" to stringResource(R.string.plus_console), "display" to stringResource(R.string.plus_graphics)).forEach { (key, label) ->
                         FilterChip(selected = model.screenDraft == key, onClick = { model.screenDraft = key }, label = { Text(label) })
                     }
                 }
-                Row {
-                    TextButton(onClick = { model.jsonMode = false }) { Text(stringResource(R.string.plus_resource_settings)) }
-                    TextButton(onClick = { model.jsonMode = !model.jsonMode }) { Text("vm_config.json") }
+                HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        selected = !model.jsonMode,
+                        onClick = { model.jsonMode = false },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        modifier = Modifier.weight(1f),
+                    ) { Text(stringResource(R.string.plus_resource_settings)) }
+                    SegmentedButton(
+                        selected = model.jsonMode,
+                        onClick = { model.jsonMode = true },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        modifier = Modifier.weight(1f),
+                    ) { Text(stringResource(R.string.plus_json_editor)) }
                 }
                 if (model.jsonMode) {
                     OutlinedTextField(value = model.configDraft, onValueChange = { model.configDraft = it }, modifier = Modifier.fillMaxWidth().heightIn(min = 240.dp, max = 420.dp), textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, textDirection = androidx.compose.ui.text.style.TextDirection.Ltr))
                 } else if (json == null) Text(stringResource(R.string.plus_json_syntax_hint))
                 else {
                     OutlinedTextField(value = json.get("memory_mib")?.takeIf { it.isJsonPrimitive }?.asString ?: "", onValueChange = { model.property("memory_mib", it) }, label = { Text(stringResource(R.string.plus_memory_mib)) }, singleLine = true)
-                    Text(stringResource(R.string.plus_cpu_configuration))
+                    Text(stringResource(R.string.plus_cpu_configuration), style = MaterialTheme.typography.titleSmall)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("one_cpu" to stringResource(R.string.plus_single_cpu), "match_host" to stringResource(R.string.plus_host_cpu)).forEach { (key, label) ->
                             FilterChip(selected = json.get("cpu_topology")?.takeIf { it.isJsonPrimitive }?.asString == key, onClick = { model.property("cpu_topology", key) }, label = { Text(label) })
                         }
                     }
-                    Text(stringResource(R.string.plus_cpu_hint))
+                    Text(stringResource(R.string.plus_cpu_hint), style = MaterialTheme.typography.bodySmall)
                     Text(stringResource(R.string.plus_console_device), style = MaterialTheme.typography.titleSmall)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("hvc0", "ttyS0").forEach { device ->
@@ -271,7 +286,7 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (model.editTarget?.isManaged == false) {
-                    HorizontalDivider(Modifier.padding(top = 6.dp))
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
                     FilledTonalButton(onClick = model::openDiskResize, enabled = canResize && model.disks.isNotEmpty()) { Text(stringResource(R.string.plus_expand_disk)) }
                     Text(if (!canResize) stringResource(R.string.plus_stop_before_resize) else stringResource(R.string.plus_resize_hint), style = MaterialTheme.typography.bodySmall)
                     model.diskMessage?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }

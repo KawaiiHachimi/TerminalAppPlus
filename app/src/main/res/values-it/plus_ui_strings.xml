@@ -204,4 +204,5 @@
     <string name="plus_console_title">"Terminal Plus · Console"</string>
     <string name="plus_console_device">"Dispositivo di ingresso console"</string>
     <string name="plus_console_device_hint">"hvc0: console virtio; ttyS0: porta seriale emulata. Si applica dopo il riavvio della VM. Il guest deve supportare il dispositivo e un servizio di accesso. Impostazioni del bootloader e instradamento di uscita invariati."</string>
+    <string name="plus_json_editor">Editor JSON</string>
 </resources>
