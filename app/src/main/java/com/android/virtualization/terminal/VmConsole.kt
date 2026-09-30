@@ -1,6 +1,8 @@
 /* Copyright 2026 Terminal Plus contributors. SPDX-License-Identifier: Apache-2.0 */
 package com.android.virtualization.terminal
 
+import com.android.virtualization.terminal.AppStrings
+import com.android.virtualization.terminal.R
 import android.system.virtualmachine.VirtualMachine
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
@@ -44,7 +46,7 @@ internal object VmConsole {
         input?.let { runCatching { it.close() } }
         input = null
         owner = null
-        listeners.forEach { it("\r\n[虚拟机已停止]\r\n".toByteArray()) }
+        listeners.forEach { it(AppStrings.get(R.string.plus_vm_stopped_notice).toByteArray()) }
         listeners.clear()
     }
 }

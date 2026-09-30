@@ -1,0 +1,25 @@
+<resources>
+    <string name="plus_check_again">"Vérifier à nouveau"</string>
+    <string name="plus_avf_unavailable">"Cet appareil ne fournit pas AVF. Terminal Plus nécessite AVF et les VM personnalisées non protégées."</string>
+    <string name="plus_shizuku_configure">"Configurer avec Shizuku"</string>
+    <string name="plus_shizuku_unavailable">"Installez et démarrez Shizuku, puis réessayez. Vous pouvez aussi copier les commandes ADB ci-dessous."</string>
+    <string name="plus_shizuku_update">"Mettez Shizuku à jour et réessayez."</string>
+    <string name="plus_shizuku_denied">"Accès Shizuku refusé. Autorisez Terminal Plus dans Shizuku puis réessayez."</string>
+    <string name="plus_shizuku_working">"Attribution des deux autorisations AVF…"</string>
+    <string name="plus_shizuku_failed">"Échec : %1$s. Réessayez ou utilisez les commandes ADB."</string>
+    <string name="plus_shizuku_verify">"Demande terminée, autorisations non confirmées. Vérifiez à nouveau ou utilisez ADB."</string>
+    <string name="plus_setup_title">"Configurer Terminal Plus"</string>
+    <string name="plus_setup_summary">"Accordez deux autorisations de virtualisation pour commencer. Choisissez une méthode ci-dessous."</string>
+    <string name="plus_shizuku_hint">"Démarrez Shizuku et autorisez Terminal Plus lorsque demandé."</string>
+    <string name="plus_adb_alternative">"Ou configurer avec ADB"</string>
+    <string name="plus_copy_commands">"Copier les commandes ADB"</string>
+    <string name="plus_commands_copied">"Commandes copiées. Exécutez-les sur l\'ordinateur connecté par ADB puis vérifiez à nouveau."</string>
+    <string name="plus_display_connecting">"Connexion à l\'écran de la VM…"</string>
+    <string name="plus_display_service_required">"En attente du service d\'écran. Terminal Plus le configure automatiquement pour Debian précompilé et se connecte dès qu\'il est prêt."</string>
+    <string name="plus_terminal_unavailable">"La VM tourne, mais ttyd n\'est pas connecté. Cette image ne fournit peut-être pas ttyd. La console et l\'affichage restent disponibles."</string>
+    <string name="plus_terminal_no_sessions">"Aucun onglet ttyd ouvert.\nUtilisez ＋ en haut à gauche ou ouvrez la console ou l\'affichage depuis la barre d\'outils.\nLa VM continue de fonctionner."</string>
+    <string name="plus_terminal_retry">"Réessayer la connexion"</string>
+    <string name="plus_terminal_new_session">"Nouveau terminal"</string>
+    <string name="plus_virtual_machines">"Machines virtuelles"</string>
+    <string name="plus_direct_console">"Console"</string>
+</resources>

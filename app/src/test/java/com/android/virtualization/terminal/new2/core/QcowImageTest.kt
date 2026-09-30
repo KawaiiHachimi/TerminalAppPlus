@@ -8,7 +8,7 @@ import java.util.zip.GZIPOutputStream
 import org.junit.Assert.*
 import org.junit.Test
 
-class QcowImageTest {
+class QcowImageTest : com.android.virtualization.terminal.LocalizedResourcesTest() {
     private fun header(version: Int = 3) = ByteArray(104).also {
         ByteBuffer.wrap(it).order(ByteOrder.BIG_ENDIAN).apply {
             putInt(0, 0x514649fb); putInt(4, version); putLong(24, 8L * 1024 * 1024)

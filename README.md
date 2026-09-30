@@ -126,6 +126,10 @@ AOSP 来源、参考项目及移植边界见 [docs/UPSTREAM.md](docs/UPSTREAM.md
 支持 U-Boot 或直接内核启动，配置页提供默认页面、内存、CPU 拓扑和 JSON 编辑。
 具体格式、资源限制与配置恢复见 [虚拟机管理](docs/CUSTOM-VM.md)。
 
+## 语言
+
+Plus 新增界面支持简体中文、繁体中文、英语、日语、韩语、俄语、德语、法语、意大利语、西班牙语、葡萄牙语、阿拉伯语和印地语，跟随系统语言，无匹配翻译时回退英语。保留 AOSP 原有语言资源。用户自定义名称、Guest 输出和系统返回的原始错误不自动翻译。
+
 ## 文档
 
 - [虚拟机管理与导入](docs/CUSTOM-VM.md)
@@ -149,6 +153,7 @@ AOSP 来源、参考项目及移植边界见 [docs/UPSTREAM.md](docs/UPSTREAM.md
 - [Podroid](https://github.com/ExTV/Podroid)：AVF 控制台流连接方案参考；
   本项目直接使用 Termux 官方组件，没有复制 Podroid 的 UI 或桥接实现。
 - [PocketVM](https://github.com/okhsunrog/pocketvm)：AVF Guest 镜像兼容性与 cloud-init 网络配置排查参考。
+- [Codex](https://openai.com/codex/)
 
 第三方许可及本地调整见 [third_party/termux/README.md](third_party/termux/README.md)。
 

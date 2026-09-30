@@ -35,6 +35,7 @@ public class Application : AndroidApplication() {
 
     override fun onCreate() {
         super.onCreate()
+        AppStrings.initialize(this)
         if (Flags.terminalNewuiJetpack()) {
             Installer.initialize(this)
             VmController.initialize(this)

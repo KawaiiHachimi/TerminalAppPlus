@@ -1,0 +1,25 @@
+<resources>
+    <string name="plus_check_again">"फिर जाँचें"</string>
+    <string name="plus_avf_unavailable">"यह उपकरण AVF नहीं देता। Terminal Plus को AVF और कस्टम गैर-संरक्षित VM समर्थन चाहिए।"</string>
+    <string name="plus_shizuku_configure">"Shizuku से सेट करें"</string>
+    <string name="plus_shizuku_unavailable">"Shizuku स्थापित और शुरू करके फिर प्रयास करें। नीचे के ADB आदेश भी कॉपी कर सकते हैं।"</string>
+    <string name="plus_shizuku_update">"Shizuku अपडेट करके फिर प्रयास करें।"</string>
+    <string name="plus_shizuku_denied">"Shizuku अनुमति अस्वीकृत। Shizuku में Terminal Plus को अनुमति देकर फिर प्रयास करें।"</string>
+    <string name="plus_shizuku_working">"दो AVF अनुमतियाँ दी जा रही हैं…"</string>
+    <string name="plus_shizuku_failed">"सेटअप विफल: %1$s। फिर प्रयास करें या ADB आदेश उपयोग करें।"</string>
+    <string name="plus_shizuku_verify">"अनुरोध पूरा हुआ, पर अनुमतियाँ पुष्ट नहीं हैं। फिर जाँचें या ADB उपयोग करें।"</string>
+    <string name="plus_setup_title">"Terminal Plus सेट करें"</string>
+    <string name="plus_setup_summary">"शुरू करने के लिए दो वर्चुअलाइज़ेशन अनुमतियाँ दें। नीचे कोई एक तरीका चुनें।"</string>
+    <string name="plus_shizuku_hint">"Shizuku शुरू करें और पूछे जाने पर Terminal Plus को अनुमति दें।"</string>
+    <string name="plus_adb_alternative">"या ADB से सेट करें"</string>
+    <string name="plus_copy_commands">"ADB आदेश कॉपी करें"</string>
+    <string name="plus_commands_copied">"आदेश कॉपी हुए। ADB से जुड़े कंप्यूटर पर चलाकर फिर जाँचें।"</string>
+    <string name="plus_display_connecting">"VM स्क्रीन से जुड़ रहे हैं…"</string>
+    <string name="plus_display_service_required">"स्क्रीन सेवा की प्रतीक्षा है। पूर्वनिर्मित Debian के लिए Terminal Plus इसे स्वतः सेट कर तैयार होने पर जुड़ता है।"</string>
+    <string name="plus_terminal_unavailable">"VM चल रही है, पर ttyd जुड़ा नहीं है। इमेज में ttyd न हो सकता है। कंसोल या डिस्प्ले उपयोग कर सकते हैं।"</string>
+    <string name="plus_terminal_no_sessions">"कोई ttyd टैब नहीं खुला है।\nऊपर बाएँ ＋ से टर्मिनल खोलें या टूलबार से कंसोल या डिस्प्ले खोलें।\nVM चलती रहती है।"</string>
+    <string name="plus_terminal_retry">"फिर कनेक्ट करें"</string>
+    <string name="plus_terminal_new_session">"नया टर्मिनल"</string>
+    <string name="plus_virtual_machines">"वर्चुअल मशीनें"</string>
+    <string name="plus_direct_console">"कंसोल"</string>
+</resources>

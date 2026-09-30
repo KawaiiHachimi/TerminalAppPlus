@@ -3,7 +3,7 @@ package com.android.virtualization.terminal.new2.core
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
-class RawDiskFormatTest {
+class RawDiskFormatTest : com.android.virtualization.terminal.LocalizedResourcesTest() {
     private fun disk() = ByteArray(65536).apply { this[510] = 0x55; this[511] = 0xaa.toByte() }
     @Test fun acceptsMbrAndGptProtectiveMbr() {
         RawDiskFormat.validate(disk())

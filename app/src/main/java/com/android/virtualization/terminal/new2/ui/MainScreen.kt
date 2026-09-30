@@ -114,7 +114,7 @@ fun MainScreen(viewModel: MainViewModel) {
                 } else if (profile.isDefault && installState !is InstallState.Installed) {
                     if (officialRequested || installState.isStarted()) {
                         Column(Modifier.fillMaxSize()) {
-                            androidx.compose.material3.TextButton(onClick = { com.android.virtualization.terminal.new2.core.VmProfiles.requestOfficial(false) }, enabled = !installState.isStarted()) { androidx.compose.material3.Text("更改系统来源") }
+                            androidx.compose.material3.TextButton(onClick = { com.android.virtualization.terminal.new2.core.VmProfiles.requestOfficial(false) }, enabled = !installState.isStarted()) { androidx.compose.material3.Text(stringResource(R.string.plus_change_system_source)) }
                             Box(Modifier.weight(1f)) { InstallScreen(snackbarHostState = snackbarHostState) }
                         }
                     } else if (installState is InstallState.Checking) BootingScreen()
@@ -270,12 +270,12 @@ private fun VmStoppedScreen(viewModel: MainViewModel, error: String? = null) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
     ) {
-        androidx.compose.material3.Text(error ?: "虚拟机已停止")
+        androidx.compose.material3.Text(error ?: stringResource(R.string.plus_vm_stopped))
         androidx.compose.material3.TextButton(onClick = { viewModel.startVm() }) {
-            androidx.compose.material3.Text(if (error == null) "启动虚拟机" else "重试启动")
+            androidx.compose.material3.Text(if (error == null) stringResource(R.string.plus_start_vm) else stringResource(R.string.plus_retry_start))
         }
         androidx.compose.material3.TextButton(onClick = { viewModel.setShowSettings(true) }) {
-            androidx.compose.material3.Text("虚拟机与设置")
+            androidx.compose.material3.Text(stringResource(R.string.plus_vm_and_settings))
         }
     }
 }

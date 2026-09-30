@@ -6,7 +6,7 @@ import org.apache.commons.codec.digest.Sha2Crypt
 import org.junit.Assert.*
 import org.junit.Test
 
-class CloudInitTest {
+class CloudInitTest : com.android.virtualization.terminal.LocalizedResourcesTest() {
     @Test fun saltedHashAndStableInstanceProduceValidSeed() {
         val first = CloudInit.config("tester", "test-password", "vm-test", "", false, "test-id")
         val second = CloudInit.config("tester", "test-password", "vm-test", "", false, "test-id")

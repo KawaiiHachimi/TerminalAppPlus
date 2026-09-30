@@ -11,7 +11,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream
 import org.junit.Assert.*
 import org.junit.Test
 
-class DebianImageArchiveTest {
+class DebianImageArchiveTest : com.android.virtualization.terminal.LocalizedResourcesTest() {
     private val config = """{"name":"debian","platform_version":"~1.0","kernel":"${'$'}PAYLOAD_DIR/vmlinuz","memory_mib":4096,"cpu_topology":"match_host","console_input_device":"ttyS0","console_out":true,"connect_console":true,"disks":[{"image":"${'$'}PAYLOAD_DIR/root_part","writable":true}]}"""
     private fun archive(vararg files: Pair<String, ByteArray>): ByteArray {
         val bytes = ByteArrayOutputStream()

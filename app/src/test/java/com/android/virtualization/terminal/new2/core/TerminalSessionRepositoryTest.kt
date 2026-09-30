@@ -4,7 +4,7 @@ import org.junit.Assert.*
 import org.junit.After
 import org.junit.Test
 
-class TerminalSessionRepositoryTest {
+class TerminalSessionRepositoryTest : com.android.virtualization.terminal.LocalizedResourcesTest() {
     @After fun reset() { TerminalSessionRepository.reset() }
 
     @Test fun consoleStartupClearsPreviousTabsAndAllowsExplicitAdd() {

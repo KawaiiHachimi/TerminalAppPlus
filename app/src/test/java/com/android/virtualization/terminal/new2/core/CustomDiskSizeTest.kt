@@ -5,7 +5,7 @@ import java.nio.file.Files
 import org.junit.Assert.*
 import org.junit.Test
 
-class CustomDiskSizeTest {
+class CustomDiskSizeTest : com.android.virtualization.terminal.LocalizedResourcesTest() {
     private val config = """{"disks":[{"image":"${'$'}PAYLOAD_DIR/system.raw","writable":true},{"image":"${'$'}PAYLOAD_DIR/tools.iso","writable":false}]}"""
     @Test fun expandsWithoutChangingExistingBytesAndRefusesShrink() {
         val dir = Files.createTempDirectory("disk-grow").toFile()

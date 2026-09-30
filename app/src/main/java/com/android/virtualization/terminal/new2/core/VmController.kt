@@ -15,6 +15,8 @@
  */
 package com.android.virtualization.terminal.new2.core
 
+import com.android.virtualization.terminal.AppStrings
+import com.android.virtualization.terminal.R
 import android.content.Context
 import android.content.Intent
 import android.net.nsd.NsdManager
@@ -372,15 +374,15 @@ object VmController {
 
     suspend fun <T> withStoppedProfile(profile: VmProfile, operation: suspend () -> T): T = lifecycleMutex.withLock {
         check(!(runningProfile?.id == profile.id && (virtualMachine?.status == VirtualMachine.STATUS_RUNNING || _vmState.value.isAlive))) {
-            "请先关闭这台虚拟机，再操作磁盘"
+            AppStrings.get(R.string.plus_stop_before_disk_operation)
         }
-        check(!(_vmState.value == VmState.Starting && VmProfiles.selected.value.id == profile.id)) { "虚拟机正在启动" }
+        check(!(_vmState.value == VmState.Starting && VmProfiles.selected.value.id == profile.id)) { AppStrings.get(R.string.plus_vm_starting) }
         operation()
     }
 
     /** Caller confirms forced power-off before switching a running VM. Disk files are retained. */
     suspend fun switchTo(profile: VmProfile) {
-        check(_switching.compareAndSet(false, true)) { "正在切换虚拟机" }
+        check(_switching.compareAndSet(false, true)) { AppStrings.get(R.string.plus_vm_switching) }
         try {
             if (_vmState.value.isAlive || virtualMachine?.status == VirtualMachine.STATUS_RUNNING) {
                 stop()
@@ -388,7 +390,7 @@ object VmController {
                     vmState.first { it != VmState.Stopping }
                 }
                 check(virtualMachine?.status != VirtualMachine.STATUS_RUNNING && _vmState.value == VmState.Stopped) {
-                    "当前虚拟机未能停止，未切换镜像"
+                    AppStrings.get(R.string.plus_vm_stop_switch_failed)
                 }
             }
             VmProfiles.select(profile)

@@ -1,8 +1,6 @@
 <resources>
-    <string name="plus_grant_instructions">终端 Plus 通过 Android 虚拟化框架免 root 运行。可通过已启动的 Shizuku 自动配置权限，或在已连接 ADB 的电脑上执行以下两条命令，然后点击「重新检查」：\n\n%1$s</string>
     <string name="plus_check_again">重新检查</string>
     <string name="plus_avf_unavailable">此设备未提供 Android 虚拟化框架。终端 Plus 需要 AVF 及自定义非受保护虚拟机支持。</string>
-    <string name="plus_display_unavailable">此 ROM 将原生虚拟机显示服务限制为系统应用。两个 AVF 权限可运行终端，但不能解锁该显示服务。</string>
     <string name="plus_shizuku_configure">使用 Shizuku 配置</string>
     <string name="plus_shizuku_unavailable">请先安装并启动 Shizuku，再返回点击「使用 Shizuku 配置」。也可以继续使用复制命令方式。</string>
     <string name="plus_shizuku_update">请更新 Shizuku 后重试。</string>
@@ -19,13 +17,6 @@
     <string name="plus_direct_console">控制台</string>
     <string name="plus_display_connecting">正在连接虚拟机屏幕…</string>
     <string name="plus_display_service_required">正在等待虚拟机屏幕服务。终端 Plus 会为预构建 Debian 自动配置，准备就绪后自动连接。</string>
-    <string name="plus_laboratory">实验室</string>
-    <string name="plus_lab_console">BusyBox / hvc0</string>
-    <string name="plus_lab_console_hint">独立无磁盘虚拟机，需要已准备好的测试 initramfs。</string>
-    <string name="plus_lab_uboot">U-Boot + Debian</string>
-    <string name="plus_lab_uboot_hint">独立虚拟机，需要已准备好的引导程序和测试磁盘。</string>
-    <string name="plus_lab_display">当前 VM 屏幕原型</string>
-    <string name="plus_lab_display_hint">打开当前虚拟机的实验采集与渲染页面。</string>
     <string name="plus_terminal_unavailable">虚拟机正在运行，尚未连接到 ttyd。此镜像可能未提供 ttyd，你可以继续使用控制台或图形界面。</string>
     <string name="plus_terminal_no_sessions">当前没有打开的 ttyd 标签页。\n点击左上角 ＋ 打开终端，或使用上方按钮进入控制台、虚拟显示器。\n虚拟机仍在运行。</string>
     <string name="plus_terminal_retry">重试连接</string>

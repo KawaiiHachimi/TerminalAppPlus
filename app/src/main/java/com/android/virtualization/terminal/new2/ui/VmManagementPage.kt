@@ -1,6 +1,8 @@
 /* Copyright 2026 Terminal Plus contributors. SPDX-License-Identifier: Apache-2.0 */
 package com.android.virtualization.terminal.new2.ui
 
+import androidx.compose.ui.res.stringResource
+import com.android.virtualization.terminal.R
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.combinedClickable
@@ -47,11 +49,11 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
     LazyColumn(Modifier.fillMaxSize()) {
         item {
             if (firstSetup) {
-                Text("初始设置", Modifier.padding(16.dp), style = MaterialTheme.typography.headlineSmall)
+                Text(stringResource(R.string.plus_initial_setup), Modifier.padding(16.dp), style = MaterialTheme.typography.headlineSmall)
             } else {
                 Spacer(Modifier.height(16.dp))
             }
-            Text(if (firstSetup) "下载 Android 官方 Debian，或导入已有镜像开始使用。" else "每次运行一台，磁盘独立保存。点击切换，长按可强制停止、重命名、克隆或删除。", Modifier.padding(horizontal = 16.dp))
+            Text(if (firstSetup) stringResource(R.string.plus_initial_setup_summary) else stringResource(R.string.plus_vm_list_summary), Modifier.padding(horizontal = 16.dp))
         }
         items(profiles, key = { it.id }) { profile ->
             Box {
@@ -59,145 +61,145 @@ fun VmManagementPage(firstSetup: Boolean = false, model: VmManagementViewModel =
                     headlineContent = { Text(profile.name) },
                     supportingContent = {
                         val description = when {
-                            !VmProfiles.isInstalled(profile) -> "尚未下载 · Android 官方预构建 Debian"
+                            !VmProfiles.isInstalled(profile) -> stringResource(R.string.plus_official_not_downloaded)
                             profile.isDefault -> "Android Debian"
-                            profile.managedDebian -> "导入的镜像包"
-                            else -> "自定义镜像"
+                            profile.managedDebian -> stringResource(R.string.plus_imported_archive)
+                            else -> stringResource(R.string.plus_custom_image)
                         }
-                        Text(description + if (VmProfiles.isInstalled(profile) && profile.id == selected.id) " · 当前" else "")
+                        Text(description + if (VmProfiles.isInstalled(profile) && profile.id == selected.id) stringResource(R.string.plus_current_suffix) else "")
                     },
                     trailingContent = {
-                        if (VmProfiles.isInstalled(profile)) TextButton(onClick = { model.edit(profile) }, enabled = !busy) { Text("配置") }
+                        if (VmProfiles.isInstalled(profile)) TextButton(onClick = { model.edit(profile) }, enabled = !busy) { Text(stringResource(R.string.plus_configure)) }
                     },
                     modifier = Modifier.combinedClickable(enabled = !busy,
                         onClick = { if (profile.id != selected.id || !vmState.isAlive) model.switchTarget = profile },
                         onLongClick = { model.menuTarget = profile }),
                 )
                 DropdownMenu(expanded = model.menuTarget?.id == profile.id, onDismissRequest = { model.menuTarget = null }) {
-                    DropdownMenuItem(text = { Text("强制停止") },
+                    DropdownMenuItem(text = { Text(stringResource(R.string.plus_force_stop)) },
                         enabled = !busy && profile.id == selected.id && vmState == VmState.Running,
                         onClick = { model.menuTarget = null; model.stopTarget = profile })
-                    DropdownMenuItem(text = { Text("重命名") }, onClick = { model.menuTarget = null; model.name = profile.name; model.renameTarget = profile })
-                    DropdownMenuItem(text = { Text("克隆") }, enabled = VmProfiles.isInstalled(profile) && !(profile.id == selected.id && vmState.isAlive), onClick = { model.menuTarget = null; model.clone(profile) })
-                    DropdownMenuItem(text = { Text("删除") }, enabled = !(profile.id == selected.id && vmState.isAlive), onClick = { model.menuTarget = null; model.deleteTarget = profile })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.plus_rename)) }, onClick = { model.menuTarget = null; model.name = profile.name; model.renameTarget = profile })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.plus_clone)) }, enabled = VmProfiles.isInstalled(profile) && !(profile.id == selected.id && vmState.isAlive), onClick = { model.menuTarget = null; model.clone(profile) })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.plus_delete)) }, enabled = !(profile.id == selected.id && vmState.isAlive), onClick = { model.menuTarget = null; model.deleteTarget = profile })
                 }
             }
             HorizontalDivider()
         }
         item {
-            TextButton(onClick = { model.choosingImport = true }, enabled = !busy, modifier = Modifier.padding(8.dp)) { Text("＋ 导入自定义镜像") }
+            TextButton(onClick = { model.choosingImport = true }, enabled = !busy, modifier = Modifier.padding(8.dp)) { Text(stringResource(R.string.plus_import_image_add)) }
         }
         if (model.importing) item {
             LinearProgressIndicator(Modifier.fillMaxWidth().padding(16.dp))
             Text("${model.operation} · ${model.importedBytes / (1024 * 1024)} MiB", Modifier.padding(horizontal = 16.dp))
-            TextButton(onClick = model::cancelImport) { Text("取消") }
+            TextButton(onClick = model::cancelImport) { Text(stringResource(R.string.plus_cancel)) }
         }
         model.error?.let { message -> item { Text(message, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) } }
     }
     if (model.choosingImport) AlertDialog(
         onDismissRequest = { model.choosingImport = false },
-        title = { Text("导入自定义镜像") },
+        title = { Text(stringResource(R.string.plus_import_custom_image)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedCard(onClick = { model.archiveImport = true; picker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("Debian 镜像包", style = MaterialTheme.typography.titleMedium)
-                        Text("官方格式 images.tar.gz，包含系统磁盘、内核和配置。按包内配置启动。", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.plus_debian_archive), style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.plus_debian_archive_summary), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
                 OutlinedCard(onClick = { model.archiveImport = false; picker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("IMG / RAW / QCOW2 磁盘镜像", style = MaterialTheme.typography.titleMedium)
-                        Text("按文件内容识别格式，支持 gzip 压缩。qcow2 转换后导入，使用 U-Boot 或自选内核启动。", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.plus_disk_image_formats), style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.plus_disk_image_summary), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = { model.choosingImport = false }) { Text("取消") } },
+        dismissButton = { TextButton(onClick = { model.choosingImport = false }) { Text(stringResource(R.string.plus_cancel)) } },
     )
     if (model.image != null) AlertDialog(
         onDismissRequest = model::dismissImport,
-        title = { Text(if (model.archiveImport) "导入 Debian 镜像包" else "导入磁盘镜像") },
+        title = { Text(if (model.archiveImport) stringResource(R.string.plus_import_debian_archive) else stringResource(R.string.plus_import_disk_image)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(value = model.name, onValueChange = { model.name = it }, label = { Text("虚拟机名称") }, enabled = !model.importing, singleLine = true)
+                OutlinedTextField(value = model.name, onValueChange = { model.name = it }, label = { Text(stringResource(R.string.plus_vm_name)) }, enabled = !model.importing, singleLine = true)
                 if (model.archiveImport) {
-                    Text("自动解压并读取包内 vm_config.json、内核和磁盘，默认进入 ttyd。创建独立虚拟机，保留原始镜像包。")
+                    Text(stringResource(R.string.plus_archive_import_details))
                 } else {
                 if (model.qcowImport) {
-                    Text("检测到 qcow2 镜像，需要先转换为 RAW。转换会保留原文件，临时副本和转换结果需要额外存储空间。", color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.plus_qcow_conversion_notice), color = MaterialTheme.colorScheme.primary)
                 }
                 Row {
                     FilterChip(selected = !model.directBoot, onClick = { model.directBoot = false }, label = { Text("U-Boot") }, enabled = !model.importing)
                     Spacer(Modifier.width(8.dp))
-                    FilterChip(selected = model.directBoot, onClick = { model.directBoot = true }, label = { Text("直接内核") }, enabled = !model.importing)
+                    FilterChip(selected = model.directBoot, onClick = { model.directBoot = true }, label = { Text(stringResource(R.string.plus_direct_kernel)) }, enabled = !model.importing)
                 }
                 if (model.directBoot) {
-                    Text("选择 ARM64 Linux 内核、可选 initrd 和启动参数。内核需支持 AVF/crosvm 设备。磁盘可为整盘或文件系统镜像。")
-                    TextButton(onClick = { kernelPicker.launch(arrayOf("*/*")) }, enabled = !model.importing) { Text(if (model.kernel == null) "选择内核（必选）" else "已选择内核 · 更换") }
-                    TextButton(onClick = { initrdPicker.launch(arrayOf("*/*")) }, enabled = !model.importing) { Text(if (model.initrd == null) "选择 initrd（可选）" else "已选择 initrd · 更换") }
-                    if (model.initrd != null) TextButton(onClick = { model.initrd = null }) { Text("不使用 initrd") }
-                    OutlinedTextField(value = model.params, onValueChange = { model.params = it }, label = { Text("内核参数") }, enabled = !model.importing)
+                    Text(stringResource(R.string.plus_kernel_boot_summary))
+                    TextButton(onClick = { kernelPicker.launch(arrayOf("*/*")) }, enabled = !model.importing) { Text(if (model.kernel == null) stringResource(R.string.plus_choose_kernel) else stringResource(R.string.plus_change_kernel)) }
+                    TextButton(onClick = { initrdPicker.launch(arrayOf("*/*")) }, enabled = !model.importing) { Text(if (model.initrd == null) stringResource(R.string.plus_choose_initrd) else stringResource(R.string.plus_change_initrd)) }
+                    if (model.initrd != null) TextButton(onClick = { model.initrd = null }) { Text(stringResource(R.string.plus_remove_initrd)) }
+                    OutlinedTextField(value = model.params, onValueChange = { model.params = it }, label = { Text(stringResource(R.string.plus_kernel_arguments)) }, enabled = !model.importing)
                 } else {
-                    Text("需要 ARM64 可启动整盘镜像，qcow2 会先转换为 RAW。默认使用系统 APEX 的 U-Boot，无法读取时使用 APK 内置版本。")
-                    TextButton(onClick = { firmwarePicker.launch(arrayOf("*/*")) }, enabled = !model.importing) { Text(if (model.firmware == null) "可选：替换 U-Boot" else "已选择自定义 U-Boot") }
-                    if (model.firmware != null) TextButton(onClick = { model.firmware = null }) { Text("恢复内置 U-Boot") }
+                    Text(stringResource(R.string.plus_uboot_boot_summary))
+                    TextButton(onClick = { firmwarePicker.launch(arrayOf("*/*")) }, enabled = !model.importing) { Text(if (model.firmware == null) stringResource(R.string.plus_replace_uboot) else stringResource(R.string.plus_custom_uboot_selected)) }
+                    if (model.firmware != null) TextButton(onClick = { model.firmware = null }) { Text(stringResource(R.string.plus_restore_uboot)) }
                 }
-                Text("创建独立副本，保留源文件。默认 2 GiB、CPU 匹配宿主，可在导入后的配置页修改。")
+                Text(stringResource(R.string.plus_import_defaults))
                 CloudInitFields(model)
                 }
                 if (model.importing) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("${model.operation} · ${model.importedBytes / (1024 * 1024)} MiB") }
                 model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
-        confirmButton = { TextButton(onClick = model::import, enabled = !busy && model.formatReady && model.name.isNotBlank() && (model.archiveImport || !model.directBoot || model.kernel != null)) { Text(if (model.qcowImport) "转换并导入" else "导入") } },
-        dismissButton = { TextButton(onClick = { if (model.importing) model.cancelImport() else model.dismissImport() }) { Text("取消") } },
+        confirmButton = { TextButton(onClick = model::import, enabled = !busy && model.formatReady && model.name.isNotBlank() && (model.archiveImport || !model.directBoot || model.kernel != null)) { Text(if (model.qcowImport) stringResource(R.string.plus_convert_import) else stringResource(R.string.plus_import_action)) } },
+        dismissButton = { TextButton(onClick = { if (model.importing) model.cancelImport() else model.dismissImport() }) { Text(stringResource(R.string.plus_cancel)) } },
     )
     model.switchTarget?.let { target ->
-        AlertDialog(onDismissRequest = { model.switchTarget = null }, title = { Text(if (VmProfiles.isInstalled(target)) "启动 ${target.name}" else "下载官方 Debian") },
+        AlertDialog(onDismissRequest = { model.switchTarget = null }, title = { Text(if (VmProfiles.isInstalled(target)) stringResource(R.string.plus_start_vm_named , target.name) else stringResource(R.string.plus_download_official_debian)) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (vmState.isAlive) {
-                        Text("切换会强制停止当前虚拟机，未保存的工作可能丢失。建议先在系统内正常关机。")
+                        Text(stringResource(R.string.plus_switch_vm_warning))
                     }
                     if (!VmProfiles.isInstalled(target)) {
-                        Text("下载 Android 官方预构建的 Debian 镜像。")
+                        Text(stringResource(R.string.plus_official_debian_description))
                         val downloadUrl = remember { ImageArchive.fromInternet().getPath() }
-                        Text("下载地址", style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.plus_download_address), style = MaterialTheme.typography.labelLarge)
                         Text(buildAnnotatedString {
                             withLink(LinkAnnotation.Url(downloadUrl, TextLinkStyles(
                                 style = SpanStyle(color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)
                             ))) { append(downloadUrl) }
                         }, style = MaterialTheme.typography.bodyMedium)
-                        Text("初始用户名和密码均为 droid", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.plus_initial_credentials), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = model::switch, enabled = !busy) { Text(if (vmState.isAlive) "强制停止并切换" else "继续") } },
-            dismissButton = { TextButton(onClick = { model.switchTarget = null }) { Text("取消") } })
+            confirmButton = { TextButton(onClick = model::switch, enabled = !busy) { Text(if (vmState.isAlive) stringResource(R.string.plus_force_stop_switch) else stringResource(R.string.plus_continue_action)) } },
+            dismissButton = { TextButton(onClick = { model.switchTarget = null }) { Text(stringResource(R.string.plus_cancel)) } })
     }
     model.renameTarget?.let { target ->
-        AlertDialog(onDismissRequest = { model.renameTarget = null }, title = { Text("重命名") },
+        AlertDialog(onDismissRequest = { model.renameTarget = null }, title = { Text(stringResource(R.string.plus_rename)) },
             text = { OutlinedTextField(value = model.name, onValueChange = { model.name = it }, singleLine = true) },
-            confirmButton = { TextButton(onClick = { model.rename(target, model.name) }, enabled = !busy && model.name.isNotBlank()) { Text("保存") } },
-            dismissButton = { TextButton(onClick = { model.renameTarget = null }) { Text("取消") } })
+            confirmButton = { TextButton(onClick = { model.rename(target, model.name) }, enabled = !busy && model.name.isNotBlank()) { Text(stringResource(R.string.plus_save)) } },
+            dismissButton = { TextButton(onClick = { model.renameTarget = null }) { Text(stringResource(R.string.plus_cancel)) } })
     }
     model.deleteTarget?.let { target ->
-        AlertDialog(onDismissRequest = { model.deleteTarget = null }, title = { Text("删除 ${target.name}？") },
-            text = { Text("将永久删除这台 VM 的磁盘和配置，不能撤销。外部导入源文件及其他 VM 不受影响。") },
-            confirmButton = { TextButton(onClick = { model.delete(target) }, enabled = !busy) { Text("删除") } },
-            dismissButton = { TextButton(onClick = { model.deleteTarget = null }) { Text("取消") } })
+        AlertDialog(onDismissRequest = { model.deleteTarget = null }, title = { Text(stringResource(R.string.plus_delete_vm_named , target.name)) },
+            text = { Text(stringResource(R.string.plus_delete_vm_warning)) },
+            confirmButton = { TextButton(onClick = { model.delete(target) }, enabled = !busy) { Text(stringResource(R.string.plus_delete)) } },
+            dismissButton = { TextButton(onClick = { model.deleteTarget = null }) { Text(stringResource(R.string.plus_cancel)) } })
     }
     model.stopTarget?.let { target ->
         AlertDialog(onDismissRequest = { model.stopTarget = null },
-            title = { Text("强制停止 ${target.name}？") },
-            text = { Text("将立即停止这台虚拟机，未保存的工作可能丢失。") },
+            title = { Text(stringResource(R.string.plus_force_stop_named , target.name)) },
+            text = { Text(stringResource(R.string.plus_force_stop_warning)) },
             confirmButton = {
                 TextButton(onClick = model::forceStop,
-                    enabled = !busy && target.id == selected.id && vmState == VmState.Running) { Text("强制停止") }
+                    enabled = !busy && target.id == selected.id && vmState == VmState.Running) { Text(stringResource(R.string.plus_force_stop)) }
             },
-            dismissButton = { TextButton(onClick = { model.stopTarget = null }) { Text("取消") } })
+            dismissButton = { TextButton(onClick = { model.stopTarget = null }) { Text(stringResource(R.string.plus_cancel)) } })
     }
     if (model.editTarget != null) VmConfigurationDialog(model)
 }
@@ -211,86 +213,88 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
     val canResize = !model.importing && !switching && !(selected.id == model.editTarget?.id && vmState.isAlive)
     var useSudo by remember { mutableStateOf(false) }
     val installCommand = GuestToolsDisk.installCommand(useSudo)
+    val installLabel = stringResource(R.string.plus_install_guest_tools)
+    val copiedMessage = stringResource(R.string.plus_install_command_copied)
     val json = remember(model.configDraft) { runCatching { JsonParser.parseString(model.configDraft).asJsonObject }.getOrNull() }
-    AlertDialog(onDismissRequest = { if (!model.importing) model.editTarget = null }, title = { Text("${model.editTarget!!.name} · 配置") },
+    AlertDialog(onDismissRequest = { if (!model.importing) model.editTarget = null }, title = { Text(stringResource(R.string.plus_vm_configuration_title , model.editTarget!!.name)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("配置保存后下次启动生效。恢复只改配置草稿，不回滚磁盘。")
+                Text(stringResource(R.string.plus_configuration_summary))
                 if (model.editTarget?.isManaged == false) {
-                    Text("Guest 工具", style = MaterialTheme.typography.titleMedium)
-                    Text("在 Debian/Ubuntu、Fedora 等支持的系统中执行下方命令，安装 ttyd 和图形采集服务。首次使用前请重启虚拟机，安装依赖需要联网。")
-                    FilterChip(selected = useSudo, onClick = { useSudo = !useSudo }, label = { Text("使用 sudo") })
+                    Text(stringResource(R.string.plus_guest_tools), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.plus_guest_tools_summary))
+                    FilterChip(selected = useSudo, onClick = { useSudo = !useSudo }, label = { Text(stringResource(R.string.plus_use_sudo)) })
                     SelectionContainer {
-                        Text(installCommand, style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace))
+                        Text(installCommand, style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, textDirection = androidx.compose.ui.text.style.TextDirection.Ltr))
                     }
                     Button(colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         contentColor = MaterialTheme.colorScheme.secondaryContainer,
                     ), onClick = {
                         context.getSystemService(ClipboardManager::class.java).setPrimaryClip(
-                            ClipData.newPlainText("安装 Guest 工具", installCommand))
-                        Toast.makeText(context, "安装命令已复制", Toast.LENGTH_SHORT).show()
-                    }) { Text("复制安装命令") }
-                    Text("安装后用 terminal-plus-setup 检查状态，追加 --force 重新安装。", style = MaterialTheme.typography.bodySmall)
+                            ClipData.newPlainText(installLabel, installCommand))
+                        Toast.makeText(context, copiedMessage, Toast.LENGTH_SHORT).show()
+                    }) { Text(stringResource(R.string.plus_copy_install_command)) }
+                    Text(stringResource(R.string.plus_guest_tools_repair_hint), style = MaterialTheme.typography.bodySmall)
                     HorizontalDivider()
                 }
-                Text("启动后打开")
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf("ttyd" to "ttyd", "console" to "控制台", "display" to "图形").forEach { (key, label) ->
+                Text(stringResource(R.string.plus_startup_screen))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf("ttyd" to "ttyd", "console" to stringResource(R.string.plus_console), "display" to stringResource(R.string.plus_graphics)).forEach { (key, label) ->
                         FilterChip(selected = model.screenDraft == key, onClick = { model.screenDraft = key }, label = { Text(label) })
                     }
                 }
                 Row {
-                    TextButton(onClick = { model.jsonMode = false }) { Text("资源设置") }
+                    TextButton(onClick = { model.jsonMode = false }) { Text(stringResource(R.string.plus_resource_settings)) }
                     TextButton(onClick = { model.jsonMode = !model.jsonMode }) { Text("vm_config.json") }
                 }
                 if (model.jsonMode) {
-                    OutlinedTextField(value = model.configDraft, onValueChange = { model.configDraft = it }, modifier = Modifier.fillMaxWidth().heightIn(min = 240.dp, max = 420.dp), textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace))
-                } else if (json == null) Text("JSON 语法有误，请切换到 JSON 编辑修复。")
+                    OutlinedTextField(value = model.configDraft, onValueChange = { model.configDraft = it }, modifier = Modifier.fillMaxWidth().heightIn(min = 240.dp, max = 420.dp), textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, textDirection = androidx.compose.ui.text.style.TextDirection.Ltr))
+                } else if (json == null) Text(stringResource(R.string.plus_json_syntax_hint))
                 else {
-                    OutlinedTextField(value = json.get("memory_mib")?.takeIf { it.isJsonPrimitive }?.asString ?: "", onValueChange = { model.property("memory_mib", it) }, label = { Text("内存（MiB）") }, singleLine = true)
-                    Text("CPU 核心配置")
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("one_cpu" to "单核", "match_host" to "匹配宿主").forEach { (key, label) ->
+                    OutlinedTextField(value = json.get("memory_mib")?.takeIf { it.isJsonPrimitive }?.asString ?: "", onValueChange = { model.property("memory_mib", it) }, label = { Text(stringResource(R.string.plus_memory_mib)) }, singleLine = true)
+                    Text(stringResource(R.string.plus_cpu_configuration))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("one_cpu" to stringResource(R.string.plus_single_cpu), "match_host" to stringResource(R.string.plus_host_cpu)).forEach { (key, label) ->
                             FilterChip(selected = json.get("cpu_topology")?.takeIf { it.isJsonPrimitive }?.asString == key, onClick = { model.property("cpu_topology", key) }, label = { Text(label) })
                         }
                     }
-                    Text("支持单核或使用宿主 CPU 拓扑。")
+                    Text(stringResource(R.string.plus_cpu_hint))
                 }
                 if (model.editTarget?.isManaged == false) {
                     HorizontalDivider(Modifier.padding(top = 6.dp))
-                    FilledTonalButton(onClick = model::openDiskResize, enabled = canResize && model.disks.isNotEmpty()) { Text("扩容磁盘") }
-                    Text(if (!canResize) "关闭虚拟机后可扩容磁盘。" else "仅扩大磁盘文件，分区和文件系统需在 Guest 内自行扩容。", style = MaterialTheme.typography.bodySmall)
+                    FilledTonalButton(onClick = model::openDiskResize, enabled = canResize && model.disks.isNotEmpty()) { Text(stringResource(R.string.plus_expand_disk)) }
+                    Text(if (!canResize) stringResource(R.string.plus_stop_before_resize) else stringResource(R.string.plus_resize_hint), style = MaterialTheme.typography.bodySmall)
                     model.diskMessage?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                 }
-                TextButton(onClick = model::restore, enabled = !model.importing) { Text("恢复上次启动／保存的配置") }
+                TextButton(onClick = model::restore, enabled = !model.importing) { Text(stringResource(R.string.plus_restore_configuration)) }
                 model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
-        }, confirmButton = { TextButton(onClick = model::save, enabled = !model.importing) { Text("保存") } },
-        dismissButton = { TextButton(onClick = { model.editTarget = null }, enabled = !model.importing) { Text("取消") } })
+        }, confirmButton = { TextButton(onClick = model::save, enabled = !model.importing) { Text(stringResource(R.string.plus_save)) } },
+        dismissButton = { TextButton(onClick = { model.editTarget = null }, enabled = !model.importing) { Text(stringResource(R.string.plus_cancel)) } })
     if (model.resizingDisk) {
         val disk = model.disks.firstOrNull { it.path == model.diskPath }
         val size = runCatching { CustomDiskSize.targetBytes(model.diskGiB) }.getOrNull()
         AlertDialog(onDismissRequest = { if (!model.importing) model.resizingDisk = false },
-            title = { Text("扩容磁盘") },
+            title = { Text(stringResource(R.string.plus_expand_disk)) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("选择已保存配置中的磁盘。操作立即生效，不随配置页的取消撤销。")
+                    Text(stringResource(R.string.plus_resize_selection_hint))
                     model.disks.forEach { item ->
                         FilterChip(selected = item.path == model.diskPath,
                             onClick = { model.diskPath = item.path }, enabled = !model.importing,
                             label = { Text(item.path.removePrefix("\$PAYLOAD_DIR/")) })
                     }
-                    disk?.let { Text("当前逻辑容量：${String.format(java.util.Locale.ROOT, "%.2f", it.bytes.toDouble() / CustomDiskSize.GIB)} GiB（${it.bytes} 字节）") }
+                    disk?.let { Text(stringResource(R.string.plus_current_disk_size , String.format(java.util.Locale.ROOT, "%.2f", it.bytes.toDouble() / CustomDiskSize.GIB), it.bytes)) }
                     OutlinedTextField(value = model.diskGiB, onValueChange = { model.diskGiB = it },
-                        label = { Text("目标容量（GiB）") }, singleLine = true, enabled = !model.importing,
+                        label = { Text(stringResource(R.string.plus_target_disk_size)) }, singleLine = true, enabled = !model.importing,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number))
-                    Text("只支持扩大，不支持缩小。新增容量按写入占用手机空间；完成后需自行扩展分区和文件系统。")
+                    Text(stringResource(R.string.plus_resize_warning))
                     model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 }
             },
-            confirmButton = { TextButton(onClick = model::growDisk, enabled = canResize && disk != null && size != null && size > disk.bytes) { Text("扩容") } },
-            dismissButton = { TextButton(onClick = { model.resizingDisk = false }, enabled = !model.importing) { Text("取消") } })
+            confirmButton = { TextButton(onClick = model::growDisk, enabled = canResize && disk != null && size != null && size > disk.bytes) { Text(stringResource(R.string.plus_expand_action)) } },
+            dismissButton = { TextButton(onClick = { model.resizingDisk = false }, enabled = !model.importing) { Text(stringResource(R.string.plus_cancel)) } })
     }
 
 }
@@ -302,24 +306,24 @@ private fun CloudInitFields(model: VmManagementViewModel) {
     HorizontalDivider()
     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
         Checkbox(checked = model.cloudEnabled, onCheckedChange = { model.cloudEnabled = it }, enabled = enabled)
-        Text("初始配置（cloud-init）")
+        Text(stringResource(R.string.plus_cloud_init_title))
     }
-    Text("适用于支持 NoCloud 的云镜像，在首次启动时设置账户。普通镜像可能不生效。", style = MaterialTheme.typography.bodySmall)
+    Text(stringResource(R.string.plus_cloud_init_summary), style = MaterialTheme.typography.bodySmall)
     if (model.cloudEnabled) {
-        OutlinedTextField(value = model.cloudUsername, onValueChange = { model.cloudUsername = it }, label = { Text("用户名") }, singleLine = true, enabled = enabled)
-        if (model.cloudUsername.trim() == "root") Text("将设置已有 root 账户。SSH 是否允许 root 登录仍由镜像策略决定。", style = MaterialTheme.typography.bodySmall)
+        OutlinedTextField(value = model.cloudUsername, onValueChange = { model.cloudUsername = it }, label = { Text(stringResource(R.string.plus_username)) }, singleLine = true, enabled = enabled)
+        if (model.cloudUsername.trim() == "root") Text(stringResource(R.string.plus_root_account_hint), style = MaterialTheme.typography.bodySmall)
         val transformation = if (showPassword) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation()
-        OutlinedTextField(value = model.cloudPassword, onValueChange = { model.cloudPassword = it }, label = { Text(if (model.cloudExistingHash.isEmpty()) "密码" else "新密码（留空保留）") }, singleLine = true, enabled = enabled, visualTransformation = transformation,
+        OutlinedTextField(value = model.cloudPassword, onValueChange = { model.cloudPassword = it }, label = { Text(if (model.cloudExistingHash.isEmpty()) stringResource(R.string.plus_password) else stringResource(R.string.plus_new_password)) }, singleLine = true, enabled = enabled, visualTransformation = transformation,
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password))
-        OutlinedTextField(value = model.cloudConfirm, onValueChange = { model.cloudConfirm = it }, label = { Text("确认密码") }, singleLine = true, enabled = enabled, visualTransformation = transformation,
+        OutlinedTextField(value = model.cloudConfirm, onValueChange = { model.cloudConfirm = it }, label = { Text(stringResource(R.string.plus_confirm_password)) }, singleLine = true, enabled = enabled, visualTransformation = transformation,
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password))
-        TextButton(onClick = { showPassword = !showPassword }, enabled = enabled) { Text(if (showPassword) "隐藏密码" else "显示密码") }
-        OutlinedTextField(value = model.cloudHostname, onValueChange = { model.cloudHostname = it }, label = { Text("主机名（可选）") }, singleLine = true, enabled = enabled)
-        OutlinedTextField(value = model.cloudKeys, onValueChange = { model.cloudKeys = it }, label = { Text("SSH 公钥（可选，每行一个）") }, enabled = enabled, minLines = 2)
+        TextButton(onClick = { showPassword = !showPassword }, enabled = enabled) { Text(if (showPassword) stringResource(R.string.plus_hide_password) else stringResource(R.string.plus_show_password)) }
+        OutlinedTextField(value = model.cloudHostname, onValueChange = { model.cloudHostname = it }, label = { Text(stringResource(R.string.plus_hostname_optional)) }, singleLine = true, enabled = enabled)
+        OutlinedTextField(value = model.cloudKeys, onValueChange = { model.cloudKeys = it }, label = { Text(stringResource(R.string.plus_ssh_keys_optional)) }, enabled = enabled, minLines = 2)
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Checkbox(checked = model.cloudSshPassword, onCheckedChange = { model.cloudSshPassword = it }, enabled = enabled)
-            Text("允许 SSH 密码登录")
+            Text(stringResource(R.string.plus_ssh_password_login))
         }
-        Text("设置密码或 SSH 公钥至少一项。普通用户拥有 sudo 权限；密码不明文保存。", style = MaterialTheme.typography.bodySmall)
+        Text(stringResource(R.string.plus_cloud_credentials_hint), style = MaterialTheme.typography.bodySmall)
     }
 }

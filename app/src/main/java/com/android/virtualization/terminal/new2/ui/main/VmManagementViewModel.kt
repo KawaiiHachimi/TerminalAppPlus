@@ -1,6 +1,8 @@
 /* Copyright 2026 Terminal Plus contributors. SPDX-License-Identifier: Apache-2.0 */
 package com.android.virtualization.terminal.new2.ui.main
 
+import com.android.virtualization.terminal.AppStrings
+import com.android.virtualization.terminal.R
 import android.app.Application
 import android.net.Uri
 import androidx.compose.runtime.*
@@ -55,11 +57,11 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
         resetCloud()
         choosingImport = false
         image = uri
-        name = runCatching { VmProfiles.displayName(uri).substringBeforeLast('.') }.getOrDefault("自定义镜像")
+        name = runCatching { VmProfiles.displayName(uri).substringBeforeLast('.') }.getOrDefault(AppStrings.get(R.string.plus_custom_image))
         firmware = null; kernel = null; initrd = null; directBoot = false
         error = null; importedBytes = 0
         qcowImport = false; formatReady = archiveImport
-        if (!archiveImport) work("识别镜像格式") {
+        if (!archiveImport) work(AppStrings.get(R.string.plus_detecting_image_format)) {
             qcowImport = VmProfiles.inspectQcow(uri)
             formatReady = true
         }
@@ -71,21 +73,21 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
         importing = true; error = null; operation = label; importedBytes = 0
         job = viewModelScope.launch {
             try { action() }
-            catch (e: CancellationException) { error = "操作已取消"; throw e }
-            catch (e: Exception) { error = e.message ?: "操作失败" }
+            catch (e: CancellationException) { error = AppStrings.get(R.string.plus_operation_canceled); throw e }
+            catch (e: Exception) { error = e.message ?: AppStrings.get(R.string.plus_operation_failed) }
             finally { importing = false }
         }
     }
     fun import() {
         val uri = image ?: return
         if (!formatReady) return
-        if (!archiveImport && directBoot && kernel == null) { error = "请选择内核"; return }
+        if (!archiveImport && directBoot && kernel == null) { error = AppStrings.get(R.string.plus_kernel_required); return }
         val chosenArchive = archiveImport
         val convertQcow = qcowImport
         val chosenFirmware = firmware; val chosenName = name
         val chosenKernel = if (directBoot) kernel else null
         val chosenInitrd = if (directBoot) initrd else null; val chosenParams = params
-        work("导入镜像") {
+        work(AppStrings.get(R.string.plus_importing_image)) {
             val cloud = if (chosenArchive) null else prepareCloud("pending")
             val result = if (chosenArchive) VmProfiles.importDebianArchive(uri, chosenName) { importedBytes = it }
             else VmProfiles.importImage(uri, chosenFirmware, chosenName, chosenKernel, chosenInitrd, chosenParams,
@@ -93,11 +95,11 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
             image = null; resetCloud(); switchTarget = result
         }
     }
-    fun clone(profile: VmProfile) { work("克隆磁盘") { VmProfiles.clone(profile) { importedBytes = it } } }
-    fun delete(profile: VmProfile) { deleteTarget = null; work("删除虚拟机") { VmProfiles.delete(profile) } }
-    fun rename(profile: VmProfile, value: String) { work("重命名") { withContext(Dispatchers.IO) { VmProfiles.rename(profile, value) }; renameTarget = null } }
+    fun clone(profile: VmProfile) { work(AppStrings.get(R.string.plus_cloning_disk)) { VmProfiles.clone(profile) { importedBytes = it } } }
+    fun delete(profile: VmProfile) { deleteTarget = null; work(AppStrings.get(R.string.plus_deleting_vm)) { VmProfiles.delete(profile) } }
+    fun rename(profile: VmProfile, value: String) { work(AppStrings.get(R.string.plus_rename)) { withContext(Dispatchers.IO) { VmProfiles.rename(profile, value) }; renameTarget = null } }
     fun edit(profile: VmProfile) {
-        work("读取配置") {
+        work(AppStrings.get(R.string.plus_reading_configuration)) {
             configDraft = withContext(Dispatchers.IO) { VmProfiles.readConfig(profile) }
             disks = withContext(Dispatchers.IO) { if (profile.isManaged) emptyList() else VmProfiles.customDisks(profile) }
             diskMessage = null; resizingDisk = false
@@ -110,7 +112,7 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
             val json = JsonParser.parseString(configDraft).asJsonObject
             if (key == "memory_mib" && value.toIntOrNull() != null) json.addProperty(key, value.toInt()) else json.addProperty(key, value)
             configDraft = VmConfigDocument.format(json)
-        }.onFailure { error = "请先修复 JSON 语法" }
+        }.onFailure { error = AppStrings.get(R.string.plus_fix_json_first) }
     }
     private fun resetCloud() {
         cloudEnabled = false; cloudUsername = "droid"; cloudPassword = ""; cloudConfirm = ""
@@ -118,7 +120,7 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     }
     private suspend fun prepareCloud(id: String): CloudInitConfig? {
         if (!cloudEnabled) return null
-        require(cloudPassword == cloudConfirm) { "两次输入的密码不一致" }
+        require(cloudPassword == cloudConfirm) { AppStrings.get(R.string.plus_passwords_mismatch) }
         val user = cloudUsername.trim(); val password = cloudPassword; val host = cloudHostname.trim()
         val keys = cloudKeys; val ssh = cloudSshPassword; val oldHash = cloudExistingHash
         val config = withContext(Dispatchers.IO) { CloudInit.config(user, password, host, keys, ssh, id, oldHash) }
@@ -133,21 +135,21 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
         val profile = editTarget ?: return
         val path = diskPath
         val size = runCatching { CustomDiskSize.targetBytes(diskGiB) }.getOrElse { error = it.message; return }
-        work("扩容磁盘") {
+        work(AppStrings.get(R.string.plus_expand_disk)) {
             VmProfiles.growDisk(profile, path, size)
             disks = withContext(Dispatchers.IO) { VmProfiles.customDisks(profile) }
             resizingDisk = false
-            diskMessage = "虚拟磁盘已扩容至 ${size / CustomDiskSize.GIB} GiB。进入系统后，请自行扩展分区（如有）和文件系统，才能使用新增空间。"
+            diskMessage = AppStrings.get(R.string.plus_disk_expanded , size / CustomDiskSize.GIB)
         }
     }
     fun restore() {
         val profile = editTarget ?: return
-        work("恢复配置草稿") { configDraft = withContext(Dispatchers.IO) { VmProfiles.restoreConfig(profile) } }
+        work(AppStrings.get(R.string.plus_restoring_configuration)) { configDraft = withContext(Dispatchers.IO) { VmProfiles.restoreConfig(profile) } }
     }
     fun save() {
         val profile = editTarget ?: return
         val draft = configDraft; val screen = screenDraft
-        work("保存配置") {
+        work(AppStrings.get(R.string.plus_saving_configuration)) {
             withContext(Dispatchers.IO) {
                 VmProfiles.saveConfig(profile, draft)
                 VmProfiles.setScreen(VmProfiles.profiles.value.first { it.id == profile.id }, screen)
@@ -158,20 +160,20 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     fun switch() {
         val target = switchTarget ?: return
         switchTarget = null
-        work("切换虚拟机") { VmController.switchTo(target) }
+        work(AppStrings.get(R.string.plus_switching_vm)) { VmController.switchTo(target) }
     }
     fun forceStop() {
         val target = stopTarget ?: return
         stopTarget = null
-        work("强制停止") {
+        work(AppStrings.get(R.string.plus_force_stop)) {
             check(VmProfiles.selected.value.id == target.id && VmController.vmState.value == VmState.Running) {
-                "虚拟机状态已改变，请重新操作"
+                AppStrings.get(R.string.plus_vm_state_changed)
             }
             VmController.stop()
             withTimeout(30_000) {
                 VmController.vmState.first { it != VmState.Stopping }
             }
-            check(VmController.vmState.value == VmState.Stopped) { "虚拟机未能停止，请重试" }
+            check(VmController.vmState.value == VmState.Stopped) { AppStrings.get(R.string.plus_vm_stop_failed) }
         }
     }
 }

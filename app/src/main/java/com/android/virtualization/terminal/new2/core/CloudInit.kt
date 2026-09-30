@@ -1,6 +1,8 @@
 /* Copyright 2026 Terminal Plus contributors. SPDX-License-Identifier: Apache-2.0 */
 package com.android.virtualization.terminal.new2.core
 
+import com.android.virtualization.terminal.AppStrings
+import com.android.virtualization.terminal.R
 import android.content.Context
 import android.util.AtomicFile
 import com.google.gson.Gson
@@ -15,13 +17,13 @@ internal data class CloudInitConfig(val username: String, val passwordHash: Stri
 internal object CloudInit {
     private val gson = Gson()
     fun config(username: String, password: String, hostname: String, keys: String, sshPassword: Boolean, id: String, existingHash: String = ""): CloudInitConfig {
-        require(username.matches(Regex("[a-z_][a-z0-9_-]{0,31}"))) { "用户名须为小写字母、数字、下划线或连字符，且不能以数字开头" }
-        require(hostname.isBlank() || (hostname.length <= 63 && hostname.matches(Regex("[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?")))) { "主机名须为 1～63 位字母、数字或连字符" }
+        require(username.matches(Regex("[a-z_][a-z0-9_-]{0,31}"))) { AppStrings.get(R.string.plus_invalid_username) }
+        require(hostname.isBlank() || (hostname.length <= 63 && hostname.matches(Regex("[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?")))) { AppStrings.get(R.string.plus_invalid_hostname) }
         val publicKeys = keys.lines().map(String::trim).filter(String::isNotEmpty)
-        require(publicKeys.all { it.matches(Regex("(?:ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(?:256|384|521)) [A-Za-z0-9+/]+={0,3}(?: .*)?")) }) { "请输入有效的 SSH 公钥，每行一个；不支持私钥或 authorized_keys 选项" }
-        require(password.isNotEmpty() || existingHash.isNotEmpty() || publicKeys.isNotEmpty()) { "请设置密码或 SSH 公钥" }
-        require(password.length <= 1024 && keys.length <= 16384) { "密码或公钥过长" }
-        require(!sshPassword || password.isNotEmpty() || existingHash.isNotEmpty()) { "启用 SSH 密码登录需要设置密码" }
+        require(publicKeys.all { it.matches(Regex("(?:ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(?:256|384|521)) [A-Za-z0-9+/]+={0,3}(?: .*)?")) }) { AppStrings.get(R.string.plus_invalid_ssh_key) }
+        require(password.isNotEmpty() || existingHash.isNotEmpty() || publicKeys.isNotEmpty()) { AppStrings.get(R.string.plus_credentials_required) }
+        require(password.length <= 1024 && keys.length <= 16384) { AppStrings.get(R.string.plus_credentials_too_long) }
+        require(!sshPassword || password.isNotEmpty() || existingHash.isNotEmpty()) { AppStrings.get(R.string.plus_ssh_password_required) }
         val alphabet = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
         val random = SecureRandom()
         val salt = (1..16).map { alphabet[random.nextInt(alphabet.length)] }.joinToString("")
@@ -47,7 +49,7 @@ internal object CloudInit {
             val slot = slots.getAsJsonObject(name)
             val start = slot.get("offset").asInt; val length = slot.get("length").asInt
             val content = (text + "#").toByteArray(Charsets.UTF_8)
-            require(start >= 0 && length > 0 && start.toLong() + length <= result.size && content.size < length) { "Cloud-init 配置超出容量" }
+            require(start >= 0 && length > 0 && start.toLong() + length <= result.size && content.size < length) { AppStrings.get(R.string.plus_cloud_config_too_large) }
             result.fill(32, start, start + length)
             content.copyInto(result, start); result[start + length - 1] = 10
         }
@@ -71,7 +73,7 @@ internal object CloudInit {
     }
     fun locked(directory: File) = File(directory, "cloud-init.booted").exists() || File(directory, "vm_config.last-good.json").exists()
     fun save(context: Context, directory: File, config: CloudInitConfig?) {
-        check(!locked(directory)) { "此虚拟机已启动过，不能再修改首次初始化配置" }
+        check(!locked(directory)) { AppStrings.get(R.string.plus_cloud_config_locked) }
         if (config == null) { check(!file(directory).exists() || file(directory).delete()); return }
         val (user, meta) = documents(config)
         val bytes = context.assets.open("cloud-init/template.iso").use { template ->

@@ -1,6 +1,8 @@
 /* Copyright 2026 Terminal Plus contributors. SPDX-License-Identifier: Apache-2.0 */
 package com.android.virtualization.terminal.new2.core
 
+import com.android.virtualization.terminal.AppStrings
+import com.android.virtualization.terminal.R
 import com.google.gson.JsonParser
 import java.io.File
 import java.io.RandomAccessFile
@@ -24,17 +26,17 @@ internal object CustomDiskSize {
 
     fun targetBytes(gib: String): Long {
         val value = gib.trim().toLongOrNull()
-        require(value != null && value > 0 && value <= Long.MAX_VALUE / GIB) { "请输入有效的整数容量（GiB）" }
+        require(value != null && value > 0 && value <= Long.MAX_VALUE / GIB) { AppStrings.get(R.string.plus_invalid_disk_capacity) }
         return value * GIB
     }
 
     // Caller holds the VM lifecycle lock; re-resolve the saved config before mutation.
     fun grow(config: String, directory: File, path: String, bytes: Long) {
-        require(disks(config, directory).any { it.path == path }) { "目标磁盘已改变或不支持扩容" }
+        require(disks(config, directory).any { it.path == path }) { AppStrings.get(R.string.plus_resize_disk_changed) }
         val file = File(path.replace("\$PAYLOAD_DIR", directory.canonicalPath)).canonicalFile
         RandomAccessFile(file, "rw").use { disk ->
-            require(bytes > disk.length()) { "目标容量必须大于当前容量，不支持缩小磁盘" }
-            require(bytes % 512 == 0L) { "容量必须按 512 字节对齐" }
+            require(bytes > disk.length()) { AppStrings.get(R.string.plus_resize_must_grow) }
+            require(bytes % 512 == 0L) { AppStrings.get(R.string.plus_size_sector_alignment) }
             val header = ByteArray(minOf(disk.length(), 65536L).toInt())
             disk.readFully(header)
             RawDiskFormat.validate(header, requireBootSector = false)

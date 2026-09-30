@@ -1,0 +1,25 @@
+<resources>
+    <string name="plus_check_again">"Erneut prüfen"</string>
+    <string name="plus_avf_unavailable">"Dieses Gerät bietet kein AVF. Terminal Plus benötigt AVF und eigene nicht geschützte VMs."</string>
+    <string name="plus_shizuku_configure">"Mit Shizuku einrichten"</string>
+    <string name="plus_shizuku_unavailable">"Shizuku installieren und starten, dann erneut versuchen. Alternativ die ADB-Befehle unten kopieren."</string>
+    <string name="plus_shizuku_update">"Shizuku aktualisieren und erneut versuchen."</string>
+    <string name="plus_shizuku_denied">"Shizuku-Zugriff abgelehnt. Terminal Plus in Shizuku erlauben und erneut versuchen."</string>
+    <string name="plus_shizuku_working">"Zwei AVF-Berechtigungen werden erteilt…"</string>
+    <string name="plus_shizuku_failed">"Einrichtung fehlgeschlagen: %1$s. Erneut versuchen oder ADB-Befehle nutzen."</string>
+    <string name="plus_shizuku_verify">"Anfrage abgeschlossen, Berechtigungen noch nicht bestätigt. Erneut prüfen oder ADB nutzen."</string>
+    <string name="plus_setup_title">"Terminal Plus einrichten"</string>
+    <string name="plus_setup_summary">"Zum Start zwei Virtualisierungsberechtigungen erteilen. Eine der folgenden Methoden wählen."</string>
+    <string name="plus_shizuku_hint">"Shizuku starten und Terminal Plus bei der Nachfrage erlauben."</string>
+    <string name="plus_adb_alternative">"Oder mit ADB einrichten"</string>
+    <string name="plus_copy_commands">"ADB-Befehle kopieren"</string>
+    <string name="plus_commands_copied">"Befehle kopiert. Auf dem ADB-Computer ausführen, dann erneut prüfen."</string>
+    <string name="plus_display_connecting">"Verbindung zum VM-Bildschirm…"</string>
+    <string name="plus_display_service_required">"Warte auf Bildschirmdienst. Terminal Plus richtet ihn für vorgefertigtes Debian automatisch ein und verbindet sich, sobald er bereit ist."</string>
+    <string name="plus_terminal_unavailable">"Die VM läuft, aber ttyd ist nicht verbunden. Das Image enthält eventuell kein ttyd. Konsole oder Anzeige können weiter genutzt werden."</string>
+    <string name="plus_terminal_no_sessions">"Keine ttyd-Tabs geöffnet.\nMit ＋ oben links ein Terminal öffnen oder Konsole/Anzeige über die Werkzeugleiste aufrufen.\nDie VM läuft weiter."</string>
+    <string name="plus_terminal_retry">"Verbindung erneut versuchen"</string>
+    <string name="plus_terminal_new_session">"Neues Terminal"</string>
+    <string name="plus_virtual_machines">"Virtuelle Maschinen"</string>
+    <string name="plus_direct_console">"Konsole"</string>
+</resources>

@@ -1,0 +1,25 @@
+<resources>
+    <string name="plus_check_again">重新檢查</string>
+    <string name="plus_avf_unavailable">此裝置未提供 Android 虛擬化框架。終端 Plus 需要 AVF 及自定義非受保護虛擬機器支援。</string>
+    <string name="plus_shizuku_configure">使用 Shizuku 配置</string>
+    <string name="plus_shizuku_unavailable">請先安裝並啟動 Shizuku，再返回點選「使用 Shizuku 配置」。也可以繼續使用複製命令方式。</string>
+    <string name="plus_shizuku_update">請更新 Shizuku 後重試。</string>
+    <string name="plus_shizuku_denied">未獲 Shizuku 授權。請在 Shizuku 的授權應用中允許「終端 Plus」，然後重試。</string>
+    <string name="plus_shizuku_working">正在授予兩個 AVF 許可權…</string>
+    <string name="plus_shizuku_failed">配置失敗：%1$s。可以重試，或使用 ADB 命令授權。</string>
+    <string name="plus_shizuku_verify">授權請求已完成，但許可權尚未確認。請重新檢查或使用 ADB 命令。</string>
+    <string name="plus_setup_title">設定終端 Plus</string>
+    <string name="plus_setup_summary">開始使用前，需要授予兩個虛擬化許可權。選擇下方任一方式即可。</string>
+    <string name="plus_shizuku_hint">請先啟動 Shizuku，並在授權提示中允許終端 Plus。</string>
+    <string name="plus_adb_alternative">也可以透過 ADB 配置</string>
+    <string name="plus_copy_commands">複製 ADB 命令</string>
+    <string name="plus_commands_copied">命令已複製。在已連線 ADB 的電腦上執行後，點選「重新檢查」。</string>
+    <string name="plus_direct_console">控制檯</string>
+    <string name="plus_display_connecting">正在連線虛擬機器螢幕…</string>
+    <string name="plus_display_service_required">正在等待虛擬機器螢幕服務。終端 Plus 會為預構建 Debian 自動配置，準備就緒後自動連線。</string>
+    <string name="plus_terminal_unavailable">虛擬機器正在執行，尚未連線到 ttyd。此映象可能未提供 ttyd，你可以繼續使用控制檯或圖形介面。</string>
+    <string name="plus_terminal_no_sessions">當前沒有開啟的 ttyd 標籤頁。\n點選左上角 ＋ 開啟終端，或使用上方按鈕進入控制檯、虛擬顯示器。\n虛擬機器仍在執行。</string>
+    <string name="plus_terminal_retry">重試連線</string>
+    <string name="plus_terminal_new_session">新建終端</string>
+    <string name="plus_virtual_machines">虛擬機器</string>
+</resources>

@@ -1,0 +1,25 @@
+<resources>
+    <string name="plus_check_again">"Проверить снова"</string>
+    <string name="plus_avf_unavailable">"Устройство не поддерживает AVF. Для Terminal Plus нужны AVF и собственные незащищённые ВМ."</string>
+    <string name="plus_shizuku_configure">"Настроить через Shizuku"</string>
+    <string name="plus_shizuku_unavailable">"Установите и запустите Shizuku, затем повторите. Также можно скопировать команды ADB ниже."</string>
+    <string name="plus_shizuku_update">"Обновите Shizuku и повторите."</string>
+    <string name="plus_shizuku_denied">"Доступ Shizuku отклонён. Разрешите Terminal Plus в Shizuku и повторите."</string>
+    <string name="plus_shizuku_working">"Предоставление двух разрешений AVF…"</string>
+    <string name="plus_shizuku_failed">"Ошибка настройки: %1$s. Повторите или используйте команды ADB."</string>
+    <string name="plus_shizuku_verify">"Запрос завершён, разрешения ещё не подтверждены. Проверьте снова или используйте ADB."</string>
+    <string name="plus_setup_title">"Настройка Terminal Plus"</string>
+    <string name="plus_setup_summary">"Для начала предоставьте два разрешения виртуализации одним из способов ниже."</string>
+    <string name="plus_shizuku_hint">"Запустите Shizuku и разрешите доступ Terminal Plus при запросе."</string>
+    <string name="plus_adb_alternative">"Или настроить через ADB"</string>
+    <string name="plus_copy_commands">"Скопировать команды ADB"</string>
+    <string name="plus_commands_copied">"Команды скопированы. Выполните их на компьютере с ADB и проверьте снова."</string>
+    <string name="plus_display_connecting">"Подключение к экрану ВМ…"</string>
+    <string name="plus_display_service_required">"Ожидание службы экрана. Terminal Plus автоматически настроит её для готового Debian и подключится по готовности."</string>
+    <string name="plus_terminal_unavailable">"ВМ работает, но ttyd не подключён. Возможно, его нет в образе. Можно использовать консоль или экран."</string>
+    <string name="plus_terminal_no_sessions">"Нет открытых вкладок ttyd.\nНажмите ＋ вверху слева или откройте консоль либо экран через панель.\nВМ продолжает работать."</string>
+    <string name="plus_terminal_retry">"Повторить подключение"</string>
+    <string name="plus_terminal_new_session">"Новый терминал"</string>
+    <string name="plus_virtual_machines">"Виртуальные машины"</string>
+    <string name="plus_direct_console">"Консоль"</string>
+</resources>

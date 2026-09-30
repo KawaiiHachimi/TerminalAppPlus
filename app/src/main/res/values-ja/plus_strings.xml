@@ -1,0 +1,25 @@
+<resources>
+    <string name="plus_check_again">"再確認"</string>
+    <string name="plus_avf_unavailable">"この端末は AVF を提供していません。Terminal Plus には AVF とカスタム非保護 VM の対応が必要です。"</string>
+    <string name="plus_shizuku_configure">"Shizuku で設定"</string>
+    <string name="plus_shizuku_unavailable">"Shizuku をインストールして起動し、再試行してください。下の ADB コマンドをコピーすることもできます。"</string>
+    <string name="plus_shizuku_update">"Shizuku を更新して再試行してください。"</string>
+    <string name="plus_shizuku_denied">"Shizuku の権限が拒否されました。Shizuku で Terminal Plus を許可して再試行してください。"</string>
+    <string name="plus_shizuku_working">"2つの AVF 権限を付与中…"</string>
+    <string name="plus_shizuku_failed">"設定失敗：%1$s。再試行するか ADB コマンドを使用してください。"</string>
+    <string name="plus_shizuku_verify">"要求は完了しましたが権限は未確認です。再確認するか ADB を使用してください。"</string>
+    <string name="plus_setup_title">"Terminal Plus の設定"</string>
+    <string name="plus_setup_summary">"開始するには2つの仮想化権限が必要です。下のいずれかの方法を選択してください。"</string>
+    <string name="plus_shizuku_hint">"Shizuku を起動し、確認画面で Terminal Plus を許可してください。"</string>
+    <string name="plus_adb_alternative">"または ADB で設定"</string>
+    <string name="plus_copy_commands">"ADB コマンドをコピー"</string>
+    <string name="plus_commands_copied">"コマンドをコピーしました。ADB 接続した PC で実行し、再確認してください。"</string>
+    <string name="plus_display_connecting">"VM の画面に接続中…"</string>
+    <string name="plus_display_service_required">"画面サービスを待っています。ビルド済み Debian では自動設定し、準備でき次第接続します。"</string>
+    <string name="plus_terminal_unavailable">"VM は実行中ですが ttyd は未接続です。イメージに ttyd がない場合があります。コンソールや画面表示は引き続き利用できます。"</string>
+    <string name="plus_terminal_no_sessions">"ttyd タブが開いていません。\n左上の ＋ で端末を開くか、ツールバーからコンソールや画面表示を開けます。\nVM は実行を続けています。"</string>
+    <string name="plus_terminal_retry">"接続を再試行"</string>
+    <string name="plus_terminal_new_session">"新しい端末"</string>
+    <string name="plus_virtual_machines">"仮想マシン"</string>
+    <string name="plus_direct_console">"コンソール"</string>
+</resources>

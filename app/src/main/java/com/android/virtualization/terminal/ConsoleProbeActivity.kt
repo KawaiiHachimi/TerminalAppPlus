@@ -1,6 +1,8 @@
 /* Copyright 2026 Terminal Plus contributors. SPDX-License-Identifier: Apache-2.0 */
 package com.android.virtualization.terminal
 
+import com.android.virtualization.terminal.AppStrings
+import com.android.virtualization.terminal.R
 import android.app.Activity
 import android.os.Bundle
 import java.util.concurrent.Executors
@@ -102,7 +104,7 @@ class ConsoleProbeActivity : Activity() {
         val connected = VmConsole.subscribe(consoleListener)
         replayingConsole = false
         if (!connected) {
-            session.append("当前虚拟机未运行，请返回主界面启动后重试。\r\n".toByteArray())
+            session.append(AppStrings.get(R.string.plus_console_not_running).toByteArray())
         }
     }
     override fun onDestroy() {

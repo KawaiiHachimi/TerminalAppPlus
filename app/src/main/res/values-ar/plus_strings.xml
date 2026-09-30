@@ -1,0 +1,25 @@
+<resources>
+    <string name="plus_check_again">"إعادة الفحص"</string>
+    <string name="plus_avf_unavailable">"هذا الجهاز لا يوفر AVF. يتطلب Terminal Plus دعم AVF والآلات المخصصة غير المحمية."</string>
+    <string name="plus_shizuku_configure">"الإعداد عبر Shizuku"</string>
+    <string name="plus_shizuku_unavailable">"ثبّت Shizuku وشغّله ثم أعد المحاولة. يمكنك أيضًا نسخ أوامر ADB أدناه."</string>
+    <string name="plus_shizuku_update">"حدّث Shizuku ثم أعد المحاولة."</string>
+    <string name="plus_shizuku_denied">"رُفض إذن Shizuku. اسمح لـ Terminal Plus في Shizuku ثم أعد المحاولة."</string>
+    <string name="plus_shizuku_working">"جارٍ منح إذنَي AVF…"</string>
+    <string name="plus_shizuku_failed">"فشل الإعداد: %1$s. أعد المحاولة أو استخدم أوامر ADB."</string>
+    <string name="plus_shizuku_verify">"اكتمل الطلب لكن الأذونات غير مؤكدة. أعد الفحص أو استخدم ADB."</string>
+    <string name="plus_setup_title">"إعداد Terminal Plus"</string>
+    <string name="plus_setup_summary">"امنح إذنَي المحاكاة الافتراضية للبدء. اختر إحدى الطريقتين أدناه."</string>
+    <string name="plus_shizuku_hint">"شغّل Shizuku واسمح لـ Terminal Plus عند الطلب."</string>
+    <string name="plus_adb_alternative">"أو الإعداد عبر ADB"</string>
+    <string name="plus_copy_commands">"نسخ أوامر ADB"</string>
+    <string name="plus_commands_copied">"نُسخت الأوامر. نفّذها على الكمبيوتر المتصل عبر ADB ثم أعد الفحص."</string>
+    <string name="plus_display_connecting">"جارٍ الاتصال بشاشة الآلة…"</string>
+    <string name="plus_display_service_required">"بانتظار خدمة الشاشة. يضبطها Terminal Plus تلقائيًا لصورة Debian المبنية مسبقًا ويتصل عند جاهزيتها."</string>
+    <string name="plus_terminal_unavailable">"الآلة تعمل لكن ttyd غير متصل. قد لا تتضمن الصورة ttyd. يمكنك متابعة استخدام وحدة التحكم أو الشاشة."</string>
+    <string name="plus_terminal_no_sessions">"لا توجد تبويبات ttyd مفتوحة.\nاستخدم ＋ أعلى اليسار أو افتح وحدة التحكم أو الشاشة من الشريط.\nالآلة ما زالت تعمل."</string>
+    <string name="plus_terminal_retry">"إعادة الاتصال"</string>
+    <string name="plus_terminal_new_session">"طرفية جديدة"</string>
+    <string name="plus_virtual_machines">"الآلات الافتراضية"</string>
+    <string name="plus_direct_console">"وحدة التحكم"</string>
+</resources>

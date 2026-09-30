@@ -4,7 +4,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import java.nio.file.Files
 
-class VmConfigDocumentTest {
+class VmConfigDocumentTest : com.android.virtualization.terminal.LocalizedResourcesTest() {
     private val valid = """{"name":"test","bootloader":"${'$'}PAYLOAD_DIR/u-boot.bin","memory_mib":2048,"cpu_topology":"match_host","protected":false,"console_out":true,"connect_console":false,"console_input_device":"ttyS0","disks":[{"image":"${'$'}PAYLOAD_DIR/system.raw","writable":true}]}"""
     @Test fun roundTripPreservesEditedResources() {
         val parsed = VmConfigDocument.parse(valid)

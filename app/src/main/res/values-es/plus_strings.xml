@@ -1,0 +1,25 @@
+<resources>
+    <string name="plus_check_again">"Comprobar de nuevo"</string>
+    <string name="plus_avf_unavailable">"Este dispositivo no ofrece AVF. Terminal Plus requiere AVF y VM personalizadas no protegidas."</string>
+    <string name="plus_shizuku_configure">"Configurar con Shizuku"</string>
+    <string name="plus_shizuku_unavailable">"Instala e inicia Shizuku y vuelve a intentarlo. También puedes copiar los comandos ADB de abajo."</string>
+    <string name="plus_shizuku_update">"Actualiza Shizuku e inténtalo de nuevo."</string>
+    <string name="plus_shizuku_denied">"Acceso a Shizuku denegado. Autoriza Terminal Plus en Shizuku y vuelve a intentarlo."</string>
+    <string name="plus_shizuku_working">"Concediendo los dos permisos AVF…"</string>
+    <string name="plus_shizuku_failed">"Error: %1$s. Reintenta o usa los comandos ADB."</string>
+    <string name="plus_shizuku_verify">"Solicitud completada, permisos sin confirmar. Comprueba de nuevo o usa ADB."</string>
+    <string name="plus_setup_title">"Configurar Terminal Plus"</string>
+    <string name="plus_setup_summary">"Concede dos permisos de virtualización para comenzar. Elige un método abajo."</string>
+    <string name="plus_shizuku_hint">"Inicia Shizuku y autoriza Terminal Plus cuando se solicite."</string>
+    <string name="plus_adb_alternative">"O configurar con ADB"</string>
+    <string name="plus_copy_commands">"Copiar comandos ADB"</string>
+    <string name="plus_commands_copied">"Comandos copiados. Ejecútalos en el ordenador conectado por ADB y comprueba de nuevo."</string>
+    <string name="plus_display_connecting">"Conectando a la pantalla de la VM…"</string>
+    <string name="plus_display_service_required">"Esperando al servicio de pantalla. Terminal Plus lo configura automáticamente para Debian precompilado y se conecta cuando está listo."</string>
+    <string name="plus_terminal_unavailable">"La VM funciona pero ttyd no está conectado. La imagen puede no incluir ttyd. Puedes usar la consola o la pantalla."</string>
+    <string name="plus_terminal_no_sessions">"No hay pestañas ttyd abiertas.\nUsa ＋ arriba a la izquierda o abre la consola o pantalla desde la barra.\nLa VM sigue funcionando."</string>
+    <string name="plus_terminal_retry">"Reintentar conexión"</string>
+    <string name="plus_terminal_new_session">"Nueva terminal"</string>
+    <string name="plus_virtual_machines">"Máquinas virtuales"</string>
+    <string name="plus_direct_console">"Consola"</string>
+</resources>

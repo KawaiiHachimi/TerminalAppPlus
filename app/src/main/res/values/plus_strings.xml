@@ -1,9 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- Plus additions intentionally provide English fallback and Simplified Chinese. -->
-    <string name="plus_grant_instructions">Terminal Plus uses Android Virtualization Framework without root. Use a running Shizuku to configure permissions, or run these two commands once from an ADB computer and tap Check again:\n\n%1$s</string>
     <string name="plus_check_again">Check again</string>
     <string name="plus_avf_unavailable">This device does not provide Android Virtualization Framework. Terminal Plus requires AVF and custom non-protected VM support.</string>
-    <string name="plus_display_unavailable">This ROM restricts the native VM display to system apps. The two AVF grants enable the terminal, but do not unlock this display service.</string>
     <string name="plus_shizuku_configure">Configure with Shizuku</string>
     <string name="plus_shizuku_unavailable">Install and start Shizuku, then return and tap Configure with Shizuku again. You can also copy the ADB commands below.</string>
     <string name="plus_shizuku_update">Please update Shizuku and try again.</string>
@@ -20,13 +18,6 @@
     <string name="plus_direct_console">Console</string>
     <string name="plus_display_connecting">Connecting to VM screen…</string>
     <string name="plus_display_service_required">Waiting for the VM screen service. Terminal Plus configures it automatically for the managed Debian image and will reconnect when ready.</string>
-    <string name="plus_laboratory">Laboratory</string>
-    <string name="plus_lab_console">BusyBox / hvc0</string>
-    <string name="plus_lab_console_hint">Independent diskless VM. Requires the prepared test initramfs.</string>
-    <string name="plus_lab_uboot">U-Boot + Debian</string>
-    <string name="plus_lab_uboot_hint">Independent VM. Requires a bootloader and a separate test disk.</string>
-    <string name="plus_lab_display">Current VM screen prototype</string>
-    <string name="plus_lab_display_hint">Open the experimental capture/rendering page for the running VM.</string>
     <string name="plus_terminal_unavailable">The virtual machine is running, but ttyd is not connected. This image may not provide ttyd. You can continue using the console or graphical display.</string>
     <string name="plus_terminal_no_sessions">No ttyd tabs are open.\nUse + at the top left to open a terminal, or the toolbar to enter the console or virtual display.\nThe virtual machine is still running.</string>
     <string name="plus_terminal_retry">Retry connection</string>
