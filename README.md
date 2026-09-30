@@ -138,6 +138,8 @@ AOSP 来源、参考项目及移植边界见 [docs/UPSTREAM.md](docs/UPSTREAM.md
 
 ## Credit
 
+- [AOSP](https://android.googlesource.com/platform/packages/modules/Virtualization/)：
+  本项目基于 Android 17 TerminalApp，沿用 AVF 虚拟机管理、终端和显示交互的原版实现。
 - [Termux](https://github.com/termux/termux-app)：控制台的 `terminal-emulator`
   与 `terminal-view`，提供 ANSI 解析、终端渲染、键盘输入及文本选择。
   固定来源提交为 `8629e632fcb95da272221be327db653fb24befe9`。
@@ -145,6 +147,7 @@ AOSP 来源、参考项目及移植边界见 [docs/UPSTREAM.md](docs/UPSTREAM.md
   Termux 组件中的上游基础代码。
 - [Podroid](https://github.com/ExTV/Podroid)：AVF 控制台流连接方案参考；
   本项目直接使用 Termux 官方组件，没有复制 Podroid 的 UI 或桥接实现。
+- [PocketVM](https://github.com/okhsunrog/pocketvm)：AVF Guest 镜像兼容性与 cloud-init 网络配置排查参考。
 
 第三方许可及本地调整见 [third_party/termux/README.md](third_party/termux/README.md)。
 
