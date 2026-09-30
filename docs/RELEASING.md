@@ -19,13 +19,9 @@ git push origin v17.0.1
 
 使用尚未存在的新标签，不要移动已经发布的标签。默认版本名仍为 `17.0-plus.1`；CI 发布版本名来自标签去掉 `v`，versionCode 为 `1000 + github.run_number`，避免后续发布覆盖安装时版本号不递增。同一次 run 的重试保持原 versionCode。
 
-Release 包含：
+Release 仅上传 `app-release.apk`：使用专用发布密钥签名的非 debuggable APK。不额外上传 `.idsig`、Guest 安装包或校验文件；Guest 工具已随 APK 提供。
 
-- `app-release.apk`：使用专用发布密钥签名的非 debuggable APK。
-- `guest-tools.bundle`：Guest 图形采集/端口代理的离线安装包。
-- `qemu-img-sources.tar.gz`：内置转换工具及静态依赖的对应源码、构建脚本和许可；分发 APK 时同时提供。
-- `SHA256SUMS`：以上附件的校验值。
-- GitHub 自动提供该标签对应的源代码归档；第三方来源和许可保留在仓库中。
+GitHub 自动显示的标签源码 zip/tar.gz 属于平台提供的链接。构建报告保留在 Actions artifacts；qemu-img 对应源码归档单独保存为 `qemu-img-corresponding-sources` artifact（90 天），固定上游来源、哈希与归档脚本保留在仓库。当前未改变的 qemu-img 二进制还可使用 [beta.3 保留的源码归档](https://github.com/KawaiiHachimi/TerminalAppPlus/releases/download/v17.0.1-beta.3/qemu-img-sources.tar.gz)。更换二进制时需同步更新对应源码分发位置。
 
 ## 签名与权限
 

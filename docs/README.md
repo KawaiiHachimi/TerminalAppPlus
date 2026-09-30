@@ -12,7 +12,7 @@
 | [自定义镜像接入 ttyd](CUSTOM-TTYD.md) | 认证方式、临时启动、完整 systemd 配置和排查 |
 | [Guest 图形采集与端口代理](GUEST-SCREEN-SERVICE.md) | 安装包部署、完整 systemd 配置、图形限制和排查 |
 
-两篇 Guest 服务指南都按“连接原理 → 准备条件 → 安装/启动 → systemd → 维护 → 排查 → 来源”组织。命令均在 Guest 内执行，不是 Android ADB shell 命令。
+常规安装优先使用 Guest 工具盘指南；ttyd 和图形服务文档用于手动部署与排查。服务命令均在 Guest 内执行，不是 Android ADB shell 命令。
 
 ## 来源与维护
 
@@ -34,3 +34,11 @@
 - [KMS 图形采集实验](experiments/KMS-CAPTURE.md)
 
 已完成且与当前说明重复的 `plans/VM-MANAGEMENT.md` 已移除；当前使用方法集中在虚拟机管理指南，源码精简建议集中在源码核对文档。旧计划仍可从 Git 历史查看。
+
+## 代码与构建资源位置
+
+- `app/`：Android 应用、界面、VM 生命周期及运行时资源。
+- `guest/root_files/`：Guest 常驻服务源码；`tools/`：安装器、资源生成与验证脚本。
+- `third_party/`：固定的第三方组件、来源和许可。ttyd 与 qemu-img 是不同运行环境的程序，前者运行在 Linux Guest，后者运行在 Android。
+- `app/src/main/assets/` 中的 ISO/bundle 是生成产物，需通过 README 对应命令更新，不能只改打包后的副本。
+- `docs/experiments/`、验证记录及源码核对是历史材料，当前操作以本页“当前使用指南”为准。

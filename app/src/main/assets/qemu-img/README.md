@@ -37,6 +37,13 @@ python3 tools/qemu-img/source-bundle.py
 
 This creates `dist/qemu-img-sources.tar.gz`, containing QEMU and linked library
 sources, Alpine recipes/patches, notices and build instructions. Release CI
-publishes it alongside the APK. Distribute this source archive with standalone
+saves it as the `qemu-img-corresponding-sources` Actions artifact (90 days);
+the Release download list contains only the APK. The pinned source URLs and
+hashes remain in `sources.json`, so the archive can be regenerated afterward. Distribute this source archive with standalone
 APK copies as well; it is deliberately not packed inside the APK. Do not publish
 a new binary without updating and distributing its corresponding sources.
+
+The corresponding sources for the current unchanged binary are also retained in
+[the beta.3 source archive](https://github.com/KawaiiHachimi/TerminalAppPlus/releases/download/v17.0.1-beta.3/qemu-img-sources.tar.gz).
+This link applies only to the binary hash recorded in this revision; replace it
+when rebuilding the executable.

@@ -28,7 +28,7 @@ Android Studio 打开本目录，使用其内置 JDK 21，同步 Gradle 后运�
 
 ## 自动构建与发布
 
-推送 `main` 自动构建检查；推送 `v17.0.1` 这样的版本标签后，GitHub Actions 自动签名 APK 并上传 Release，同时提供校验文件和 Guest 安装包。发布签名与当前本机 debug 签名不同，首次切换前请先备份 VM 数据。触发方式、签名与产物说明见 [发布指南](docs/RELEASING.md)。
+推送 `main` 自动构建检查；推送 `v17.0.1` 这样的版本标签后，GitHub Actions 自动签名并向 Release 上传 `app-release.apk`。Guest 工具已内置，构建报告和对应源码归档保存在 Actions artifacts。debug 与发布版签名不同，首次切换前请先备份 VM 数据。触发方式、签名与产物说明见 [发布指南](docs/RELEASING.md)。
 
 ## 安装与授权
 
@@ -83,10 +83,17 @@ adb shell pm grant com.android.virtualization.terminal.plus android.permission.U
 ```sh
 ./tools/build.sh :app:lintDebug
 python3 -m unittest discover -s tests -v
+python3 -m unittest discover -s tools/tests -v
 # 只有修改 guest 文件时才需要：
 python3 -m venv .venv
 .venv/bin/pip install pycdlib
+# Android 官方镜像的 cidata 与自动部署服务：
 .venv/bin/python tools/build-cidata.py
+# 自定义镜像的 PLUS_TOOLS 安装盘：
+.venv/bin/python tools/build-guest-tools-iso.py
+.venv/bin/python tools/verify-guest-tools-iso.py
+# 仅修改 NoCloud 模板/网络配置时：
+.venv/bin/python tools/build-cloud-init-template.py
 ```
 
 正常 Android Studio 构建直接使用已生成 cidata，无需 Python 或 ISO 工具。
@@ -114,7 +121,7 @@ AOSP 来源、参考项目及移植边界见 [docs/UPSTREAM.md](docs/UPSTREAM.md
 
 ## 虚拟机管理
 
-“初始设置”支持官方下载、导入官方格式 Debian 镜像包，或导入 IMG/RAW 磁盘。
+“初始设置”支持官方下载、导入官方格式 Debian 镜像包，或导入 IMG/RAW/QCOW2 磁盘。
 “设置 → 虚拟机”统一管理切换、重命名、离线克隆、删除及每台 VM 的启动配置。
 支持 U-Boot 或直接内核启动，配置页提供默认页面、内存、CPU 拓扑和 JSON 编辑。
 具体格式、资源限制与配置恢复见 [虚拟机管理](docs/CUSTOM-VM.md)。
@@ -122,6 +129,7 @@ AOSP 来源、参考项目及移植边界见 [docs/UPSTREAM.md](docs/UPSTREAM.md
 ## 文档
 
 - [虚拟机管理与导入](docs/CUSTOM-VM.md)
+- [初始配置 cloud-init](docs/CLOUD-INIT.md)：账户、SSH 公钥及首次启动 DHCP。
 - [自定义镜像 Guest 工具盘（实验）](docs/GUEST-TOOLS-ISO.md)：通过只读安装盘部署 ttyd 和图形采集服务。
 - [自定义镜像接入 ttyd](docs/CUSTOM-TTYD.md)：认证、启动命令和 systemd 配置。
 - [qcow2 转换工具](third_party/qemu-img/README.md)：内置 qemu-img 的来源、许可和对应源码；按文件内容识别镜像，转换为 RAW 后导入。
@@ -142,3 +150,5 @@ AOSP 来源、参考项目及移植边界见 [docs/UPSTREAM.md](docs/UPSTREAM.md
 
 内置 U-Boot 的来源和许可见 [第三方说明](third_party/u-boot/README.md)。
 压缩解码使用 [LZ4 Java](https://github.com/yawkat/lz4-java) 1.12.0（Apache-2.0）。
+
+Guest 工具盘内置 [ttyd](https://github.com/tsl0922/ttyd) 1.7.7 ARM64 静态程序，来源及许可见 [third_party/ttyd/NOTICE](third_party/ttyd/NOTICE)。
