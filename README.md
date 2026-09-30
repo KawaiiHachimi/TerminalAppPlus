@@ -130,6 +130,7 @@ AOSP 来源、参考项目及移植边界见 [docs/UPSTREAM.md](docs/UPSTREAM.md
 
 - [虚拟机管理与导入](docs/CUSTOM-VM.md)
 - [初始配置 cloud-init](docs/CLOUD-INIT.md)：账户、SSH 公钥及首次启动 DHCP。
+- [AlmaLinux 网络兼容排查](docs/ALMALINUX-NETWORK.md)：特殊环境下的接口匹配与 DHCP/DNS 校验和处理。
 - [自定义镜像 Guest 工具盘（实验）](docs/GUEST-TOOLS-ISO.md)：通过只读安装盘部署 ttyd 和图形采集服务。
 - [自定义镜像接入 ttyd](docs/CUSTOM-TTYD.md)：认证、启动命令和 systemd 配置。
 - [qcow2 转换工具](third_party/qemu-img/README.md)：内置 qemu-img 的来源、许可和对应源码；按文件内容识别镜像，转换为 RAW 后导入。

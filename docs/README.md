@@ -9,6 +9,7 @@
 | [虚拟机管理](CUSTOM-VM.md) | 镜像导入、U-Boot/内核启动、切换、资源配置 |
 | [自定义镜像 Guest 工具盘（实验）](GUEST-TOOLS-ISO.md) | 挂载只读 ISO，一次安装 ttyd 与图形采集服务 |
 | [初始配置 cloud-init（实验）](CLOUD-INIT.md) | 为兼容云镜像设置首次启动用户、密码和 SSH 公钥 |
+| [AlmaLinux 网络兼容排查](ALMALINUX-NETWORK.md) | 接口匹配、DHCP/DNS 校验和异常及手动 workaround |
 | [自定义镜像接入 ttyd](CUSTOM-TTYD.md) | 认证方式、临时启动、完整 systemd 配置和排查 |
 | [Guest 图形采集与端口代理](GUEST-SCREEN-SERVICE.md) | 安装包部署、完整 systemd 配置、图形限制和排查 |
 

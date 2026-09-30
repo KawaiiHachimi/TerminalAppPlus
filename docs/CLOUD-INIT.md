@@ -53,3 +53,5 @@ ethernets:
 ```
 
 配置不指定 renderer，由发行版选择其网络后端。已有 VM 的 CIDATA 不会因升级 APK 自动改写；测试首次启动需重新导入未经初始化的原始镜像。Guest Tools 不修改网络配置。
+
+AlmaLinux 等使用不同网络后端的镜像，可能存在接口匹配或 DHCP 校验和问题，见 [AlmaLinux 网络兼容排查](ALMALINUX-NETWORK.md)。处理办法仅供手动使用，不随 CIDATA 或 Guest Tools 自动安装。
