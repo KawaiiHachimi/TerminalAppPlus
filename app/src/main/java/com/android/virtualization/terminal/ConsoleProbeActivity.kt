@@ -14,6 +14,7 @@ class ConsoleProbeActivity : Activity() {
     private lateinit var session: com.termux.terminal.AvfTerminalSession
     private val writer = Executors.newSingleThreadExecutor()
     private var replayingConsole = false
+    private val repeatButtons = mutableListOf<RepeatingArrowButton>()
     private val consoleListener: (ByteArray) -> Unit = { bytes ->
         runOnUiThread { if (!isDestroyed) session.append(bytes) }
     }
@@ -63,7 +64,10 @@ class ConsoleProbeActivity : Activity() {
         fun row(actions: List<Pair<String, () -> Unit>>) {
             val row = android.widget.LinearLayout(this)
             actions.forEach { (label, action) ->
-                row.addView(android.widget.Button(this).apply {
+                val button = if (label in listOf("↑", "↓", "←", "→")) {
+                    RepeatingArrowButton(this).also { repeatButtons.add(it) }
+                } else android.widget.Button(this)
+                row.addView(button.apply {
                     text = label
                     textSize = 12f
                     setTextColor(android.graphics.Color.LTGRAY)
@@ -107,9 +111,78 @@ class ConsoleProbeActivity : Activity() {
             session.append(AppStrings.get(R.string.plus_console_not_running).toByteArray())
         }
     }
+    override fun onPause() {
+        repeatButtons.forEach { it.stopRepeating() }
+        super.onPause()
+    }
+
     override fun onDestroy() {
         VmConsole.unsubscribe(consoleListener)
         writer.shutdownNow()
         super.onDestroy()
+    }
+}
+
+/** Short taps click once; holding an arrow repeats after one second. */
+private class RepeatingArrowButton(context: android.content.Context) : androidx.appcompat.widget.AppCompatButton(context) {
+    private var pointerId = -1
+    private var repeated = false
+    private val repeat = object : Runnable {
+        override fun run() {
+            if (pointerId == -1 || !isPressed || !isShown || !hasWindowFocus()) return
+            repeated = true
+            performClick()
+            postDelayed(this, 80L)
+        }
+    }
+
+    fun stopRepeating() {
+        removeCallbacks(repeat)
+        pointerId = -1
+        isPressed = false
+    }
+
+    override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+        if (!isEnabled) { stopRepeating(); return false }
+        when (event.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> {
+                stopRepeating()
+                pointerId = event.getPointerId(0)
+                repeated = false
+                isPressed = true
+                postDelayed(repeat, 1000L)
+                return true
+            }
+            android.view.MotionEvent.ACTION_MOVE -> {
+                val index = event.findPointerIndex(pointerId)
+                if (index < 0 || event.getX(index) < 0 || event.getX(index) >= width ||
+                    event.getY(index) < 0 || event.getY(index) >= height) stopRepeating()
+                return true
+            }
+            android.view.MotionEvent.ACTION_UP -> {
+                val click = pointerId != -1 && !repeated
+                stopRepeating()
+                if (click) performClick()
+                return true
+            }
+            android.view.MotionEvent.ACTION_POINTER_UP -> {
+                if (event.getPointerId(event.actionIndex) == pointerId) stopRepeating()
+                return true
+            }
+            android.view.MotionEvent.ACTION_CANCEL -> { stopRepeating(); return true }
+        }
+        return true
+    }
+
+    override fun performClick(): Boolean = super.performClick()
+
+    override fun onWindowFocusChanged(hasWindowFocus: Boolean) {
+        if (!hasWindowFocus) stopRepeating()
+        super.onWindowFocusChanged(hasWindowFocus)
+    }
+
+    override fun onDetachedFromWindow() {
+        stopRepeating()
+        super.onDetachedFromWindow()
     }
 }
