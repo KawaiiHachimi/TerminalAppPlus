@@ -24,8 +24,9 @@ done
 [ "$(id -u)" = 0 ] || fail 'Run this installer with sudo or as root.'
 command -v systemctl >/dev/null || fail 'This installer requires systemd.'
 [ -d /run/systemd/system ] || fail 'systemd must be running.'
-payloads='install.sh guest-packages.sh install-guest-tools.sh terminal-plus-guest.service terminal-plus-guest.py terminal-plus-capture.py terminal-plus-proxy.py'
+payloads='install.sh guest-packages.sh guest-runtime.sh ttyd.aarch64 ttyd-NOTICE ttyd-LICENSE ttyd-dependency-licenses.txt install-guest-tools.sh terminal-plus-guest.service terminal-plus-guest.py terminal-plus-capture.py terminal-plus-proxy.py'
 for file in $payloads; do [ -r "$script_dir/$file" ] || fail "Missing payload: $file"; done
+. "$script_dir/guest-runtime.sh"
 version=$(cd "$script_dir" && sha256sum $payloads | sha256sum | cut -d' ' -f1)
 signature="$version:$terminal_user:$install_ttyd"
 services='terminal-plus-guest.service'
@@ -56,32 +57,22 @@ if [ "$install_ttyd" = 1 ]; then
     done
 fi
 . "$script_dir/guest-packages.sh"
-[ -r /etc/os-release ] || fail 'Missing /etc/os-release.'
-. /etc/os-release
-family=$(guest_package_family "${ID:-}" "${ID_LIKE:-}") || fail "Unsupported distribution: ${ID:-unknown}. Supports Debian/Ubuntu and Fedora/RHEL-family."
-case "$family" in
-    deb) command -v apt-get >/dev/null && command -v dpkg-query >/dev/null || fail 'apt-get/dpkg-query is required.' ;;
-    rpm) command -v rpm >/dev/null || fail 'rpm is required.' ;;
-esac
-printf 'Detected %s (%s).\n' "${PRETTY_NAME:-$ID}" "$family"
+family=$(guest_package_family) || fail 'Requires apt-get/dpkg-query or rpm with dnf/yum.'
+if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    printf 'Detected %s (%s).\n' "${PRETTY_NAME:-unknown}" "$family"
+fi
 packages=$(guest_packages "$family" "$install_ttyd")
 missing=0
 missing_packages=''
-new_ttyd=0
 for package in $packages; do
     if ! guest_package_installed "$family" "$package"; then
         missing=1
         missing_packages="$missing_packages $package"
-        [ "$package" != ttyd ] || new_ttyd=1
     fi
 done
 if [ "$missing" = 1 ]; then
-    guest_install_packages "$family" $missing_packages || fail 'Dependency installation failed. Check network and enabled repositories; RHEL/AlmaLinux/Rocky may need the matching EPEL repository for ttyd. No repositories were added automatically.'
-fi
-# Debian starts its packaged ttyd unit on installation, using the same TCP port.
-# Only replace that newly installed default, never a pre-existing user service.
-if [ "$new_ttyd" = 1 ] && systemctl cat ttyd.service >/dev/null 2>&1; then
-    systemctl disable --now ttyd.service
+    guest_install_packages "$family" $missing_packages || fail 'Dependency installation failed. Check network and enabled repositories.'
 fi
 # Drivers may be built in; inability to load a module alone is not a failure.
 modprobe vmw_vsock_virtio_transport 2>/dev/null || true
@@ -91,7 +82,8 @@ s = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
 s.close()
 PY
 if [ "$install_ttyd" = 1 ]; then
-    [ -x /usr/bin/ttyd ] && [ -x /usr/bin/socat ] || fail 'Expected /usr/bin/ttyd and /usr/bin/socat.'
+    ttyd_bin=$(guest_ttyd_binary "$script_dir") || fail 'Unable to install or execute ttyd.'
+    [ -x /usr/bin/socat ] || fail 'Expected /usr/bin/socat.'
     # Refuse occupied ports unless they belong to our already-running units.
     if ! systemctl is-active --quiet terminal-plus-ttyd.service; then
         python3 - <<'PY'
@@ -117,7 +109,7 @@ User=$terminal_user
 WorkingDirectory=$home_dir
 Environment=HOME=$home_dir
 Environment=TERM=xterm-256color
-ExecStart=/usr/bin/ttyd -i 127.0.0.1 -p 7681 -W /bin/bash -l
+ExecStart=$ttyd_bin -i 127.0.0.1 -p 7681 -W /bin/bash -l
 Restart=on-failure
 RestartSec=2
 

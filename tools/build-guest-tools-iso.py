@@ -9,6 +9,11 @@ import json
 root = Path(__file__).resolve().parents[1]
 assets = root / 'app/src/main/assets'
 sources = {
+    'guest-runtime.sh': root / 'tools/guest-runtime.sh',
+    'ttyd.aarch64': root / 'third_party/ttyd/ttyd.aarch64',
+    'ttyd-NOTICE': root / 'third_party/ttyd/NOTICE',
+    'ttyd-LICENSE': root / 'third_party/ttyd/LICENSE',
+    'ttyd-dependency-licenses.txt': root / 'third_party/ttyd/dependency-licenses.txt',
     'guest-packages.sh': root / 'tools/guest-packages.sh',
     'install.sh': root / 'tools/install-custom-guest.sh',
     'install-guest-tools.sh': root / 'tools/install-guest-tools.sh',

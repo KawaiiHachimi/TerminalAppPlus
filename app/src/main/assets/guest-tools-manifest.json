@@ -1,10 +1,15 @@
 {
-  "tools/guest-packages.sh": "ba87f6dae616e4390abc0011d7bc4339793e08e6f90cb31b957d01fa296b9fb9",
-  "tools/install-custom-guest.sh": "ea1d000dc8797a361c6510b86ab4bdfbdb8d5a450b9c2269da164cdb62655e45",
+  "tools/guest-runtime.sh": "5ad05dd1930df02b8e6eb168367b42ddab8ccc17a5b344ba00c8bfdc5657de8d",
+  "third_party/ttyd/ttyd.aarch64": "b38acadd89d1d396a0f5649aa52c539edbad07f4bc7348b27b4f4b7219dd4165",
+  "third_party/ttyd/NOTICE": "e7e2064424c090634e4aa4f17c23a511855a2035dcad09418d91f1eec953bf1f",
+  "third_party/ttyd/LICENSE": "8b7e100f8311cb428c57609164d93099bada2599f948359045d1ac876a7a625b",
+  "third_party/ttyd/dependency-licenses.txt": "50b652b032fe3ce23099a93487c1f258029fab4096511f41dd9b0d9eb0bac115",
+  "tools/guest-packages.sh": "3fe919081006f3a07bdd54693b95f39947755de05829851dcf815f03316c9ce7",
+  "tools/install-custom-guest.sh": "26d43aa76c42c2b05ec586477019ab79ded3b67b2b218cd77dc1385e974f2619",
   "tools/install-guest-tools.sh": "7eb1d287b6fac813b164495404b77c7d83a7b19cac72cf4132c5fde9b2e98d0a",
   "guest/root_files/etc/systemd/system/terminal-plus-guest.service": "b2f81c85a6009399fc90a1c9c897cb99307e6db679465cca7589323415c042b7",
   "guest/root_files/usr/local/bin/terminal-plus-guest.py": "66bb80e5964d09227ee85d8e4afef4431e44967990cfc6c7ce2de767dbfbe451",
   "guest/root_files/usr/local/bin/terminal-plus-proxy.py": "9eb15ed867b5ed5278f42e6f176b37f962257ea1c623ec756717a0db42606f47",
   "tools/experiments/kms-capture-server.py": "80bf941a23540583252312445564c96bd9311dcc6df1603ea1bdf5b8f40726a4",
-  "app/src/main/assets/guest-tools.iso": "2026ae061c39100c41320f1f8b2a487cd68a2783efb3bbce86dda89a5afe1d23"
+  "app/src/main/assets/guest-tools.iso": "16a9e54d979841e86ac42f960b2587de08509943847b67b30554503f66bbfcb9"
 }

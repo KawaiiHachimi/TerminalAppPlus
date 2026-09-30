@@ -22,9 +22,15 @@ sudo sh -c 'mkdir -p /mnt/plus && mount -o ro LABEL=PLUS_TOOLS /mnt/plus && sh /
 
 `/mnt/plus` 为专用工具盘目录，勿用于其他挂载。如果工具盘已经挂载，只执行 `sh /mnt/plus/install.sh`（普通用户加 sudo）。安装器自动读取当前用户或 SUDO_USER，支持 root；指定其他用户可用 `--user USER`，已有 ttyd 时可用 `--skip-ttyd`。这些参数加在 install.sh 后，使用 sudo sh -c 时放在单引号内。
 
-脚本读取 `/etc/os-release`：Debian/Ubuntu 使用 apt，Fedora/RHEL/AlmaLinux/Rocky 使用 dnf（无 dnf 时尝试 yum）；只安装缺少的依赖。RPM 系使用 `lz4-libs`，Debian 系使用 `liblz4-1`。RHEL 衍生版的 ttyd 可能需要匹配版本的 EPEL，脚本不会自动启用额外软件源；缺包时会提示，也可用 `--skip-ttyd`。
+脚本根据可用命令选择 apt-get/dpkg-query 或 rpm + dnf/yum，只安装缺少的 Python、LZ4 和 socat。`/etc/os-release` 仅用于显示系统名称。工具盘携带上游 ARM64 静态 ttyd：优先复用已有 ttyd，否则安装到 `/usr/local/bin/ttyd`，不依赖发行版是否提供 ttyd 软件包，也不需要为 ttyd 启用 EPEL。`--skip-ttyd` 会跳过 ttyd 和 socat。
 
-脚本配置 ttyd 和图形采集/端口代理服务并启用开机启动。缺少依赖时需要联网。本次新安装 ttyd 软件包启动的默认服务会被停用以避免端口冲突；原有 ttyd 服务保留。脚本不创建账户或修改密码；支持 SELinux 文件标签恢复，不关闭 SELinux，也不修改防火墙。
+脚本配置 ttyd 和图形采集/端口代理服务并启用开机启动。缺少通用依赖时仍需联网。原有 ttyd 服务保留；检测到活动服务冲突时提示使用 `--skip-ttyd`。脚本不创建账户或修改密码；恢复 SELinux 文件标签，不关闭 SELinux，也不修改防火墙。
+
+## 网络与内核要求
+
+安装器不配置或接管 Guest 网络。支持 cloud-init 的新导入云镜像由 CIDATA 的独立 `network-config` 设置 IPv4 DHCP，见 [初始配置](CLOUD-INIT.md)。其他镜像使用其原有网络配置；缺少依赖时需先保证网络正常。
+
+图形采集需要 Guest 内核启用 DRM/virtio-gpu，并存在活动 KMS 输出。Debian genericcloud 的 cloud 内核可能未启用 DRM；此时 ttyd 可正常使用，但安装 Guest Tools 不会让虚拟显示器自动可用，需要换用具备相应驱动的内核。
 
 ## 后续检查、修复与更新
 
@@ -35,7 +41,7 @@ terminal-plus-setup
 terminal-plus-setup --force
 ```
 
-第一条检查安装版本与服务状态，同版本不重复安装或重启服务；第二条使用本地安装包覆盖安装。普通用户会自动通过 sudo 提权。已安装的终端用户和是否安装 ttyd 的选择会保留，除非显式使用 `--user` 或 `--skip-ttyd`。
+第一条检查安装版本与服务状态，同版本不重复安装或重启 Guest 服务；第二条使用本地安装包覆盖安装。普通用户会自动通过 sudo 提权。已安装的终端用户和是否安装 ttyd 的选择会保留，除非显式使用 `--user` 或 `--skip-ttyd`。
 
 App 提供新版工具盘时，正常关闭 Guest 再启动，重新挂载并执行盘上的 install.sh 来更新；本地修复命令不会自行下载新版本。覆盖安装会重启 ttyd，请在控制台执行。
 
@@ -43,7 +49,9 @@ App 提供新版工具盘时，正常关闭 Guest 再启动，重新挂载并执
 
 ## 已验证环境
 
-Fedora 45 Beta ARM64：自动识别 RPM 系、通过 dnf 安装 ttyd/socat、三个服务启动、同版本状态检查、App ttyd shell 和 TTY 图形采集均通过；SELinux 保持 Enforcing。AlmaLinux/Rocky/RHEL 的包管理路径已实现，但尚未逐一实机验证，且 ttyd 可能依赖 EPEL。
+- Debian 13 genericcloud ARM64 / AVF：新导入镜像通过独立 NoCloud network-config 在首次启动自动取得 DHCPv4 地址、默认路由和 DNS，Guest Tools 不改网络；工具安装、同版本检查、本地 `--force`、`--skip-ttyd` 保留现有终端服务、三个服务及 ttyd HTTP 200 均通过。正常关机再启动后，网络与服务自动恢复，cloud-init 账户仍可登录。
+- Debian 13、Ubuntu 24.04、Fedora 43、AlmaLinux 9 ARM64 容器：通用依赖安装、工具盘静态 ttyd 安装/复用和 HTTP 200 通过。容器结果不代表 RPM 系 AVF 网络或 SELinux 实机验证。
+- 自动化测试覆盖包管理能力检测、跳过 ttyd 的依赖选择、复用/安装 ttyd、失败处理。
 
 ## 状态与排查
 
@@ -53,7 +61,7 @@ journalctl -u terminal-plus-guest -n 50 --no-pager
 lsblk -o NAME,SIZE,FSTYPE,LABEL
 ```
 
-- 找不到 `PLUS_TOOLS`：确认运行的是本实验分支 APK、自定义 img/raw VM，并已重新启动。没有 `/dev/disk/by-label` 的系统可以通过 `lsblk -f` 查找卷标，使用对应设备挂载，勿假定永远是 `/dev/vdb`。
+- 找不到 `PLUS_TOOLS`：确认使用包含工具盘的新 APK、自定义磁盘 VM，并已重新启动。没有 `/dev/disk/by-label` 的系统可以通过 `lsblk -f` 查找卷标，使用对应设备挂载，勿假定永远是 `/dev/vdb`。
 - 无法挂载：Guest 需要 ISO9660 支持，root 可尝试 `modprobe isofs`（普通用户加 sudo）。
 - vsock 检查失败：需要内核支持 virtio-vsock。仅安装软件无法补齐缺失的内核功能。
 - 服务 active 不代表图形链路已可用：需要 virtio-gpu、DRM debugfs，以及采集器支持的活动 KMS 输出。安装器不安装桌面，不创建第二个图形会话。

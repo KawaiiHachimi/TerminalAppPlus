@@ -189,3 +189,5 @@
    END OF TERMS AND CONDITIONS
 
 Bundled ARM64 crosvm U-Boot: U-Boot contributors / AOSP external/u-boot, GPL-2.0. See third_party/u-boot/COPYING and README.md for the exact revision and source archive.
+
+Bundled Guest ttyd 1.7.7: Shuanglei Tao and contributors, MIT. See third_party/ttyd/NOTICE, LICENSE and dependency-licenses.txt (also included on PLUS_TOOLS).

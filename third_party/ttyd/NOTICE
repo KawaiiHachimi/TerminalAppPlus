@@ -1,0 +1,11 @@
+Terminal Plus bundles the unmodified upstream ttyd 1.7.7 ARM64 static executable.
+Project: https://github.com/tsl0922/ttyd
+Release: https://github.com/tsl0922/ttyd/releases/tag/1.7.7
+Binary: https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.aarch64
+SHA256: b38acadd89d1d396a0f5649aa52c539edbad07f4bc7348b27b4f4b7219dd4165
+Verified against the release SHA256SUMS. ELF64 AArch64, statically linked.
+Upstream source/build instructions: https://github.com/tsl0922/ttyd/tree/1.7.7
+Build script: scripts/cross-build.sh in that tag.
+Copyright (c) 2016 Shuanglei Tao <https://github.com/tsl0922>. MIT license (LICENSE).
+Static dependencies and embedded web frontend licenses: dependency-licenses.txt.
+This binary runs inside Linux ARM64 guests, not the Android app process.

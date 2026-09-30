@@ -19,8 +19,10 @@ Guest 内核必须支持 virtio-vsock。只在 Guest 开放 TCP 7681 不够，Ap
 ## 准备条件
 
 - Guest 已能启动并登录普通用户，有 root 或 sudo 权限用于安装软件。
-- Guest 内核支持 virtio-vsock；发行版提供 ttyd 和 socat。
+- Guest 内核支持 virtio-vsock；socat 由包管理器安装，ARM64 ttyd 可以直接使用工具盘自带版本。
 - 开机启动示例使用 systemd。自定义镜像需要手动配置，App 不会自动创建账户。
+
+建议使用 [Guest 工具盘的一键安装](GUEST-TOOLS-ISO.md)，自动选择 ttyd 路径并配置开机启动。以下仅供手动部署。
 
 ## 临时启动
 
@@ -28,8 +30,13 @@ Guest 内核必须支持 virtio-vsock。只在 Guest 开放 TCP 7681 不够，Ap
 
 ```sh
 sudo apt update
-sudo apt install ttyd socat
-# Fedora / RHEL 系：sudo dnf install ttyd socat（RHEL 衍生版可能需 EPEL）
+sudo apt install socat
+# RPM 系改用：sudo dnf install socat
+# ARM64 Guest，先挂载 PLUS_TOOLS（已挂载可跳过）：
+sudo mkdir -p /mnt/plus
+sudo mount -o ro LABEL=PLUS_TOOLS /mnt/plus
+# 若已有 ttyd，则保留原来的可执行文件。
+command -v ttyd >/dev/null || sudo install -m 755 /mnt/plus/ttyd.aarch64 /usr/local/bin/ttyd
 
 nohup ttyd -i 127.0.0.1 -p 7681 -W bash -l \
   >"$HOME/ttyd.log" 2>&1 &
@@ -53,7 +60,7 @@ nohup socat VSOCK-LISTEN:7681,fork,reuseaddr \
 
 先结束上面临时启动的两个进程，释放端口，再配置服务。若已存在 AOSP 的 `ttyd_uds` / `ttyd_vsock_bridge`，使用原有服务即可，不要重复启动。
 
-用 `command -v ttyd`、`command -v socat` 确认安装路径。下面按 Debian 软件包的 `/usr/bin/ttyd` 和 `/usr/bin/socat` 编写；自行编译到 `/usr/local/bin` 时调整对应路径。
+用 `command -v ttyd`、`command -v socat` 确认安装路径。下面按工具盘安装的 `/usr/local/bin/ttyd` 和仓库提供的 `/usr/bin/socat` 编写；复用已有 ttyd 时按实际路径调整。
 
 创建 `/etc/systemd/system/terminal-plus-ttyd.service`，将所有 `YOUR_USER` 替换为已有普通用户名，并按实际情况修改其家目录：
 
@@ -68,7 +75,7 @@ User=YOUR_USER
 WorkingDirectory=/home/YOUR_USER
 Environment=HOME=/home/YOUR_USER
 Environment=TERM=xterm-256color
-ExecStart=/usr/bin/ttyd -i 127.0.0.1 -p 7681 -W /bin/bash -l
+ExecStart=/usr/local/bin/ttyd -i 127.0.0.1 -p 7681 -W /bin/bash -l
 Restart=on-failure
 RestartSec=2
 
