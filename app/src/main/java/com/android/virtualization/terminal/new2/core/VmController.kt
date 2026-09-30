@@ -90,14 +90,30 @@ object VmController {
     private val _sessionDiscarded = MutableSharedFlow<String>()
     val sessionDiscarded: SharedFlow<String> = _sessionDiscarded.asSharedFlow()
 
+    private val manualPorts = MutableStateFlow<List<OpenPort>>(emptyList())
+    private lateinit var portsStateManager: com.android.virtualization.terminal.PortsStateManager
+    private val manualPortsListener = object : com.android.virtualization.terminal.PortsStateManager.Listener {
+        override fun onPortsStateUpdated(oldActivePorts: Set<Int>, newActivePorts: Set<Int>) {
+            manualPorts.value = portsStateManager.getEnabledPorts().sorted().map { OpenPort(it, "", true) }
+            repositoryScope.launch {
+                lifecycleMutex.withLock {
+                    val machine = virtualMachine
+                    if (machine != null && runningProfile?.isManaged == false && _vmState.value == VmState.Running) {
+                        com.android.virtualization.terminal.ForwarderHost.updateCustom(machine, portsStateManager.getEnabledPorts().toIntArray())
+                    }
+                }
+            }
+        }
+    }
+
     private val _guestAgentController = MutableStateFlow<GuestAgentController?>(null)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val ports: StateFlow<List<OpenPort>> =
         _guestAgentController
             .flatMapLatest { controller ->
-                // If controller is null, emit a flow containing null
-                controller?.ports ?: flowOf(emptyList())
+                // Custom guests use saved manual ports without the AOSP agent.
+                controller?.ports ?: manualPorts
             }
             .stateIn(
                 scope = repositoryScope,
@@ -125,6 +141,9 @@ object VmController {
     fun initialize(context: Context) {
         this.context = context.applicationContext
         VmProfiles.initialize(this.context)
+        portsStateManager = com.android.virtualization.terminal.PortsStateManager.getInstance(this.context)
+        portsStateManager.registerListener(manualPortsListener)
+        manualPorts.value = portsStateManager.getEnabledPorts().sorted().map { OpenPort(it, "", true) }
         val key = CertificateUtils.createOrGetKey()
         CertificateUtils.writeCertificateToFile(this.context, key.certificate)
     }
@@ -140,7 +159,8 @@ object VmController {
     }
 
     fun enablePortForwarding(port: Int, enable: Boolean) {
-        _guestAgentController.value?.enablePortForwarding(port, enable)
+        require(port in 1024..65535)
+        portsStateManager.updateEnabledPort(port, enable)
     }
 
     val graphicsAccelerationType: GraphicsManager.AccelerationType
@@ -268,6 +288,7 @@ object VmController {
                                 Log.e(TAG, "VM error: $message ($errorCode)")
                                 _vmState.value = VmState.Error(RuntimeException("VM error: $message"))
                                 _guestAgentController.value?.stop()
+                                com.android.virtualization.terminal.ForwarderHost.shutdown()
                             }
 
                             override fun onStopped(vm: VirtualMachine, reason: Int) {
@@ -279,6 +300,7 @@ object VmController {
                                     disconnectTerminal()
                                     virtualMachine = null
                                     _guestAgentController.value?.stop()
+                                    com.android.virtualization.terminal.ForwarderHost.shutdown()
                                     Log.i("VmController", "VM stopped. reason: $reason")
                                     // Explicit stop publishes Stopped after its cleanup, before allowing a switch.
                                     if (requestedStop) return
@@ -334,12 +356,18 @@ object VmController {
                     runCatching { VmProfiles.markStarted(profile, configText) }
                     // Guest services are optional. AVF running is sufficient to expose console/display.
                     if (!_vmState.compareAndSet(VmState.Starting, VmState.Running)) return@withLock
+                    synchronized(VmController) {
+                        if (!profile.isManaged && virtualMachine === vm && _vmState.value == VmState.Running) {
+                            com.android.virtualization.terminal.ForwarderHost.startCustom(vm, portsStateManager.getEnabledPorts().toIntArray())
+                        }
+                    }
                     retryTerminalConnection()
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to start VM", e)
                     if (_vmState.value != VmState.Stopping) _vmState.value = VmState.Error(e)
                     disconnectTerminal()
                     _guestAgentController.value?.stop()
+                    com.android.virtualization.terminal.ForwarderHost.shutdown()
                 }
             }
         }
@@ -551,6 +579,7 @@ object VmController {
                     virtualMachine?.let { com.android.virtualization.terminal.VmConsole.end(it) }
                     virtualMachine = null
                     _guestAgentController.value?.stop()
+                    com.android.virtualization.terminal.ForwarderHost.shutdown()
                     _vmState.value = VmState.Stopped
                 }
             }

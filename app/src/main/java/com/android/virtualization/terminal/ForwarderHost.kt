@@ -20,6 +20,20 @@ object ForwarderHost {
     private var vm: VirtualMachine? = null
     fun attach(vm: VirtualMachine) = synchronized(lock) { this.vm = vm }
 
+    /** Custom guests provide the vsock proxy without an AOSP Guest Agent. */
+    fun startCustom(machine: VirtualMachine, ports: IntArray) = synchronized(lock) {
+        check(vm === machine) { "Stale forwarding request" }
+        requested = ports.filter { it in 1024..65535 }.toSet()
+        running?.stop()
+        running = Session(machine).also { update(it) }
+    }
+
+    fun updateCustom(machine: VirtualMachine, ports: IntArray) = synchronized(lock) {
+        if (running?.vm !== machine) return@synchronized
+        requested = ports.filter { it in 1024..65535 }.toSet()
+        running?.let { update(it) }
+    }
+
     private class Session(val vm: VirtualMachine) {
         val done = CountDownLatch(1)
         val listeners = mutableMapOf<String, ServerSocket>()
