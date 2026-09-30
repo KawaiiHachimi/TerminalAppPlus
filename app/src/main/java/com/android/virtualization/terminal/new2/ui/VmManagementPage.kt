@@ -242,7 +242,7 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
                 }
                 Row {
                     TextButton(onClick = { model.jsonMode = false }) { Text("资源设置") }
-                    TextButton(onClick = { model.jsonMode = true }) { Text("vm_config.json") }
+                    TextButton(onClick = { model.jsonMode = !model.jsonMode }) { Text("vm_config.json") }
                 }
                 if (model.jsonMode) {
                     OutlinedTextField(value = model.configDraft, onValueChange = { model.configDraft = it }, modifier = Modifier.fillMaxWidth().heightIn(min = 240.dp, max = 420.dp), textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace))
@@ -256,12 +256,12 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
                         }
                     }
                     Text("支持单核或使用宿主 CPU 拓扑。")
-                    if (model.editTarget?.isManaged == false) {
-                        HorizontalDivider(Modifier.padding(top = 6.dp))
-                        FilledTonalButton(onClick = model::openDiskResize, enabled = canResize && model.disks.isNotEmpty()) { Text("扩容磁盘") }
-                        Text(if (!canResize) "关闭虚拟机后可扩容磁盘。" else "仅扩大磁盘文件，分区和文件系统需在 Guest 内自行扩容。", style = MaterialTheme.typography.bodySmall)
-                        model.diskMessage?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-                    }
+                }
+                if (model.editTarget?.isManaged == false) {
+                    HorizontalDivider(Modifier.padding(top = 6.dp))
+                    FilledTonalButton(onClick = model::openDiskResize, enabled = canResize && model.disks.isNotEmpty()) { Text("扩容磁盘") }
+                    Text(if (!canResize) "关闭虚拟机后可扩容磁盘。" else "仅扩大磁盘文件，分区和文件系统需在 Guest 内自行扩容。", style = MaterialTheme.typography.bodySmall)
+                    model.diskMessage?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                 }
                 TextButton(onClick = model::restore, enabled = !model.importing) { Text("恢复上次启动／保存的配置") }
                 model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
