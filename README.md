@@ -76,6 +76,9 @@ adb shell pm grant com.android.virtualization.terminal.plus android.permission.U
 | Fedora 44 Minimal | [Fedora-Minimal-44-1.7.aarch64.raw.xz](https://download.fedoraproject.org/pub/fedora/linux/releases/44/Spins/aarch64/images/Fedora-Minimal-44-1.7.aarch64.raw.xz) | RAW（XZ 压缩） | | 解压后导入 |
 | AlmaLinux 10 | [AlmaLinux-10-GenericCloud-ext4-latest.aarch64.qcow2](https://repo.almalinux.org/almalinux/10/cloud/aarch64/images/AlmaLinux-10-GenericCloud-ext4-latest.aarch64.qcow2) | QCOW2（ext4） | ✓ | [联网问题及处理办法](docs/ALMALINUX-NETWORK.md) |
 | OpenWrt 25.12.5 | [openwrt-25.12.5-armsr-armv8-generic-ext4-combined-efi.img.gz](https://downloads.openwrt.org/releases/25.12.5/targets/armsr/armv8/openwrt-25.12.5-armsr-armv8-generic-ext4-combined-efi.img.gz) | RAW（ext4，Gzip 压缩） | | |
+| openSUSE Leap 16.0 | [Leap-16.0-Minimal-VM.aarch64-Cloud.qcow2](https://download.opensuse.org/download/distribution/openSUSE-current/appliances/Leap-16.0-Minimal-VM.aarch64-Cloud.qcow2) | QCOW2 | ✓ | SUSE 系统默认 sudo 要求 root 密码 |
+| openSUSE Leap 16.0 | [Leap-16.0-Minimal-VM.aarch64-kvm.qcow2](https://download.opensuse.org/download/distribution/openSUSE-current/appliances/Leap-16.0-Minimal-VM.aarch64-kvm.qcow2) | QCOW2 | | |
+| Alpine Linux 3.24.2 | [alpine-3.24.2-aarch64-cloudinit-r0.qcow2](https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/alpine-3.24.2-aarch64-cloudinit-r0.qcow2) | QCOW2 | ✓ | Shell 使用 `/bin/sh` |
 
 欢迎测试和补充。
 
