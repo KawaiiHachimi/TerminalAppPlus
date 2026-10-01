@@ -12,7 +12,7 @@ import java.security.SecureRandom
 import org.apache.commons.codec.digest.Sha2Crypt
 
 internal data class CloudInitConfig(val username: String, val passwordHash: String,
-    val hostname: String, val publicKeys: List<String>, val sshPassword: Boolean, val instanceId: String)
+    val hostname: String, val publicKeys: List<String>, val sshPassword: Boolean, val instanceId: String, val userData: String? = null)
 
 internal object CloudInit {
     private val gson = Gson()
@@ -30,6 +30,28 @@ internal object CloudInit {
         val hash = if (password.isEmpty()) existingHash else Sha2Crypt.sha512Crypt(password.toByteArray(Charsets.UTF_8), "\$6\$rounds=10000\$$salt\$")
         return CloudInitConfig(username, hash, hostname.trim(), publicKeys, sshPassword, "terminal-plus-$id")
     }
+    private fun yaml() = org.yaml.snakeyaml.Yaml(
+        org.yaml.snakeyaml.constructor.SafeConstructor(org.yaml.snakeyaml.LoaderOptions().apply {
+            isAllowDuplicateKeys = false
+            maxAliasesForCollections = 20
+            codePointLimit = 65536
+        })
+    )
+    fun custom(text: String, id: String): CloudInitConfig {
+        require(text.toByteArray(Charsets.UTF_8).size < 65534) { AppStrings.get(R.string.plus_cloud_config_too_large) }
+        require(text.lineSequence().firstOrNull()?.trim() == "#cloud-config") { "Expected #cloud-config header" }
+        val data = yaml().load<Any>(text)
+        require(data is Map<*, *> && data.keys.all { it is String }) { "Expected a YAML mapping" }
+        val host = data["hostname"] as? String ?: ""
+        return CloudInitConfig("", "", host, emptyList(), false, "terminal-plus-$id", text.trimEnd() + "\n")
+    }
+    fun editable(config: CloudInitConfig): String {
+        val data = yaml().load<Any>(documents(config).first)
+        val options = org.yaml.snakeyaml.DumperOptions().apply {
+            defaultFlowStyle = org.yaml.snakeyaml.DumperOptions.FlowStyle.BLOCK
+        }
+        return "#cloud-config\n" + org.yaml.snakeyaml.Yaml(options).dump(data)
+    }
     fun documents(config: CloudInitConfig): Pair<String, String> {
         val user = linkedMapOf<String, Any>("name" to config.username, "shell" to "/bin/bash", "lock_passwd" to config.passwordHash.isEmpty())
         if (config.username != "root") user["sudo"] = listOf("ALL=(ALL) ALL")
@@ -40,7 +62,7 @@ internal object CloudInit {
         if (config.hostname.isNotEmpty()) { data["hostname"] = config.hostname; data["manage_etc_hosts"] = true }
         val meta = linkedMapOf("instance-id" to config.instanceId)
         if (config.hostname.isNotEmpty()) meta["local-hostname"] = config.hostname
-        return "#cloud-config\n${gson.toJson(data)}\n" to "${gson.toJson(meta)}\n"
+        return (config.userData ?: "#cloud-config\n${gson.toJson(data)}\n") to "${gson.toJson(meta)}\n"
     }
     fun fill(template: ByteArray, layout: String, userData: String, metadata: String): ByteArray {
         val result = template.copyOf()
@@ -60,17 +82,15 @@ internal object CloudInit {
         if (!file(directory).exists()) return null
         val bytes = file(directory).readBytes()
         val layout = context.assets.open("cloud-init/layout.json").bufferedReader().use { JsonParser.parseReader(it).asJsonObject }
-        fun document(name: String): com.google.gson.JsonObject {
+        fun document(name: String): String {
             val slot = layout.getAsJsonObject(name)
-            return JsonParser.parseString(String(bytes, slot.get("offset").asInt, slot.get("length").asInt, Charsets.UTF_8)
-                .removePrefix("#cloud-config\n").substringBefore("\n#").trim()).asJsonObject
+            return String(bytes, slot.get("offset").asInt, slot.get("length").asInt, Charsets.UTF_8)
+                .trimEnd().removeSuffix("#").trimEnd() + "\n"
         }
-        val data = document("user-data"); val meta = document("meta-data")
-        val user = data.getAsJsonArray("users")[0].asJsonObject
-        return CloudInitConfig(user.get("name").asString, user.get("hashed_passwd")?.asString ?: "",
-            data.get("hostname")?.asString ?: "", user.getAsJsonArray("ssh_authorized_keys")?.map { it.asString } ?: emptyList(),
-            data.get("ssh_pwauth").asBoolean, meta.get("instance-id").asString)
+        val meta = JsonParser.parseString(document("meta-data")).asJsonObject
+        return custom(document("user-data"), "read").copy(instanceId = meta.get("instance-id").asString)
     }
+
     fun locked(directory: File) = File(directory, "cloud-init.booted").exists() || File(directory, "vm_config.last-good.json").exists()
     fun save(context: Context, directory: File, config: CloudInitConfig?) {
         check(!locked(directory)) { AppStrings.get(R.string.plus_cloud_config_locked) }

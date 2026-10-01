@@ -206,4 +206,13 @@
     <string name="plus_console_device_hint">"hvc0: consola virtio; ttyS0: puerto serie emulado. Se aplica al reiniciar la VM. El invitado debe admitir el dispositivo y ofrecer un servicio de inicio de sesión. No cambia el cargador ni las rutas de salida."</string>
     <string name="plus_json_editor">Editor JSON</string>
     <string name="plus_about">Acerca del proyecto</string>
+    <string name="plus_cloud_form">Configuración de cuenta</string>
+    <string name="plus_cloud_yaml_hint">Los campos de cuenta se sincronizan con YAML. Los demás se conservan. El formulario edita el primer usuario con nombre.</string>
+    <string name="plus_cloud_yaml_only">No hay un usuario editable con nombre o YAML contiene errores. Continúa en YAML.</string>
+    <string name="plus_cloud_primary_group">Grupo principal (opcional)</string>
+    <string name="plus_cloud_groups">Grupos adicionales (separados por comas)</string>
+    <string name="plus_cloud_shell">Shell de inicio (opcional)</string>
+    <string name="plus_cloud_sudo">Reglas sudo</string>
+    <string name="plus_cloud_sudo_hint">Una regla por línea; false no añade reglas sudo. Vacío: valor predeterminado de la imagen. Sin contraseña: ALL=(ALL) NOPASSWD:ALL</string>
+    <string name="plus_cloud_lock_password">Bloquear acceso con contraseña</string>
 </resources>

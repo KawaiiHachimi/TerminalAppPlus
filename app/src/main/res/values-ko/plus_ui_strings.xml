@@ -206,4 +206,13 @@
     <string name="plus_console_device_hint">"hvc0는 virtio 콘솔, ttyS0는 에뮬레이션 직렬 포트입니다. VM 재시작 후 적용됩니다. 게스트가 장치를 지원하고 로그인 서비스를 제공해야 합니다. 부트로더 설정과 출력 경로는 변경하지 않습니다."</string>
     <string name="plus_json_editor">JSON 편집</string>
     <string name="plus_about">프로젝트 정보</string>
+    <string name="plus_cloud_form">계정 설정</string>
+    <string name="plus_cloud_yaml_hint">계정 필드는 YAML과 동기화되며 다른 필드는 유지됩니다. 양식은 이름이 지정된 첫 사용자를 편집합니다.</string>
+    <string name="plus_cloud_yaml_only">편집 가능한 사용자가 없거나 YAML 오류가 있습니다. YAML에서 계속 편집하세요.</string>
+    <string name="plus_cloud_primary_group">기본 그룹 (선택)</string>
+    <string name="plus_cloud_groups">추가 그룹 (쉼표로 구분)</string>
+    <string name="plus_cloud_shell">로그인 셸 (선택)</string>
+    <string name="plus_cloud_sudo">sudo 규칙</string>
+    <string name="plus_cloud_sudo_hint">한 줄에 하나. false는 sudo 규칙을 추가하지 않음, 빈 값은 이미지 기본값입니다. 암호 없이: ALL=(ALL) NOPASSWD:ALL</string>
+    <string name="plus_cloud_lock_password">암호 로그인 잠금</string>
 </resources>

@@ -20,7 +20,72 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     var archiveImport by mutableStateOf(true)
     var qcowImport by mutableStateOf(false); private set
     var formatReady by mutableStateOf(false); private set
+    var cloudYamlMode by mutableStateOf(false); private set
+    var cloudYaml by mutableStateOf(CloudInitEditor.INITIAL); private set
+    var cloudYamlError by mutableStateOf<String?>(null); private set
+    var cloudFormAvailable by mutableStateOf(true); private set
+    var cloudPreparing by mutableStateOf(false); private set
+    private var cloudPasswordJob: Job? = null
+    private var cloudHashedInput = ""
+    fun selectCloudMode(yaml: Boolean) {
+        if (!importing && !cloudPreparing) cloudYamlMode = yaml
+    }
+    fun editCloudYaml(text: String) {
+        cloudPasswordJob?.cancel()
+        cloudPreparing = false
+        cloudPassword = ""; cloudConfirm = ""; cloudHashedInput = ""
+        cloudYaml = text
+        refreshCloudForm()
+    }
+    private fun refreshCloudForm() {
+        runCatching { CloudInitEditor.read(cloudYaml) }.onSuccess { account ->
+            cloudYamlError = null
+            cloudFormAvailable = account != null
+            if (account != null) {
+                cloudUsername = account.username; cloudExistingHash = account.hash
+                cloudHostname = account.hostname; cloudKeys = account.keys; cloudSshPassword = account.ssh
+                cloudPrimaryGroup = account.primaryGroup; cloudGroups = account.groups
+                cloudShell = account.shell; cloudSudo = account.sudo; cloudLocked = account.locked
+            }
+        }.onFailure { cloudYamlError = it.message; cloudFormAvailable = false }
+    }
+    fun editCloudField(field: String, value: Any) {
+        runCatching { CloudInitEditor.patch(cloudYaml, field, value) }.onSuccess {
+            cloudYaml = it
+            refreshCloudForm()
+            // Preserve partially typed keys, including trailing spaces/newlines.
+            when (field) {
+                "ssh_authorized_keys" -> cloudKeys = value as String
+                "groups" -> cloudGroups = value as String
+                "sudo" -> cloudSudo = value as String
+            }
+        }.onFailure { cloudYamlError = it.message }
+    }
+    fun editCloudPassword(value: String, confirmation: Boolean) {
+        if (confirmation) cloudConfirm = value else cloudPassword = value
+        cloudPasswordJob?.cancel()
+        cloudPreparing = false
+        if (cloudPassword.isEmpty() || cloudPassword != cloudConfirm || cloudPassword == cloudHashedInput) return
+        val password = cloudPassword
+        cloudPreparing = true
+        cloudPasswordJob = viewModelScope.launch {
+            try {
+                val hash = withContext(Dispatchers.Default) {
+                    CloudInit.config("droid", password, "", "", false, "hash").passwordHash
+                }
+                editCloudField("hashed_passwd", hash)
+                cloudHashedInput = password
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) { cloudYamlError = e.message }
+            finally { cloudPreparing = false }
+        }
+    }
     var cloudEnabled by mutableStateOf(false)
+    var cloudPrimaryGroup by mutableStateOf("")
+    var cloudGroups by mutableStateOf("")
+    var cloudShell by mutableStateOf("/bin/bash")
+    var cloudSudo by mutableStateOf("ALL=(ALL) ALL")
+    var cloudLocked by mutableStateOf(true)
     var cloudUsername by mutableStateOf("droid")
     var cloudPassword by mutableStateOf("")
     var cloudConfirm by mutableStateOf("")
@@ -80,7 +145,7 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
     }
     fun import() {
         val uri = image ?: return
-        if (!formatReady) return
+        if (!formatReady || cloudPreparing) return
         if (!archiveImport && directBoot && kernel == null) { error = AppStrings.get(R.string.plus_kernel_required); return }
         val chosenArchive = archiveImport
         val convertQcow = qcowImport
@@ -115,18 +180,22 @@ class VmManagementViewModel(app: Application) : AndroidViewModel(app) {
         }.onFailure { error = AppStrings.get(R.string.plus_fix_json_first) }
     }
     private fun resetCloud() {
+        cloudPasswordJob?.cancel(); cloudPasswordJob = null; cloudHashedInput = ""
+        cloudYamlMode = false; cloudYaml = CloudInitEditor.INITIAL; cloudPreparing = false
+        cloudYamlError = null; cloudFormAvailable = true
+        cloudPrimaryGroup = ""; cloudGroups = ""; cloudShell = "/bin/bash"
+        cloudSudo = "ALL=(ALL) ALL"; cloudLocked = true
         cloudEnabled = false; cloudUsername = "droid"; cloudPassword = ""; cloudConfirm = ""
         cloudHostname = ""; cloudKeys = ""; cloudSshPassword = false; cloudExistingHash = ""
     }
     private suspend fun prepareCloud(id: String): CloudInitConfig? {
         if (!cloudEnabled) return null
+        cloudPasswordJob?.join()
         require(cloudPassword == cloudConfirm) { AppStrings.get(R.string.plus_passwords_mismatch) }
-        val user = cloudUsername.trim(); val password = cloudPassword; val host = cloudHostname.trim()
-        val keys = cloudKeys; val ssh = cloudSshPassword; val oldHash = cloudExistingHash
-        val config = withContext(Dispatchers.IO) { CloudInit.config(user, password, host, keys, ssh, id, oldHash) }
-        cloudExistingHash = config.passwordHash; cloudPassword = ""; cloudConfirm = ""
-        return config
+        require(cloudPassword.isEmpty() || cloudPassword == cloudHashedInput) { cloudYamlError ?: "Password has not been applied" }
+        return withContext(Dispatchers.IO) { CloudInit.custom(cloudYaml, id) }
     }
+
     fun openDiskResize() {
         val disk = disks.firstOrNull() ?: return
         diskPath = disk.path; diskGiB = ""; error = null; resizingDisk = true

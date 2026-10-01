@@ -7,6 +7,27 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CloudInitTest : com.android.virtualization.terminal.LocalizedResourcesTest() {
+    @Test fun customYamlPreservesAdvancedFieldsAndCloneIdentity() {
+        val source = "#cloud-config\nusers:\n  - default\npackages:\n  - htop\nruncmd:\n  - echo hello\n"
+        val config = CloudInit.custom(source, "original")
+        val (user, meta) = CloudInit.documents(config.copy(instanceId = "terminal-plus-clone"))
+        assertEquals(source, user)
+        assertEquals("terminal-plus-clone", JsonParser.parseString(meta).asJsonObject["instance-id"].asString)
+        assertTrue(CloudInit.editable(config).contains("runcmd:"))
+    }
+    @Test fun customYamlRejectsInvalidDocuments() {
+        listOf("users: []", "#cloud-config\n- list", "#cloud-config\nx: [", "#cloud-config\nx: 1\nx: 2", "#cloud-config\n!!java.net.URL [x]", "#cloud-config\na: 1\n---\nb: 2").forEach { source ->
+            assertThrows(Exception::class.java) { CloudInit.custom(source, "test") }
+        }
+    }
+    @Test fun formConvertsToEditableYamlWithHashedPassword() {
+        val config = CloudInit.config("tester", "secret123", "", "", false, "test")
+        val yaml = CloudInit.editable(config)
+        assertTrue(yaml.contains("users:"))
+        assertFalse(yaml.contains("secret123"))
+        assertTrue(yaml.contains(config.passwordHash))
+        CloudInit.custom(yaml, "test")
+    }
     @Test fun saltedHashAndStableInstanceProduceValidSeed() {
         val first = CloudInit.config("tester", "test-password", "vm-test", "", false, "test-id")
         val second = CloudInit.config("tester", "test-password", "vm-test", "", false, "test-id")

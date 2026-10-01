@@ -324,20 +324,54 @@ private fun CloudInitFields(model: VmManagementViewModel) {
     }
     Text(stringResource(R.string.plus_cloud_init_summary), style = MaterialTheme.typography.bodySmall)
     if (model.cloudEnabled) {
-        OutlinedTextField(value = model.cloudUsername, onValueChange = { model.cloudUsername = it }, label = { Text(stringResource(R.string.plus_username)) }, singleLine = true, enabled = enabled)
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            listOf(false, true).forEachIndexed { index, yaml ->
+                SegmentedButton(
+                    selected = model.cloudYamlMode == yaml,
+                    onClick = { model.selectCloudMode(yaml) },
+                    enabled = enabled,
+                    shape = SegmentedButtonDefaults.itemShape(index, 2),
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                ) { Text(if (yaml) "user-data.yaml" else stringResource(R.string.plus_cloud_form)) }
+            }
+        }
+        Text(stringResource(R.string.plus_cloud_yaml_hint), style = MaterialTheme.typography.bodySmall)
+        model.cloudYamlError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+        if (model.cloudYamlMode) {
+            OutlinedTextField(
+                value = model.cloudYaml, onValueChange = model::editCloudYaml, enabled = enabled,
+                isError = model.cloudYamlError != null,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 240.dp, max = 420.dp),
+                textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace,
+                    textDirection = androidx.compose.ui.text.style.TextDirection.Ltr),
+            )
+        } else if (!model.cloudFormAvailable) {
+            Text(stringResource(R.string.plus_cloud_yaml_only))
+        } else {
+        OutlinedTextField(value = model.cloudUsername, onValueChange = { model.editCloudField("name", it) }, label = { Text(stringResource(R.string.plus_username)) }, singleLine = true, enabled = enabled)
         if (model.cloudUsername.trim() == "root") Text(stringResource(R.string.plus_root_account_hint), style = MaterialTheme.typography.bodySmall)
         val transformation = if (showPassword) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation()
-        OutlinedTextField(value = model.cloudPassword, onValueChange = { model.cloudPassword = it }, label = { Text(if (model.cloudExistingHash.isEmpty()) stringResource(R.string.plus_password) else stringResource(R.string.plus_new_password)) }, singleLine = true, enabled = enabled, visualTransformation = transformation,
+        OutlinedTextField(value = model.cloudPassword, onValueChange = { model.editCloudPassword(it, false) }, label = { Text(if (model.cloudExistingHash.isEmpty()) stringResource(R.string.plus_password) else stringResource(R.string.plus_new_password)) }, singleLine = true, enabled = enabled, visualTransformation = transformation,
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password))
-        OutlinedTextField(value = model.cloudConfirm, onValueChange = { model.cloudConfirm = it }, label = { Text(stringResource(R.string.plus_confirm_password)) }, singleLine = true, enabled = enabled, visualTransformation = transformation,
+        OutlinedTextField(value = model.cloudConfirm, onValueChange = { model.editCloudPassword(it, true) }, label = { Text(stringResource(R.string.plus_confirm_password)) }, singleLine = true, enabled = enabled, visualTransformation = transformation,
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password))
         TextButton(onClick = { showPassword = !showPassword }, enabled = enabled) { Text(if (showPassword) stringResource(R.string.plus_hide_password) else stringResource(R.string.plus_show_password)) }
-        OutlinedTextField(value = model.cloudHostname, onValueChange = { model.cloudHostname = it }, label = { Text(stringResource(R.string.plus_hostname_optional)) }, singleLine = true, enabled = enabled)
-        OutlinedTextField(value = model.cloudKeys, onValueChange = { model.cloudKeys = it }, label = { Text(stringResource(R.string.plus_ssh_keys_optional)) }, enabled = enabled, minLines = 2)
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Checkbox(checked = model.cloudSshPassword, onCheckedChange = { model.cloudSshPassword = it }, enabled = enabled)
+            Checkbox(checked = model.cloudLocked, onCheckedChange = { model.editCloudField("lock_passwd", it) }, enabled = enabled)
+            Text(stringResource(R.string.plus_cloud_lock_password))
+        }
+        OutlinedTextField(value = model.cloudPrimaryGroup, onValueChange = { model.editCloudField("primary_group", it) }, label = { Text(stringResource(R.string.plus_cloud_primary_group)) }, singleLine = true, enabled = enabled)
+        OutlinedTextField(value = model.cloudGroups, onValueChange = { model.editCloudField("groups", it) }, label = { Text(stringResource(R.string.plus_cloud_groups)) }, singleLine = true, enabled = enabled)
+        OutlinedTextField(value = model.cloudShell, onValueChange = { model.editCloudField("shell", it) }, label = { Text(stringResource(R.string.plus_cloud_shell)) }, singleLine = true, enabled = enabled)
+        OutlinedTextField(value = model.cloudSudo, onValueChange = { model.editCloudField("sudo", it) }, label = { Text(stringResource(R.string.plus_cloud_sudo)) }, enabled = enabled, minLines = 2,
+            supportingText = { Text(stringResource(R.string.plus_cloud_sudo_hint)) })
+        OutlinedTextField(value = model.cloudHostname, onValueChange = { model.editCloudField("hostname", it) }, label = { Text(stringResource(R.string.plus_hostname_optional)) }, singleLine = true, enabled = enabled)
+        OutlinedTextField(value = model.cloudKeys, onValueChange = { model.editCloudField("ssh_authorized_keys", it) }, label = { Text(stringResource(R.string.plus_ssh_keys_optional)) }, enabled = enabled, minLines = 2)
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Checkbox(checked = model.cloudSshPassword, onCheckedChange = { model.editCloudField("ssh_pwauth", it) }, enabled = enabled)
             Text(stringResource(R.string.plus_ssh_password_login))
         }
         Text(stringResource(R.string.plus_cloud_credentials_hint), style = MaterialTheme.typography.bodySmall)
+        }
     }
 }

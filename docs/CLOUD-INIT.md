@@ -55,3 +55,20 @@ ethernets:
 配置不指定 renderer，由发行版选择其网络后端。已有 VM 的 CIDATA 不会因升级 APK 自动改写；测试首次启动需重新导入未经初始化的原始镜像。Guest Tools 不修改网络配置。
 
 AlmaLinux 等使用不同网络后端的镜像，可能存在接口匹配或 DHCP 校验和问题，见 [AlmaLinux 网络兼容排查](ALMALINUX-NETWORK.md)。处理办法仅供手动使用，不随 CIDATA 或 Guest Tools 自动安装。
+
+## 编辑 user-data YAML
+
+导入自定义磁盘镜像时启用 cloud-init，可在“账户设置”和 `user-data.yaml` 之间切换。
+账户设置支持用户名、密码、主组、附加组、登录 Shell、sudo 规则、密码锁定、SSH 公钥及 SSH 密码登录。附加组用逗号分隔，sudo 规则每行一条；填 `false` 不为该用户生成 sudo 规则，留空不覆盖镜像默认行为。锁定密码登录不影响 SSH 公钥认证。
+
+表单与 YAML 共用一份配置。修改 YAML 后，语法正确就同步到表单；语法未完成时保留原文、显示错误，并暂停表单编辑。
+
+表单只修改对应字段，保留 `packages`、`runcmd`、`write_files`、用户自定义属性及其他用户。多用户配置编辑第一个明确包含 `name` 的用户；只有 `default` 或没有命名用户时使用 YAML 编辑。通过 YAML 语法树更新，保留未修改节点及其注释，但序列化可能调整缩进或引号。
+
+新密码与确认输入一致后，在后台生成哈希并同步到 YAML；已有密码哈希不回显为明文。手写的密码配置仅在表单明确设置新密码时替换该用户的 `passwd` / `plain_text_passwd`。
+
+支持 `#cloud-config` 映射格式，导入前检查 YAML 语法、重复键和大小；具体 cloud-init 字段是否受发行版支持仍由 Guest 决定。`meta-data` 的实例 ID 和独立 `network-config` 继续由 App 管理。
+
+YAML 会原样写入 CIDATA，手写明文密码也会保留；优先使用 SSH 公钥或密码哈希。
+
+YAML 解析使用 [SnakeYAML](https://github.com/snakeyaml/snakeyaml)（Apache-2.0），通过安全构造器加载。

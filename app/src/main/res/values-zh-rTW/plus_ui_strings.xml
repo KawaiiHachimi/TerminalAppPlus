@@ -206,4 +206,13 @@
     <string name="plus_console_device_hint">"hvc0：virtio 控制台；ttyS0：模擬序列埠。重新啟動虛擬機器後生效。Guest 需支援所選裝置並啟用登入服務；不會修改引導程式設定或輸出路由。"</string>
     <string name="plus_json_editor">JSON 編輯</string>
     <string name="plus_about">關於此專案</string>
+    <string name="plus_cloud_form">帳戶設定</string>
+    <string name="plus_cloud_yaml_hint">帳戶欄位與 YAML 即時同步，保留其他欄位。表單編輯第一個明確命名的使用者。</string>
+    <string name="plus_cloud_yaml_only">目前 YAML 沒有可編輯的命名使用者或有錯誤，請繼續使用 YAML 編輯。</string>
+    <string name="plus_cloud_primary_group">主要群組（選填）</string>
+    <string name="plus_cloud_groups">附加群組（逗號分隔）</string>
+    <string name="plus_cloud_shell">登入 Shell（選填）</string>
+    <string name="plus_cloud_sudo">sudo 規則</string>
+    <string name="plus_cloud_sudo_hint">每行一條；false 不新增 sudo 規則，留空使用映像預設值。免密碼：ALL=(ALL) NOPASSWD:ALL</string>
+    <string name="plus_cloud_lock_password">鎖定密碼登入</string>
 </resources>

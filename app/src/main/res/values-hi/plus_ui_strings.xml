@@ -206,4 +206,13 @@
     <string name="plus_console_device_hint">"hvc0: virtio कंसोल; ttyS0: अनुकरण किया हुआ सीरियल पोर्ट। VM पुनः शुरू करने पर लागू होता है। गेस्ट में उपकरण समर्थन और लॉगिन सेवा चाहिए। बूटलोडर सेटिंग या आउटपुट मार्ग नहीं बदलता।"</string>
     <string name="plus_json_editor">JSON संपादक</string>
     <string name="plus_about">परियोजना के बारे में</string>
+    <string name="plus_cloud_form">खाता सेटिंग</string>
+    <string name="plus_cloud_yaml_hint">खाता फ़ील्ड YAML से सिंक होते हैं। अन्य फ़ील्ड सुरक्षित रहते हैं। फ़ॉर्म पहले नामित उपयोगकर्ता को संपादित करता है।</string>
+    <string name="plus_cloud_yaml_only">संपादन योग्य नामित उपयोगकर्ता नहीं है या YAML में त्रुटियाँ हैं। YAML में संपादन जारी रखें।</string>
+    <string name="plus_cloud_primary_group">प्राथमिक समूह (वैकल्पिक)</string>
+    <string name="plus_cloud_groups">अतिरिक्त समूह (अल्पविराम से अलग)</string>
+    <string name="plus_cloud_shell">लॉगिन शेल (वैकल्पिक)</string>
+    <string name="plus_cloud_sudo">sudo नियम</string>
+    <string name="plus_cloud_sudo_hint">हर पंक्ति में एक नियम; false से sudo नियम नहीं जोड़े जाते। खाली रखने पर इमेज का डिफ़ॉल्ट उपयोग होगा। बिना पासवर्ड: ALL=(ALL) NOPASSWD:ALL</string>
+    <string name="plus_cloud_lock_password">पासवर्ड लॉगिन लॉक करें</string>
 </resources>

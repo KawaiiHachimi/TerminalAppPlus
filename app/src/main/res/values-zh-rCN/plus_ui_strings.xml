@@ -206,4 +206,13 @@
     <string name="plus_console_device_hint">"hvc0：virtio 控制台；ttyS0：模拟串口。重启虚拟机后生效。Guest 需支持所选设备并启用登录服务；不会修改引导程序设置或输出路由。"</string>
     <string name="plus_json_editor">JSON 编辑</string>
     <string name="plus_about">关于此项目</string>
+    <string name="plus_cloud_form">账户设置</string>
+    <string name="plus_cloud_yaml_hint">账户字段与 YAML 实时同步，保留其他字段。表单编辑第一个明确命名的用户。</string>
+    <string name="plus_cloud_yaml_only">当前 YAML 没有可编辑的命名用户或存在错误，请继续使用 YAML 编辑。</string>
+    <string name="plus_cloud_primary_group">主组（可选）</string>
+    <string name="plus_cloud_groups">附加组（逗号分隔）</string>
+    <string name="plus_cloud_shell">登录 Shell（可选）</string>
+    <string name="plus_cloud_sudo">sudo 规则</string>
+    <string name="plus_cloud_sudo_hint">每行一条；false 不添加 sudo 规则，留空使用镜像默认值。免密码：ALL=(ALL) NOPASSWD:ALL</string>
+    <string name="plus_cloud_lock_password">锁定密码登录</string>
 </resources>

@@ -206,4 +206,13 @@
     <string name="plus_console_device_hint">"hvc0 — консоль virtio; ttyS0 — эмулируемый последовательный порт. Применяется после перезапуска ВМ. Нужны поддержка устройства и служба входа в госте. Настройки загрузчика и маршрутизация вывода не меняются."</string>
     <string name="plus_json_editor">Редактор JSON</string>
     <string name="plus_about">О проекте</string>
+    <string name="plus_cloud_form">Настройки учётной записи</string>
+    <string name="plus_cloud_yaml_hint">Поля аккаунта синхронизируются с YAML. Остальные поля сохраняются. Форма меняет первого пользователя с именем.</string>
+    <string name="plus_cloud_yaml_only">Нет доступного именованного пользователя или YAML содержит ошибки. Продолжите в YAML.</string>
+    <string name="plus_cloud_primary_group">Основная группа (необязательно)</string>
+    <string name="plus_cloud_groups">Дополнительные группы (через запятую)</string>
+    <string name="plus_cloud_shell">Оболочка входа (необязательно)</string>
+    <string name="plus_cloud_sudo">Правила sudo</string>
+    <string name="plus_cloud_sudo_hint">По одному правилу на строку; false не добавляет правила sudo. Пустое поле — настройка образа. Без пароля: ALL=(ALL) NOPASSWD:ALL</string>
+    <string name="plus_cloud_lock_password">Заблокировать вход по паролю</string>
 </resources>

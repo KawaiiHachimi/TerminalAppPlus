@@ -206,4 +206,13 @@
     <string name="plus_console_device_hint">"hvc0 は virtio コンソール、ttyS0 はエミュレートされたシリアルポートです。VM の再起動後に適用されます。ゲストのデバイス対応とログインサービスが必要です。ブートローダー設定や出力経路は変更しません。"</string>
     <string name="plus_json_editor">JSON 編集</string>
     <string name="plus_about">プロジェクトについて</string>
+    <string name="plus_cloud_form">アカウント設定</string>
+    <string name="plus_cloud_yaml_hint">アカウント項目は YAML と同期し、他の項目を保持します。フォームは最初の名前付きユーザーを編集します。</string>
+    <string name="plus_cloud_yaml_only">編集できる名前付きユーザーがないか、YAML にエラーがあります。YAML で編集を続けてください。</string>
+    <string name="plus_cloud_primary_group">主グループ（任意）</string>
+    <string name="plus_cloud_groups">追加グループ（カンマ区切り）</string>
+    <string name="plus_cloud_shell">ログインシェル（任意）</string>
+    <string name="plus_cloud_sudo">sudo ルール</string>
+    <string name="plus_cloud_sudo_hint">1 行に 1 つ。false は sudo ルールを追加しません、空欄はイメージの既定値。パスワード不要：ALL=(ALL) NOPASSWD:ALL</string>
+    <string name="plus_cloud_lock_password">パスワードログインをロック</string>
 </resources>

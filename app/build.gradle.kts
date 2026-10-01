@@ -22,6 +22,7 @@ android {
     packaging { resources.excludes += setOf("META-INF/INDEX.LIST", "META-INF/io.netty.versions.properties", "net/jpountz/util/**/*.so", "net/jpountz/util/**/*.dylib", "net/jpountz/util/**/*.dll") }
 }
 dependencies {
+    implementation("org.yaml:snakeyaml:2.7")
     implementation("commons-codec:commons-codec:1.19.0")
     implementation("at.yawk.lz4:lz4-java:1.12.0")
     testImplementation("junit:junit:4.13.2")
