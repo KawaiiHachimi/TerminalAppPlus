@@ -4,6 +4,7 @@
 
 | 文档 | 内容 |
 | --- | --- |
+| [应用文件访问](APP-FILES.md) | 在 MT 等文件管理器中通过 SAF 管理应用数据 |
 | [项目 README](../README.md) | 构建、授权和功能入口 |
 | [自动构建与发布](RELEASING.md) | Actions、签名、标签和 Release 产物 |
 | [虚拟机管理](CUSTOM-VM.md) | 镜像导入、U-Boot/内核启动、切换、资源配置 |

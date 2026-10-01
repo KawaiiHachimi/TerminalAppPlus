@@ -48,6 +48,16 @@
         android:allowBackup="false"
         android:name=".Application">
         <activity android:name=".ConsoleProbeActivity" android:exported="false" android:configChanges="orientation|screenSize|keyboard|keyboardHidden" android:label="@string/plus_console_title" android:windowSoftInputMode="adjustResize" />
+        <provider
+            android:name=".files.AppDocumentsProvider"
+            android:authorities="${applicationId}.documents"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
+        </provider>
         <provider android:name="rikka.shizuku.ShizukuProvider"
                   android:authorities="${applicationId}.shizuku"
                   android:exported="true"

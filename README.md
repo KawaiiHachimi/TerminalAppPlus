@@ -132,6 +132,8 @@ Plus 新增界面支持简体中文、繁体中文、英语、日语、韩语、
 
 ## 文档
 
+- [应用文件访问](docs/APP-FILES.md)：使用 MT 等文件管理器管理应用数据。
+
 - [虚拟机管理与导入](docs/CUSTOM-VM.md)
 - [初始配置 cloud-init](docs/CLOUD-INIT.md)：账户、SSH 公钥及首次启动 DHCP。
 - [AlmaLinux 网络兼容排查](docs/ALMALINUX-NETWORK.md)：特殊环境下的接口匹配与 DHCP/DNS 校验和处理。
@@ -152,6 +154,7 @@ Plus 新增界面支持简体中文、繁体中文、英语、日语、韩语、
   Termux 组件中的上游基础代码。
 - [Podroid](https://github.com/ExTV/Podroid)：AVF 控制台流连接方案参考；
   本项目直接使用 Termux 官方组件，没有复制 Podroid 的 UI 或桥接实现。
+- [MTDataFilesProvider](https://github.com/L-JINBIN/MTDataFilesProvider)（[L-JINBIN](https://github.com/L-JINBIN)）：应用数据文件提供器的实现思路参考；本项目基于 Android 标准 `DocumentsProvider` 独立实现，未复制其代码。
 - [PocketVM](https://github.com/okhsunrog/pocketvm)：AVF Guest 镜像兼容性与 cloud-init 网络配置排查参考。
 - [Codex](https://openai.com/codex/)
 
