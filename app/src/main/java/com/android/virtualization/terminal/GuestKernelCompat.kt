@@ -1,19 +1,18 @@
 /* Copyright 2026 Terminal Plus contributors. SPDX-License-Identifier: Apache-2.0 */
 package com.android.virtualization.terminal
 
-import android.os.Build
 import android.util.Log
 import java.io.File
 import java.security.MessageDigest
 
-/** Compatibility for the tested MT6991 GenieZone firmware, for NON-protected guests only. */
+/** Compatibility for the GenieZone backend, for NON-protected guests only. */
 internal object GuestKernelCompat {
     private const val STOCK_SHA256 = "1008c4aa740113c3bccd1aa72376bcd23602a2f94aa170d51617b7089c647343"
     private const val PATCHED_SHA256 = "e8250ecd77b159e9013e3816ce8dece12e58fc0758d3fbb24277c640e67cf717"
     private const val OFFSET = 0xea8f7c
     private val original = byteArrayOf(0x3f, 0x23, 0x03, 0xd5.toByte()) // paciasp
     private val replacement = byteArrayOf(0xc0.toByte(), 0x03, 0x5f, 0xd6.toByte()) // ret
-    val required: Boolean get() = Build.HARDWARE == "mt6991" && File("/dev/gzvm").exists()
+    val required: Boolean get() = File("/dev/gzvm").exists()
 
     private fun hash(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
         .digest(bytes).joinToString("") { "%02x".format(it.toInt() and 255) }
@@ -25,7 +24,7 @@ internal object GuestKernelCompat {
         val digest = hash(data)
         if (digest == PATCHED_SHA256) return path
         check(digest == STOCK_SHA256) {
-            "This MT6991 GenieZone device requires a verified guest-kernel compatibility fix. " +
+            "This GenieZone device requires a verified guest-kernel compatibility fix. " +
                 "Unknown kernel SHA-256: $digest. Original image was left unchanged."
         }
         check(data.copyOfRange(OFFSET, OFFSET + 4).contentEquals(original))

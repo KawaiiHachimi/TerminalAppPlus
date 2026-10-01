@@ -28,7 +28,7 @@
 
 以下记录保留特定日期、设备和开发阶段的证据；旧命令及功能描述不应作为当前安装指南。
 
-- [MT6991 / GenieZone 内核兼容](GENIEZONE.md)：当前仍使用的精确哈希兼容措施及限制。
+- [GenieZone 内核兼容](GENIEZONE.md)：当前仍使用的精确哈希兼容措施及限制。
 - [镜像版本对比](IMAGE-VERSIONS.md)：2026-09-27 取得的包内元数据，远程目录内容可能更新。
 - [系统内置终端限制](BUILTIN-TERMINAL.md)：指定 ROM 的权限和 SELinux 观察。
 - [分阶段实机验证](VALIDATION.md)

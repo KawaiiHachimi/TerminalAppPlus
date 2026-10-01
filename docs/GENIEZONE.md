@@ -1,4 +1,4 @@
-# MT6991 / GenieZone guest-kernel compatibility
+# GenieZone guest-kernel compatibility
 
 Test device: PKB110, Android 17 / API 37, `ro.hardware=mt6991`, `/dev/gzvm`.
 
@@ -23,7 +23,7 @@ Equivalent guest source change for this specific non-protected backend:
 ```c
 void pkvm_init_hyp_services(void)
 {
-    return; /* non-protected MT6991 GenieZone compatibility build only */
+    return; /* non-protected GenieZone compatibility build only */
 }
 ```
 
@@ -34,9 +34,11 @@ instruction of `pkvm_init_hyp_services` (offset 0xea8f7c, `3f2303d5` PACIASP) wi
 AArch64 disassembly. Result SHA-256:
 `e8250ecd77b159e9013e3816ce8dece12e58fc0758d3fbb24277c640e67cf717`.
 
-The original vmlinuz is never overwritten. This is restricted to MT6991 with
-/dev/gzvm and a non-protected config. Unknown hashes fail with a diagnostic rather
+The original vmlinuz is never overwritten. This is enabled when /dev/gzvm exists and the config is non-protected,
+without a hardware-model restriction. Unknown hashes fail with a diagnostic rather
 than patching an unverified offset. No host kernel, SELinux policy, system file or
-protected-VM security setting is changed. Other devices use the unmodified image.
+protected-VM security setting is changed. Devices without /dev/gzvm use the unmodified image.
+The verified test device remains PKB110 / MT6991; other GenieZone devices have not
+been individually validated.
 The ROM vendor should fix its hypervisor feature reporting; this narrowly scoped
 compatibility measure is not a general kernel patch or a claim of pKVM support.
