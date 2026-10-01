@@ -205,4 +205,5 @@
     <string name="plus_console_device">"Konsolen-Eingabegerät"</string>
     <string name="plus_console_device_hint">"hvc0: virtio-Konsole; ttyS0: emulierter serieller Port. Gilt nach VM-Neustart. Der Gast benötigt Geräteunterstützung und einen Anmeldedienst. Bootloader-Einstellungen und Ausgabewege bleiben unverändert."</string>
     <string name="plus_json_editor">JSON-Editor</string>
+    <string name="plus_about">Über das Projekt</string>
 </resources>

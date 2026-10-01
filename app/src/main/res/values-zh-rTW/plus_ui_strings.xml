@@ -205,4 +205,5 @@
     <string name="plus_console_device">"控制台輸入裝置"</string>
     <string name="plus_console_device_hint">"hvc0：virtio 控制台；ttyS0：模擬序列埠。重新啟動虛擬機器後生效。Guest 需支援所選裝置並啟用登入服務；不會修改引導程式設定或輸出路由。"</string>
     <string name="plus_json_editor">JSON 編輯</string>
+    <string name="plus_about">關於此專案</string>
 </resources>

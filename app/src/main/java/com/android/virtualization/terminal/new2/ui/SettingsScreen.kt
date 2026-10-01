@@ -16,6 +16,8 @@
 package com.android.virtualization.terminal.new2.ui
 
 import android.content.Intent
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.platform.LocalUriHandler
 import com.android.virtualization.terminal.BuildConfig
 import androidx.compose.material.icons.filled.Science
 import android.icu.number.NumberFormatter
@@ -215,6 +217,7 @@ fun SettingsListPane(
     selectedItem: SettingsDestination?,
     onBack: () -> Unit,
 ) {
+    val uriHandler = LocalUriHandler.current
     Scaffold(
         topBar = {
             TopAppBar(
@@ -245,6 +248,15 @@ fun SettingsListPane(
                         ),
                 )
                 HorizontalDivider()
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.plus_about)) },
+                    leadingContent = { Icon(Icons.Default.Info, contentDescription = null) },
+                    modifier = Modifier.clickable {
+                        uriHandler.openUri("https://github.com/KawaiiHachimi/TerminalAppPlus")
+                    },
+                )
             }
         }
     }

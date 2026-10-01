@@ -249,20 +249,10 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
                     }
                 }
                 HorizontalDivider(Modifier.padding(vertical = 4.dp))
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                    SegmentedButton(
-                        selected = !model.jsonMode,
-                        onClick = { model.jsonMode = false },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                        modifier = Modifier.weight(1f),
-                    ) { Text(stringResource(R.string.plus_resource_settings)) }
-                    SegmentedButton(
-                        selected = model.jsonMode,
-                        onClick = { model.jsonMode = true },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                        modifier = Modifier.weight(1f),
-                    ) { Text(stringResource(R.string.plus_json_editor)) }
-                }
+                VmConfigModeSelector(
+                    jsonMode = model.jsonMode,
+                    onModeChange = { model.jsonMode = it },
+                )
                 if (model.jsonMode) {
                     OutlinedTextField(value = model.configDraft, onValueChange = { model.configDraft = it }, modifier = Modifier.fillMaxWidth().heightIn(min = 240.dp, max = 420.dp), textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, textDirection = androidx.compose.ui.text.style.TextDirection.Ltr))
                 } else if (json == null) Text(stringResource(R.string.plus_json_syntax_hint))

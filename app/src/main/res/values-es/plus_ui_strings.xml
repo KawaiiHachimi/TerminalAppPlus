@@ -205,4 +205,5 @@
     <string name="plus_console_device">"Dispositivo de entrada de consola"</string>
     <string name="plus_console_device_hint">"hvc0: consola virtio; ttyS0: puerto serie emulado. Se aplica al reiniciar la VM. El invitado debe admitir el dispositivo y ofrecer un servicio de inicio de sesión. No cambia el cargador ni las rutas de salida."</string>
     <string name="plus_json_editor">Editor JSON</string>
+    <string name="plus_about">Acerca del proyecto</string>
 </resources>

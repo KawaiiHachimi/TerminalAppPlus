@@ -205,4 +205,5 @@
     <string name="plus_console_device">"Устройство ввода консоли"</string>
     <string name="plus_console_device_hint">"hvc0 — консоль virtio; ttyS0 — эмулируемый последовательный порт. Применяется после перезапуска ВМ. Нужны поддержка устройства и служба входа в госте. Настройки загрузчика и маршрутизация вывода не меняются."</string>
     <string name="plus_json_editor">Редактор JSON</string>
+    <string name="plus_about">О проекте</string>
 </resources>

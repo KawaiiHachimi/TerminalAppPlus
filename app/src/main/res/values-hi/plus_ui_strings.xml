@@ -205,4 +205,5 @@
     <string name="plus_console_device">"कंसोल इनपुट उपकरण"</string>
     <string name="plus_console_device_hint">"hvc0: virtio कंसोल; ttyS0: अनुकरण किया हुआ सीरियल पोर्ट। VM पुनः शुरू करने पर लागू होता है। गेस्ट में उपकरण समर्थन और लॉगिन सेवा चाहिए। बूटलोडर सेटिंग या आउटपुट मार्ग नहीं बदलता।"</string>
     <string name="plus_json_editor">JSON संपादक</string>
+    <string name="plus_about">परियोजना के बारे में</string>
 </resources>

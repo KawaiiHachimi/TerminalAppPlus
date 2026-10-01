@@ -205,4 +205,5 @@
     <string name="plus_console_device">"控制台输入设备"</string>
     <string name="plus_console_device_hint">"hvc0：virtio 控制台；ttyS0：模拟串口。重启虚拟机后生效。Guest 需支持所选设备并启用登录服务；不会修改引导程序设置或输出路由。"</string>
     <string name="plus_json_editor">JSON 编辑</string>
+    <string name="plus_about">关于此项目</string>
 </resources>

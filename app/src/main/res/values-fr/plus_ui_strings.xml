@@ -205,4 +205,5 @@
     <string name="plus_console_device">"Périphérique de saisie console"</string>
     <string name="plus_console_device_hint">"hvc0 : console virtio ; ttyS0 : port série émulé. Appliqué après redémarrage de la VM. Le système invité doit prendre en charge le périphérique et un service de connexion. Les réglages du chargeur et la sortie restent inchangés."</string>
     <string name="plus_json_editor">Éditeur JSON</string>
+    <string name="plus_about">À propos du projet</string>
 </resources>
