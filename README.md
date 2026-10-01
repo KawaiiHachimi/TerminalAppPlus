@@ -64,6 +64,21 @@ adb shell pm grant com.android.virtualization.terminal.plus android.permission.U
 **虚拟机内核副本兼容修正**；原 vmlinuz 保留。实现及限制见
 [docs/GENIEZONE.md](docs/GENIEZONE.md)。不对未知内核盲目打补丁。
 
+### 已验证的发行版镜像
+
+| 发行版名称和版本 | 镜像文件 | 镜像类型 | Cloud-init | 备注 |
+| --- | --- | --- | --- | --- |
+| Debian 13 (Trixie) | [debian-13-nocloud-arm64.qcow2](https://cloud.debian.org/images/cloud/trixie/latest/debian-13-nocloud-arm64.qcow2) | QCOW2 | | |
+| Debian 13 (Trixie) | [debian-13-nocloud-arm64.raw](https://cloud.debian.org/images/cloud/trixie/latest/debian-13-nocloud-arm64.raw) | RAW | | |
+| Debian 13 (Trixie) | [debian-13-generic-arm64.qcow2](https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-arm64.qcow2) | QCOW2 | ✓ | |
+| Debian 13 (Trixie) | [debian-13-generic-arm64.raw](https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-arm64.raw) | RAW | ✓ | |
+| Ubuntu 26.04 LTS (Resolute) | [resolute-server-cloudimg-arm64.img](https://cloud-images.ubuntu.com/resolute/current/resolute-server-cloudimg-arm64.img) | QCOW2（`.img`） | ✓ | 控制台选择 `hvc0` |
+| Fedora 44 Minimal | [Fedora-Minimal-44-1.7.aarch64.raw.xz](https://download.fedoraproject.org/pub/fedora/linux/releases/44/Spins/aarch64/images/Fedora-Minimal-44-1.7.aarch64.raw.xz) | RAW（XZ 压缩） | | 解压后导入 |
+| AlmaLinux 10 | [AlmaLinux-10-GenericCloud-ext4-latest.aarch64.qcow2](https://repo.almalinux.org/almalinux/10/cloud/aarch64/images/AlmaLinux-10-GenericCloud-ext4-latest.aarch64.qcow2) | QCOW2（ext4） | ✓ | [联网问题及处理办法](docs/ALMALINUX-NETWORK.md) |
+| OpenWrt 25.12.5 | [openwrt-25.12.5-armsr-armv8-generic-ext4-combined-efi.img.gz](https://downloads.openwrt.org/releases/25.12.5/targets/armsr/armv8/openwrt-25.12.5-armsr-armv8-generic-ext4-combined-efi.img.gz) | RAW（ext4，Gzip 压缩） | | |
+
+欢迎测试和补充。
+
 ## 与系统版的差异与限制
 
 - 保留 AOSP 新版 Compose 界面、终端 WebView、多标签、设置、镜像安装与恢复流程。
