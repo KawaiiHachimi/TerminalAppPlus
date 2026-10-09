@@ -27,18 +27,35 @@ void pkvm_init_hyp_services(void)
 }
 ```
 
-To avoid requiring a Linux kernel build environment, Terminal Plus derives a
-separate guest kernel file from the **exact known hash**, replacing the first
-instruction of `pkvm_init_hyp_services` (offset 0xea8f7c, `3f2303d5` PACIASP) with
-`c0035fd6` RET. Offset was verified against the image's recovered kallsyms and
-AArch64 disassembly. Result SHA-256:
-`e8250ecd77b159e9013e3816ce8dece12e58fc0758d3fbb24277c640e67cf717`.
+Terminal Plus locates `pkvm_init_hyp_services` by decompressing the kernel's
+embedded kallsyms names. There is no SHA-256 whitelist or fixed patch offset.
+The minimal reader supports little-endian, uncompressed ARM64 Image files with
+the Linux 6.12 kallsyms layout (unsigned relative offsets after the token index).
+ELF, compressed kernels, missing symbols and other kallsyms layouts are rejected.
 
-The original vmlinuz is never overwritten. This is enabled when /dev/gzvm exists and the config is non-protected,
-without a hardware-model restriction. Unknown hashes fail with a diagnostic rather
-than patching an unverified offset. No host kernel, SELinux policy, system file or
-protected-VM security setting is changed. Devices without /dev/gzvm use the unmodified image.
-The verified test device remains PKB110 / MT6991; other GenieZone devices have not
-been individually validated.
-The ROM vendor should fix its hypervisor feature reporting; this narrowly scoped
-compatibility measure is not a general kernel patch or a claim of pKVM support.
+Before patching, it checks the token index, symbol-count markers, kallsyms
+self-references against file offsets, a unique target symbol, executable-section
+bounds and the entry instruction. A PACIASP entry is replaced with RET; an
+optional BTI C landing pad is preserved. An existing RET is accepted, making the
+operation idempotent. These checks validate location and entry shape, not the
+semantic compatibility of every future kernel implementation.
+
+The original kernel is never overwritten. The patched bytes are written atomically
+to `vmlinuz-terminal-plus`; an existing identical copy is reused. This is enabled
+only when `/dev/gzvm` exists and the VM is non-protected. Parse or validation failure
+leaves the original untouched and reports an error; no guessed offset is applied.
+
+Local parser/patch validation covered the archived September 5100000 kernel and
+4000000/latest kernels: offsets were resolved as `0xea8f7c`,
+`0xe76b50`, and `0xe4f9d0`. This does not constitute boot verification of all three.
+Run optional real-image tests with colon-separated absolute paths in
+`PLUS_KERNEL_FIXTURES` and `:app:testDebugUnitTest --tests '*GuestKernelSymbolsTest'`.
+
+On 2026-10-09, a fresh download from the 5100000 endpoint was also tested on
+PKB110: the parser located the updated function at `0xeaa344`, the VM booted,
+the AIDL guest agent registered, and the ttyd WebSocket connected successfully.
+
+The verified boot device remains PKB110 / MT6991; other GenieZone devices have not
+been individually validated. No host kernel, SELinux policy or protected-VM
+security setting is changed. The ROM vendor should fix its hypervisor feature
+reporting; this compatibility measure is not a general pKVM implementation.
