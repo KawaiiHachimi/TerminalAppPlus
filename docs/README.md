@@ -4,6 +4,7 @@
 
 | 文档 | 内容 |
 | --- | --- |
+| [dev 图形加速与传输实验](GRAPHICS-DEV.md) | Android 17 VirGL2 构建边界、H.264 与 safe-JIT |
 | [应用文件访问](APP-FILES.md) | 在 MT 等文件管理器中通过 SAF 管理应用数据 |
 | [项目 README](../README.md) | 构建、授权和功能入口 |
 | [自动构建与发布](RELEASING.md) | Actions、签名、标签和 Release 产物 |
@@ -28,7 +29,7 @@
 
 以下记录保留特定日期、设备和开发阶段的证据；旧命令及功能描述不应作为当前安装指南。
 
-- [GenieZone 内核兼容](GENIEZONE.md)：当前仍使用的精确哈希兼容措施及限制。
+- [GenieZone 内核兼容](GENIEZONE.md)：按 kallsyms 定位的兼容补丁及限制。
 - [镜像版本对比](IMAGE-VERSIONS.md)：2026-09-27 取得的包内元数据，远程目录内容可能更新。
 - [系统内置终端限制](BUILTIN-TERMINAL.md)：指定 ROM 的权限和 SELinux 观察。
 - [分阶段实机验证](VALIDATION.md)

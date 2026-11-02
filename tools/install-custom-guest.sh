@@ -24,7 +24,7 @@ done
 [ "$(id -u)" = 0 ] || fail 'Run this installer with sudo or as root.'
 command -v systemctl >/dev/null || fail 'This installer requires systemd.'
 [ -d /run/systemd/system ] || fail 'systemd must be running.'
-payloads='install.sh guest-packages.sh guest-runtime.sh ttyd.aarch64 ttyd-NOTICE ttyd-LICENSE ttyd-dependency-licenses.txt install-guest-tools.sh terminal-plus-guest.service terminal-plus-guest.py terminal-plus-capture.py terminal-plus-proxy.py'
+payloads='install.sh guest-packages.sh guest-runtime.sh ttyd.aarch64 ttyd-NOTICE ttyd-LICENSE ttyd-dependency-licenses.txt install-guest-tools.sh terminal-plus-guest.service terminal-plus-guest.py terminal-plus-capture.py terminal-plus-proxy.py terminal-plus-safe-jit.py'
 for file in $payloads; do [ -r "$script_dir/$file" ] || fail "Missing payload: $file"; done
 . "$script_dir/guest-runtime.sh"
 version=$(cd "$script_dir" && sha256sum $payloads | sha256sum | cut -d' ' -f1)

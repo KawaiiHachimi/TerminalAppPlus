@@ -6,12 +6,12 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 payload=${1:-"$script_dir/../app/src/main/assets/guest-setup"}
 command -v python3 >/dev/null
 command -v systemctl >/dev/null
-for name in guest capture proxy; do
+for name in guest capture proxy safe-jit; do
     test -f "$payload/terminal-plus-$name.py"
 done
 test -f "$payload/terminal-plus-guest.service"
 changed=0
-for name in guest capture proxy; do
+for name in guest capture proxy safe-jit; do
     if ! cmp -s "$payload/terminal-plus-$name.py" "/usr/local/bin/terminal-plus-$name.py"; then
         install -m 755 "$payload/terminal-plus-$name.py" "/usr/local/bin/terminal-plus-$name.py"
         changed=1
@@ -27,7 +27,7 @@ for name in capture console-resize proxy kms-probe; do
 done
 rm -f /usr/local/bin/terminal-plus-console-resize.py
 if command -v restorecon >/dev/null; then
-    restorecon /usr/local/bin/terminal-plus-guest.py /usr/local/bin/terminal-plus-capture.py /usr/local/bin/terminal-plus-proxy.py /etc/systemd/system/terminal-plus-guest.service
+    restorecon /usr/local/bin/terminal-plus-guest.py /usr/local/bin/terminal-plus-capture.py /usr/local/bin/terminal-plus-proxy.py /usr/local/bin/terminal-plus-safe-jit.py /etc/systemd/system/terminal-plus-guest.service
 fi
 systemctl daemon-reload
 systemctl enable --now terminal-plus-guest.service

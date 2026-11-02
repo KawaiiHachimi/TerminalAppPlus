@@ -65,8 +65,10 @@ internal data class ConfigJson(
     private val gpu: GpuJson?,
     private val auto_memory_balloon: Boolean,
     private val boot_timeout_secs: Int?,
+    private val display_transport: String? = null,
 ) {
     @Transient var applyGuestCompatibility = true
+    fun displayTransport() = display_transport ?: "raw"
     fun hasDisplay() = display != null
     fun hasAudio() = audio != null
 

@@ -14,14 +14,14 @@ capture = (root/'tools/experiments/kms-capture-server.py').read_bytes()
 (root/'guest/root_files/usr/local/bin/terminal-plus-capture.py').write_bytes(capture)
 assets = root/'app/src/main/assets/guest-setup'
 assets.mkdir(parents=True, exist_ok=True)
-for name in ('guest', 'capture', 'proxy'):
+for name in ('guest', 'capture', 'proxy', 'safe-jit'):
     (assets/f'terminal-plus-{name}.py').write_bytes((root/f'guest/root_files/usr/local/bin/terminal-plus-{name}.py').read_bytes())
 (assets/'terminal-plus-guest.service').write_bytes((root/'guest/root_files/etc/systemd/system/terminal-plus-guest.service').read_bytes())
 (assets/'install-guest-tools.sh').write_bytes((root/'tools/install-guest-tools.sh').read_bytes())
 # Deterministic bundle for guest service installation and upgrades.
 bundle = BytesIO()
 with tarfile.open(fileobj=bundle, mode='w') as archive:
-    for name in ('terminal-plus-guest.py', 'terminal-plus-capture.py', 'terminal-plus-proxy.py', 'terminal-plus-guest.service', 'install-guest-tools.sh'):
+    for name in ('terminal-plus-guest.py', 'terminal-plus-capture.py', 'terminal-plus-proxy.py', 'terminal-plus-safe-jit.py', 'terminal-plus-guest.service', 'install-guest-tools.sh'):
         data = (assets/name).read_bytes()
         info = tarfile.TarInfo(name)
         info.size = len(data)
@@ -37,6 +37,7 @@ script = init.getvalue().replace(b'\t\tattach-cidata.service', b'\t\tterminal-pl
 iso.rm_file(iso_path='/INIT.SH;1')
 iso.add_fp(BytesIO(script), len(script), iso_path='/INIT.SH;1', rr_name='init.sh', file_mode=0o100755)
 files = [
+    ('root_files/usr/local/bin/terminal-plus-safe-jit.py', '/SAFEJIT.PY;1', 0o100755),
     ('root_files/usr/local/bin/terminal-plus-capture.py', '/CAPTURE.PY;1', 0o100755),
     ('root_files/usr/local/bin/terminal-plus-guest.py', '/GUEST.PY;1', 0o100755),
     ('root_files/etc/systemd/system/terminal-plus-guest.service', '/GUEST.SER;1', 0o100644),

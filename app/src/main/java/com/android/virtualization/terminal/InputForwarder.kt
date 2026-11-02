@@ -99,10 +99,17 @@ internal class InputForwarder(
                 if (event.isCtrlPressed && event.isAltPressed) {
                     onMouseLockRelease()
                 }
-                virtualMachine.sendKeyEvent(
-                    event.scanCode.toShort(),
-                    event.action != MotionEvent.ACTION_UP,
-                )
+                val scanCode = if (event.scanCode != 0) event.scanCode.toShort()
+                    else receiver.convertAndroidKeyCodeToEvdevScanCode(code)
+                if (scanCode == (-1).toShort()) return@setOnKeyListener false
+                val shift = event.scanCode == 0 &&
+                    (event.isShiftPressed || receiver.shouldSyntheticallyPressShift(event))
+                if (shift) virtualMachine.sendKeyEvent(HARDWARE_KEYCODE_SHIFT, true)
+                try {
+                    virtualMachine.sendKeyEvent(scanCode, event.action != KeyEvent.ACTION_UP)
+                } finally {
+                    if (shift) virtualMachine.sendKeyEvent(HARDWARE_KEYCODE_SHIFT, false)
+                }
             } else {
                 false
             }

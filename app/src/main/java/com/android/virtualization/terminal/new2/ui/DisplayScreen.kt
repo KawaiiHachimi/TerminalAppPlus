@@ -190,6 +190,7 @@ fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                 isMouseLocked = isMouseLocked,
                 hasMouse = hasMouse,
                 onTouchEvent = { event, contentSize ->
+                    displaySurfaceView?.requestFocus()
                     if (useDisplayAsTouchpad) {
                         vm.sendTrackpadEvent(event)
                     } else {
@@ -227,6 +228,7 @@ fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                             }
                         container.addView(mainView)
                         container.addView(cursorView)
+                        container.post { mainView.requestFocus() }
 
                         val displayProvider =
                             DisplayProvider(

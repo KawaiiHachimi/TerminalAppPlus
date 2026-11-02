@@ -29,6 +29,9 @@ import io.grpc.InsecureServerCredentials
 import io.grpc.Server
 import io.grpc.okhttp.OkHttpServerBuilder
 import java.io.IOException
+import com.android.virtualization.terminal.ClipboardSync
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,7 +48,10 @@ class GuestAgentController(
 ) {
     private var server: Server? = null
     private var debianService: DebianServiceBase? = null
-    private var clipboardController: ClipboardController? = null
+    @Volatile private var clipboardController: ClipboardController? = null
+    private val clipboardSync = ClipboardSync(java.util.concurrent.Executor { task ->
+        scope.launch(Dispatchers.IO) { task.run() }
+    })
     private val portsStateManager = PortsStateManager.getInstance(context)
 
     private val _ports = MutableStateFlow<List<OpenPort>>(emptyList())
@@ -101,14 +107,14 @@ class GuestAgentController(
         stopDebianServer()
     }
 
-    @Synchronized
     fun pullClipboardFromGuest() {
-        clipboardController?.pullFromGuest()
+        val controller = clipboardController ?: return
+        clipboardSync.submit { if (clipboardController === controller) controller.pullFromGuest() }
     }
 
-    @Synchronized
     fun pushClipboardToGuest() {
-        clipboardController?.pushToGuestIfNeeded()
+        val controller = clipboardController ?: return
+        clipboardSync.submit { if (clipboardController === controller) controller.pushToGuestIfNeeded() }
     }
 
     @Synchronized

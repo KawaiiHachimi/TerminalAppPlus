@@ -14,6 +14,9 @@ import os
 from pathlib import Path
 import re
 import socket
+import select
+import subprocess
+import threading
 import struct
 import time
 import zlib
@@ -203,6 +206,130 @@ class Lz4Encoder:
         return 0, memoryview(pixels)
 
 
+
+MAX_AVC_PACKET = 4 * 1024 * 1024
+
+
+class AvcAccessUnits:
+    """Split Annex B at x264's explicit four-byte access-unit delimiters.
+
+    Preserve SPS/PPS and every encoded reference; only raw input may be dropped.
+    """
+    delimiter = b'\x00\x00\x00\x01\x09'
+
+    def __init__(self):
+        self.pending = bytearray()
+
+    def push(self, data):
+        self.pending.extend(data)
+        result = []
+        while True:
+            first = self.pending.find(self.delimiter)
+            second = self.pending.find(self.delimiter, first + len(self.delimiter)) if first >= 0 else -1
+            if second < 0:
+                break
+            result.append(bytes(self.pending[:second]))
+            del self.pending[:second]
+        if len(self.pending) > MAX_AVC_PACKET or any(len(x) > MAX_AVC_PACKET for x in result):
+            raise OSError('AVC access unit exceeds limit')
+        return result
+
+
+def encoded_size(width, height):
+    w, h = (width + 1) & ~1, (height + 1) & ~1
+    if not (0 < width <= 4096 and 0 < height <= 4096 and w * h * 4 <= 32 * 1024 * 1024):
+        raise OSError('H.264 dimensions exceed capture budget')
+    return w, h
+
+
+def encoder_command(width, height, fps):
+    encoded_size(width, height)
+    if not 1 <= fps <= 60:
+        raise OSError('Invalid H.264 frame rate')
+    return ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-nostdin',
+            '-f', 'rawvideo', '-pixel_format', 'bgr0', '-video_size', f'{width}x{height}',
+            '-framerate', str(fps), '-i', 'pipe:0', '-an', '-c:v', 'libx264',
+            '-preset', 'ultrafast', '-tune', 'zerolatency', '-threads', '4',
+            '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-pix_fmt', 'yuv420p', '-crf', '25', '-g', str(fps * 2),
+            '-x264-params', 'aud=1:repeat-headers=1:bframes=0',
+            '-flush_packets', '1', '-f', 'h264', 'pipe:1']
+
+
+def stream_avc(connection, fps):
+    """Opt-in H request: PAV1 + BE width/height, then BE length + Annex-B AU.
+
+    Uses the existing KMS capture and host-CID check. ffmpeg/libx264 is optional;
+    no X11 session discovery, desktop changes or vendor codec blobs are needed.
+    """
+    buffers = {}
+    header, first = capture(True, buffers=buffers, split=True, native=True)
+    width, height, _ = struct.unpack('!III', header)
+    process = subprocess.Popen(encoder_command(width, height, fps), stdin=subprocess.PIPE,
+                               stdout=subprocess.PIPE, stderr=None, bufsize=0)
+    stopping = threading.Event()
+    errors = []
+
+    def produce():
+        try:
+            pixels = first
+            while not stopping.is_set():
+                start = time.monotonic()
+                pending = memoryview(pixels)
+                deadline = start + 2
+                while pending and not stopping.is_set():
+                    if time.monotonic() >= deadline:
+                        raise OSError('Encoder input stalled')
+                    if select.select([], [process.stdin], [], .1)[1]:
+                        count = os.write(process.stdin.fileno(), pending[:65536])
+                        if not count:
+                            raise OSError('Encoder input closed')
+                        pending = pending[count:]
+                if stopping.wait(max(0, start + 1 / fps - time.monotonic())):
+                    break
+                header, pixels = capture(True, buffers=buffers, split=True, native=True)
+                if struct.unpack('!III', header)[:2] != (width, height):
+                    raise OSError('Scanout resized; reconnect encoder')
+        except Exception as error:
+            errors.append(error)
+        finally:
+            stopping.set()
+
+    os.set_blocking(process.stdin.fileno(), False)
+    writer = threading.Thread(target=produce, name='plus-avc-capture', daemon=True)
+    try:
+        connection.sendall(struct.pack('!4sII', b'PAV1', *encoded_size(width, height)))
+        writer.start()
+        parser = AvcAccessUnits()
+        last_output = time.monotonic()
+        while not stopping.is_set():
+            if process.poll() is not None:
+                raise OSError('ffmpeg/libx264 stopped; check installed encoder')
+            if not select.select([process.stdout], [], [], .2)[0]:
+                if time.monotonic() - last_output > 10:
+                    raise OSError('Encoder output stalled')
+                continue
+            chunk = os.read(process.stdout.fileno(), 65536)
+            if not chunk:
+                break
+            last_output = time.monotonic()
+            for unit in parser.push(chunk):
+                connection.sendall(struct.pack('!I', len(unit)))
+                connection.sendall(unit)
+        if errors:
+            raise OSError(str(errors[0]))
+    finally:
+        stopping.set()
+        process.terminate() if process.poll() is None else None
+        try:
+            process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+        if writer.ident is not None:
+            writer.join(timeout=2)
+        process.stdin.close()
+        process.stdout.close()
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--fps', type=int, default=30, choices=range(1, 61), metavar='1..60')
@@ -226,6 +353,9 @@ def main():
                 try:
                     while True:
                         request = connection.recv(1)
+                        if request == b'H':
+                            stream_avc(connection, args.fps)
+                            break
                         if request not in (b'F', b'R', b'Z', b'B', b'Q'):
                             break
                         time.sleep(frame_delay(deadline, time.monotonic()))
@@ -256,8 +386,8 @@ def main():
                                   (frames/(end-sample_start), capture_seconds*1000/frames,
                                    send_seconds*1000/frames), flush=True)
                             sample_start=end; frames=0; capture_seconds=send_seconds=0.0
-                except (ConnectionError, TimeoutError, OSError):
-                    pass
+                except (ConnectionError, TimeoutError, OSError) as error:
+                    print('capture connection: ' + str(error), flush=True)
 
 
 if __name__ == '__main__':

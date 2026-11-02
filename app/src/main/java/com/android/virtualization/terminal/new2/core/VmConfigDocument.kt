@@ -10,7 +10,7 @@ import java.io.File
 
 /** Validate the actual AVF configuration before replacing the last working file. */
 object VmConfigDocument {
-    private val keys = setOf("protected", "name", "cpu_topology", "memory_mib", "hugepages", "console_input_device", "bootloader", "kernel", "initrd", "params", "debuggable", "console_out", "connect_console", "network", "input", "audio", "usb_config", "disks", "sharedPath", "display", "gpu", "auto_memory_balloon", "boot_timeout_secs")
+    private val keys = setOf("protected", "name", "cpu_topology", "memory_mib", "hugepages", "console_input_device", "bootloader", "kernel", "initrd", "params", "debuggable", "console_out", "connect_console", "network", "input", "audio", "usb_config", "disks", "sharedPath", "display", "gpu", "auto_memory_balloon", "boot_timeout_secs", "display_transport")
     fun parse(text: String): JsonObject {
         require(text.length <= 256 * 1024) { AppStrings.get(R.string.plus_config_too_large) }
         val root = JsonParser.parseString(text)
@@ -20,6 +20,7 @@ object VmConfigDocument {
         fun present(key: String) = json.get(key)?.let { !it.isJsonNull && it.asString.isNotBlank() } == true
         require(present("kernel") xor present("bootloader")) { AppStrings.get(R.string.plus_kernel_bootloader_exclusive) }
         require(!present("bootloader") || !present("initrd")) { AppStrings.get(R.string.plus_uboot_no_initrd) }
+        require(json.get("display_transport")?.asString in listOf(null, "raw", "h264")) { "display_transport: raw or h264" }
         val memory = json.get("memory_mib")?.asString?.toIntOrNull()
         require(memory != null && memory in 256..262144) { AppStrings.get(R.string.plus_invalid_memory) }
         require(json.get("cpu_topology")?.asString in listOf("one_cpu", "match_host")) { AppStrings.get(R.string.plus_invalid_cpu_topology) }

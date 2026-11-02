@@ -198,6 +198,7 @@ object VmController {
     private fun applyDisplayResize(request: ResizeRequest) {
         val (vm, width, height, dpi, refreshRate) = request
         try {
+            Log.i(TAG, "Applying display resize ${width}x${height}")
             val displays = vm.getDisplays()
             if (displays.isNotEmpty()) {
                 val oldDisplay = displays[0]
@@ -217,6 +218,7 @@ object VmController {
             config.verticalDpi = dpi
             config.refreshRate = refreshRate
             vm.addDisplay(config)
+            Log.i(TAG, "Display added ${width}x${height}")
             if (displays.isNotEmpty()) {
                 val oldDisplay = displays[0]
                 vm.removeDisplay(oldDisplay.id)
@@ -373,9 +375,13 @@ object VmController {
         }
     }
 
+    @Volatile var displayTransport: String = "raw"
+        private set
+
     private fun buildProfileConfig(profile: VmProfile, text: String): android.system.virtualmachine.VirtualMachineConfig {
         val payload = VmProfiles.payloadDirectory(profile)
         val json = ConfigJson.fromText(context, text, payload.toPath(), profile.isManaged)
+        displayTransport = json.displayTransport()
         terminalTimeoutSecs = json.getBootTimeoutSecs().toLong() * (if (IS_EMULATOR) 10 else 1)
         val configBuilder = json.toConfigBuilder(context)
         configBuilder.setVmConsoleInputSupported(true).setConnectVmConsole(false)

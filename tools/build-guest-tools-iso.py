@@ -19,6 +19,7 @@ sources = {
     'install-guest-tools.sh': root / 'tools/install-guest-tools.sh',
     'terminal-plus-guest.service': root / 'guest/root_files/etc/systemd/system/terminal-plus-guest.service',
     'terminal-plus-guest.py': root / 'guest/root_files/usr/local/bin/terminal-plus-guest.py',
+    'terminal-plus-safe-jit.py': root / 'guest/root_files/usr/local/bin/terminal-plus-safe-jit.py',
     'terminal-plus-proxy.py': root / 'guest/root_files/usr/local/bin/terminal-plus-proxy.py',
     'terminal-plus-capture.py': root / 'tools/experiments/kms-capture-server.py',
 }

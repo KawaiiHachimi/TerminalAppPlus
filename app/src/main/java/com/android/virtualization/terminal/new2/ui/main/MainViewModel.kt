@@ -143,6 +143,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _settingsRequest.value = null
     }
 
+    private var startupVm: android.system.virtualmachine.VirtualMachine? = null
+    private var startupProfile: String? = null
+
+    /** Activity recreation must not reapply the profile's initial screen over user navigation. */
+    fun takeStartupScreen(profileId: String): Boolean {
+        val vm = VmController.virtualMachine ?: return false
+        if (startupVm === vm && startupProfile == profileId) return false
+        startupVm = vm
+        startupProfile = profileId
+        return true
+    }
+
     fun toggleDisplay() {
         _displayState.value =
             if (_displayState.value == DisplayState.Hidden) {

@@ -92,7 +92,7 @@ fun MainScreen(viewModel: MainViewModel) {
     }
 
     LaunchedEffect(uiState is MainUiState.Running, profile.id) {
-        if (uiState is MainUiState.Running) {
+        if (uiState is MainUiState.Running && viewModel.takeStartupScreen(profile.id)) {
             viewModel.setShowSettings(false)
             when (profile.screen) {
                 "console" -> context.startActivity(Intent().setClassName(context.packageName,

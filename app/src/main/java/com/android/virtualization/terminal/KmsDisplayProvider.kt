@@ -8,6 +8,8 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.findViewTreeLifecycleOwner
 import com.android.virtualization.terminal.new2.core.VmController
 import com.android.virtualization.terminal.new2.ui.main.DisplayResolution
 import java.io.DataInputStream
@@ -29,23 +31,33 @@ internal class KmsDisplayProvider(
     private val executor = Executors.newSingleThreadExecutor()
     private val renderer = Executors.newSingleThreadExecutor()
     @Volatile private var frames: LatestFrameQueue? = null
-    private val lifecycle = (mainView.context as? LifecycleOwner)?.lifecycle
+    private var lifecycle: Lifecycle? = null
     @Volatile private var connection: ParcelFileDescriptor? = null
     @Volatile private var running = false
     private var closed = false
     private var resolution = initialResolution
     private var requestedSize = 0 to 0
+    private val layoutListener = android.view.View.OnLayoutChangeListener { _, l, t, r, b, oldL, oldT, oldR, oldB ->
+        if (r-l != oldR-oldL || b-t != oldB-oldT) updateResolution()
+    }
 
     init {
         // Guest capture composites the cursor into the frame; no host cursor Binder is needed.
         cursorView.visibility = android.view.View.GONE
+        mainView.addOnLayoutChangeListener(layoutListener)
         mainView.holder.addCallback(this)
-        lifecycle?.addObserver(this)
     }
-    override fun surfaceCreated(holder: SurfaceHolder) { updateResolution(); start() }
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        updateResolution()
+        if (lifecycle == null) {
+            lifecycle = mainView.findViewTreeLifecycleOwner()?.lifecycle
+            lifecycle?.addObserver(this)
+        }
+        start()
+    }
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) { updateResolution() }
     override fun surfaceDestroyed(holder: SurfaceHolder) { stop() }
-    override fun onStart(owner: LifecycleOwner) { start() }
+    override fun onStart(owner: LifecycleOwner) { updateResolution(); start() }
     override fun onStop(owner: LifecycleOwner) { stop() }
 
     fun setResolution(value: DisplayResolution) {
@@ -55,23 +67,30 @@ internal class KmsDisplayProvider(
     }
     private fun updateResolution() {
         if (closed || mainView.width == 0 || mainView.height == 0) return
-        val size = (mainView.width * resolution.scale).toInt().coerceAtLeast(1) to
-            (mainView.height * resolution.scale).toInt().coerceAtLeast(1)
+        val h264 = VmController.displayTransport == "h264"
+        val size = CaptureDisplaySize.requested(mainView.width, mainView.height, resolution.scale, h264)
         if (requestedSize == size) return
         requestedSize = size
+        android.util.Log.i("PlusDisplay", "Layout ${mainView.width}x${mainView.height}, scale=${resolution.scale}, request=${size.first}x${size.second}")
         VmController.resizeDisplay(size.first, size.second,
             (mainView.resources.configuration.densityDpi * resolution.scale).toInt(), 60, expectedVm = vm)
-        mainView.holder.setFixedSize(size.first, size.second)
+        if (h264) {
+            // MediaCodec owns its buffer geometry. Keep the destination tied to layout.
+            mainView.holder.setSizeFromLayout()
+            if (running) { stop(); start() }
+        } else mainView.holder.setFixedSize(size.first, size.second)
     }
     private fun start() {
-        if (closed || running || !mainView.holder.surface.isValid) return
+        if (closed || running || !mainView.holder.surface.isValid ||
+            lifecycle?.currentState?.isAtLeast(Lifecycle.State.STARTED) == false) return
         running = true
         val ticket = generation.incrementAndGet()
         onStatus(mainView.context.getString(R.string.plus_display_connecting))
         val queue = LatestFrameQueue()
         val ready = java.util.concurrent.atomic.AtomicBoolean(false)
         frames = queue
-        renderer.execute { render(queue, ticket, ready) }
+        val h264 = VmController.displayTransport == "h264"
+        if (!h264) renderer.execute { render(queue, ticket, ready) }
         executor.execute {
             val decoder = CaptureFrameDecoder()
             var compressed = ByteArray(0)
@@ -83,6 +102,13 @@ internal class KmsDisplayProvider(
                             connection = fd
                             val input = DataInputStream(FileInputStream(fd.fileDescriptor))
                             val output = FileOutputStream(fd.fileDescriptor)
+                            if (h264) {
+                                output.write('H'.code); output.flush()
+                                AvcDisplaySession.play(input, mainView.holder.surface, { generation.get() == ticket }) {
+                                    mainView.post { if (generation.get() == ticket) onStatus(null) }
+                                }
+                                return@use
+                            }
                             while (generation.get() == ticket) {
                                 output.write('Q'.code); output.flush()
                                 val w = input.readInt(); val h = input.readInt(); val length = input.readInt()
@@ -108,7 +134,8 @@ internal class KmsDisplayProvider(
                         if (generation.get() != ticket) break
                         ready.set(false)
                         mainView.post {
-                            if (generation.get() == ticket) onStatus(mainView.context.getString(R.string.plus_display_service_required))
+                            if (generation.get() == ticket) onStatus(mainView.context.getString(R.string.plus_display_service_required) +
+                                if (h264) "\nH.264: ${e.message}" else "")
                         }
                         Thread.sleep(1000)
                     }
@@ -181,6 +208,7 @@ internal class KmsDisplayProvider(
         if (closed) return
         closed = true
         stop()
+        mainView.removeOnLayoutChangeListener(layoutListener)
         mainView.holder.removeCallback(this)
         lifecycle?.removeObserver(this)
         executor.shutdownNow()

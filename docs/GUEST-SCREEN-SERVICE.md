@@ -2,7 +2,9 @@
 
 适用于 App 虚拟显示器页面。以下命令在 **Guest 内**执行，示例面向 Debian/Ubuntu；不需要 Android 宿主 root。
 
-当前图形路径：
+dev 分支的可选 H.264 传输、VirGL2 与 safe-JIT 使用方法见 [图形实验](GRAPHICS-DEV.md)。
+
+当前默认图形路径：
 
 ```text
 Guest virtio-gpu DRM/KMS 画面与光标
@@ -74,6 +76,7 @@ sudo install -d -m 755 /usr/local/bin
 sudo install -m 755 terminal-plus-tools/terminal-plus-guest.py /usr/local/bin/terminal-plus-guest.py
 sudo install -m 755 terminal-plus-tools/terminal-plus-capture.py /usr/local/bin/terminal-plus-capture.py
 sudo install -m 755 terminal-plus-tools/terminal-plus-proxy.py /usr/local/bin/terminal-plus-proxy.py
+sudo install -m 755 terminal-plus-tools/terminal-plus-safe-jit.py /usr/local/bin/terminal-plus-safe-jit.py
 
 sudo tee /etc/systemd/system/terminal-plus-guest.service >/dev/null <<'UNIT'
 [Unit]
