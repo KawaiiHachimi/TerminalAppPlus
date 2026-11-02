@@ -1,4 +1,4 @@
-# QPR3 MD3 界面移植（开发分支）
+# QPR3 MD3 界面移植
 
 本轮参考 Pixel QPR3 TerminalApp 的主界面、设置页和标签栏组件，在现有 Kotlin/Compose 工程中实现，不加入反编译的 Compose/R8 Java。
 提取 APK SHA-256：`a2ed91f6ae903e9fef3f8cc550e9baca4b5dc8fdcaa213558f5396f94867c033`，cidata build ID `16583637`。
