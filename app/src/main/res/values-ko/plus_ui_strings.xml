@@ -221,24 +221,5 @@
     <string name="plus_display_transport">화면 전송</string>
     <string name="plus_display_lossless">무손실(기본값)</string>
     <string name="plus_display_h264_hint">손실 압축입니다. Guest Tools를 업데이트하고 Guest에 libx264를 지원하는 ffmpeg를 설치해야 합니다.</string>
-    <string name="plus_appearance_title">디자인</string>
-    <string name="plus_appearance_colors">색상 테마</string>
-    <string name="plus_appearance_auto">시스템 테마에 따라 색상 테마 전환</string>
-    <string name="plus_appearance_light_theme">밝은 모드</string>
-    <string name="plus_appearance_dark_theme">어두운 모드</string>
-    <string name="plus_appearance_import_theme">맞춤 테마 가져오기</string>
-    <string name="plus_appearance_font">글꼴 모음</string>
-    <string name="plus_appearance_import_font">맞춤 글꼴 가져오기…</string>
-    <string name="plus_appearance_reset_font">맞춤 글꼴 삭제</string>
-    <string name="plus_appearance_font_size">글꼴 크기</string>
-    <string name="plus_appearance_font_smaller">글꼴 크기 작게</string>
-    <string name="plus_appearance_font_larger">글꼴 크기 크게</string>
-    <string name="plus_appearance_mode">앱 테마</string>
-    <string name="plus_appearance_system">시스템</string>
-    <string name="plus_appearance_light">밝게</string>
-    <string name="plus_appearance_dark">어둡게</string>
-    <string name="plus_appearance_import_error">파일을 가져올 수 없습니다</string>
-    <string name="plus_appearance_default_dark">표준 어두운 테마(미리 설정)</string>
-    <string name="plus_appearance_default_light">표준 밝은 테마(미리 설정)</string>
-    <string name="plus_appearance_default_font">시스템 기본값</string>
+    <string name="plus_more_options">옵션 더보기</string>
 </resources>

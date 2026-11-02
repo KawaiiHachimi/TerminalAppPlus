@@ -221,24 +221,5 @@
     <string name="plus_display_transport">顯示傳輸</string>
     <string name="plus_display_lossless">無損（預設）</string>
     <string name="plus_display_h264_hint">有損壓縮；需更新 Guest Tools，並在 Guest 中安裝支援 libx264 的 ffmpeg。</string>
-    <string name="plus_appearance_title">外觀</string>
-    <string name="plus_appearance_colors">色彩主題</string>
-    <string name="plus_appearance_auto">根據系統主題切換色彩主題</string>
-    <string name="plus_appearance_light_theme">淺色模式的主題</string>
-    <string name="plus_appearance_dark_theme">深色模式的主題</string>
-    <string name="plus_appearance_import_theme">匯入自訂主題</string>
-    <string name="plus_appearance_font">字型系列</string>
-    <string name="plus_appearance_import_font">匯入自訂字型...</string>
-    <string name="plus_appearance_reset_font">刪除自訂字型</string>
-    <string name="plus_appearance_font_size">字型大小</string>
-    <string name="plus_appearance_font_smaller">縮小字體</string>
-    <string name="plus_appearance_font_larger">放大字體</string>
-    <string name="plus_appearance_mode">應用程式外觀</string>
-    <string name="plus_appearance_system">跟隨系統</string>
-    <string name="plus_appearance_light">淺色</string>
-    <string name="plus_appearance_dark">深色</string>
-    <string name="plus_appearance_import_error">無法匯入檔案</string>
-    <string name="plus_appearance_default_dark">標準深色 (預設)</string>
-    <string name="plus_appearance_default_light">標準淺色 (預設)</string>
-    <string name="plus_appearance_default_font">系統預設</string>
+    <string name="plus_more_options">更多選項</string>
 </resources>

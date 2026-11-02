@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Recolor only green pixels in extracted QPR3 launcher PNGs. Requires Pillow.
+"""Recolor the full colored palette in extracted QPR3 launcher PNGs. Requires Pillow.
 Usage: python3 tools/recolor-terminal-icon.py /path/to/apktool/res
 """
 import argparse
@@ -14,10 +14,8 @@ def recolor(image):
     pixels = []
     for r, g, b, a in original.getdata():
         h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-        if a and s > .2 and .20 <= h < .50:
-            # Taper at green/cyan boundaries to retain the original gradient.
-            amount = min(1., (h - .20) / .08, (.50 - h) / .04)
-            r, g, b = [round(x * 255) for x in colorsys.hsv_to_rgb(h + (.61 - h) * amount, s, v)]
+        if a and s > .05:
+            r, g, b = [round(x * 255) for x in colorsys.hsv_to_rgb(220 / 360, s, v)]
         pixels.append((r, g, b, a))
     output = Image.new('RGBA', original.size)
     output.putdata(pixels)

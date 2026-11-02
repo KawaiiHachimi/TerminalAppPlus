@@ -221,24 +221,5 @@
     <string name="plus_display_transport">Bildübertragung</string>
     <string name="plus_display_lossless">Verlustfrei (Standard)</string>
     <string name="plus_display_h264_hint">Verlustbehaftete Komprimierung. Erfordert aktuelle Guest Tools und ffmpeg mit libx264 im Gast.</string>
-    <string name="plus_appearance_title">Darstellung</string>
-    <string name="plus_appearance_colors">Farbschema</string>
-    <string name="plus_appearance_auto">Farbschema je nach Systemdesign wechseln</string>
-    <string name="plus_appearance_light_theme">Im hellen Modus</string>
-    <string name="plus_appearance_dark_theme">Im dunklen Modus</string>
-    <string name="plus_appearance_import_theme">Benutzerdefiniertes Design importieren</string>
-    <string name="plus_appearance_font">Schriftfamilie</string>
-    <string name="plus_appearance_import_font">Benutzerdefinierte Schriftart importieren…</string>
-    <string name="plus_appearance_reset_font">Benutzerdefinierte Schriftart löschen</string>
-    <string name="plus_appearance_font_size">Schriftgröße</string>
-    <string name="plus_appearance_font_smaller">Schrift verkleinern</string>
-    <string name="plus_appearance_font_larger">Schrift vergrößern</string>
-    <string name="plus_appearance_mode">App-Darstellung</string>
-    <string name="plus_appearance_system">System</string>
-    <string name="plus_appearance_light">Hell</string>
-    <string name="plus_appearance_dark">Dunkel</string>
-    <string name="plus_appearance_import_error">Datei konnte nicht importiert werden</string>
-    <string name="plus_appearance_default_dark">Standard für dunklen Modus (Voreinstellung)</string>
-    <string name="plus_appearance_default_light">Standard für hellen Modus (Voreinstellung)</string>
-    <string name="plus_appearance_default_font">Standardeinstellung des Systems</string>
+    <string name="plus_more_options">Weitere Optionen</string>
 </resources>

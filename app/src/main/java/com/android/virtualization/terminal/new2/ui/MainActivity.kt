@@ -27,8 +27,6 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import com.android.virtualization.terminal.appearance.AppearanceRepository
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -41,15 +39,19 @@ import com.android.virtualization.terminal.new2.ui.main.MainViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        // The previous dev build saved an Appearance enum destination that no longer exists.
+        // Reset transient activity navigation once; retain VM data and font preferences.
+        val uiPrefs = getSharedPreferences("terminal_ui", MODE_PRIVATE)
+        val changedLayout = uiPrefs.getInt("layout_revision", 0) != 2
+        super.onCreate(if (changedLayout) null else savedInstanceState)
+        if (changedLayout) uiPrefs.edit().putInt("layout_revision", 2).apply()
 
         // Insets are handled by the scaffold; terminal content paints its own black background.
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
+            val darkTheme = isSystemInDarkTheme()
             val context = LocalContext.current
-            val appearance by remember { AppearanceRepository.get(context) }.state.collectAsStateWithLifecycle()
-            val darkTheme = appearance.isDark(isSystemInDarkTheme())
             val colorScheme =
                 if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
 
@@ -83,7 +85,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(viewModel) { viewModel.handleIntent(intent) }
+                viewModel.handleIntent(intent)
                 MainScreen(viewModel)
             }
         }

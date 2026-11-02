@@ -105,6 +105,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _showSettings = MutableStateFlow(false)
     val showSettings: StateFlow<Boolean> = _showSettings.asStateFlow()
+    private val _settingsTabOpen = MutableStateFlow(false)
+    val settingsTabOpen: StateFlow<Boolean> = _settingsTabOpen.asStateFlow()
 
     private val _hasMandatoryPermissions = MutableStateFlow(false)
     val hasMandatoryPermissions: StateFlow<Boolean> = _hasMandatoryPermissions.asStateFlow()
@@ -123,21 +125,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun handleIntent(intent: Intent) {
         if (intent.action == MainActivity.ACTION_OPEN_SETTINGS_PORT) {
             _settingsRequest.value = SettingsDestination.PortControl
-            _showSettings.value = true
+            setShowSettings(true)
         } else if (intent.action == MainActivity.ACTION_OPEN_SETTINGS_KEEP_AWAKE) {
             _settingsRequest.value = SettingsDestination.Advanced
-            _showSettings.value = true
+            setShowSettings(true)
         }
     }
 
     fun setShowSettings(show: Boolean) {
         _showSettings.value = show
+        if (show) {
+            _settingsTabOpen.value = true
+            _isFullscreen.value = false
+            _displayState.value = DisplayState.Hidden
+            _isImeVisible.value = false
+        }
         if (!show) {
             clearSettingsRequest()
         }
     }
 
-    fun openVmSettings() { _settingsRequest.value = SettingsDestination.VirtualMachines; _showSettings.value = true }
+    fun openVmSettings() { _settingsRequest.value = SettingsDestination.VirtualMachines; setShowSettings(true) }
+
+    fun closeSettingsTab() { setShowSettings(false); _settingsTabOpen.value = false }
 
     fun clearSettingsRequest() {
         _settingsRequest.value = null
@@ -156,6 +166,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun toggleDisplay() {
+        setShowSettings(false)
         _displayState.value =
             if (_displayState.value == DisplayState.Hidden) {
                 DisplayState.Normal
@@ -185,6 +196,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun addTab() {
+        setShowSettings(false)
         TerminalSessionRepository.addSession()
         _displayState.value = DisplayState.Hidden
     }
@@ -195,6 +207,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun selectTab(id: String) {
+        setShowSettings(false)
         TerminalSessionRepository.selectSession(id)
         _displayState.value = DisplayState.Hidden
     }

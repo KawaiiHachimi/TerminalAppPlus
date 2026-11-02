@@ -15,8 +15,8 @@
  */
 package com.android.virtualization.terminal.new2.core
 
-import com.android.virtualization.terminal.appearance.AppearanceRepository
-import com.android.virtualization.terminal.appearance.AppearanceState
+import com.android.virtualization.terminal.FixedTerminalStyle
+import com.android.virtualization.terminal.TerminalStyleState
 import com.google.gson.Gson
 import kotlin.math.roundToInt
 import android.content.Context
@@ -54,8 +54,8 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
     var onTerminalDisconnected: (() -> Unit)? = null
     var onSessionDiscard: (() -> Unit)? = null
     var onTitleChanged: ((String) -> Unit)? = null
-    private var appearance = AppearanceRepository.get(context).state.value
-    private var fontSize = appearance.fontSize
+    private var terminalStyle = FixedTerminalStyle.get(context).state.value
+    private var fontSize = terminalStyle.fontSize
     private var terminalReady = false
     private var appliedFontData: String? = null
 
@@ -95,7 +95,7 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
                 fun onTerminalReady() {
                     post {
                         terminalReady = true
-                        applyAppearance(appearance)
+                        applyTerminalStyle(terminalStyle)
                         this@TtydView.onTerminalReady?.invoke()
                     }
                 }
@@ -125,7 +125,7 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
             )
         isFocusable = true
         isFocusableInTouchMode = true
-        setBackgroundColor(android.graphics.Color.BLACK)
+        setBackgroundColor(android.graphics.Color.parseColor(com.android.virtualization.terminal.Dracula.background))
 
         enableJavascriptConsoleDebug()
     }
@@ -137,7 +137,7 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        applyAppearance(appearance)
+        applyTerminalStyle(terminalStyle)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -172,23 +172,23 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
     }
 
     private fun updateFontSize() {
-        AppearanceRepository.get(context).setFontSize(fontSize)
-        applyAppearance(appearance.copy(fontSize = fontSize))
+        FixedTerminalStyle.get(context).setFontSize(fontSize)
+        applyTerminalStyle(terminalStyle.copy(fontSize = fontSize))
     }
 
-    fun applyAppearance(value: AppearanceState) {
-        appearance = value
+    fun applyTerminalStyle(value: TerminalStyleState) {
+        terminalStyle = value
         fontSize = value.fontSize
-        val dark = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-        val theme = value.theme(dark)
-        setBackgroundColor(android.graphics.Color.parseColor(theme.background))
+        setBackgroundColor(android.graphics.Color.parseColor(com.android.virtualization.terminal.Dracula.background))
         if (!terminalReady) return
         val gson = Gson()
         val pixels = (fontSize * resources.configuration.fontScale).roundToInt()
         evaluateJavascript("""
             (function() {
                 if (!window.term) return;
-                term.options.theme = ${gson.toJson(theme.colors)};
+                document.documentElement.style.backgroundColor = '#282a36';
+                if (document.body) document.body.style.backgroundColor = '#282a36';
+                term.options.theme = ${gson.toJson(com.android.virtualization.terminal.Dracula.colors)};
                 term.options.fontSize = $pixels;
                 term.refresh(0, Math.max(0, term.rows - 1));
                 window.dispatchEvent(new Event('resize'));

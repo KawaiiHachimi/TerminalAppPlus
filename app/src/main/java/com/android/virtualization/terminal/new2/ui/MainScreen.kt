@@ -34,6 +34,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -75,6 +80,7 @@ fun MainScreen(viewModel: MainViewModel) {
     val hasMandatoryPermissions by viewModel.hasMandatoryPermissions.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val savedSettingsPage = rememberSaveableStateHolder()
     val context = LocalContext.current
     val activity = context as Activity
 
@@ -137,10 +143,16 @@ fun MainScreen(viewModel: MainViewModel) {
 
             AnimatedVisibility(
                 visible = showSettings,
+                modifier = Modifier.fillMaxSize().padding(
+                    top = if (uiState is MainUiState.Running) innerPadding.calculateTopPadding() + TAB_BAR_HEIGHT else 0.dp,
+                    bottom = if (uiState is MainUiState.Running) innerPadding.calculateBottomPadding() else 0.dp,
+                ),
                 enter = slideInHorizontally(initialOffsetX = { it }),
                 exit = slideOutHorizontally(targetOffsetX = { it }),
             ) {
-                SettingsScreen(onBack = { viewModel.setShowSettings(false) })
+                savedSettingsPage.SaveableStateProvider("settings") {
+                    SettingsScreen(onBack = { viewModel.setShowSettings(false) }, embedded = uiState is MainUiState.Running)
+                }
             }
         }
     }
@@ -167,25 +179,32 @@ fun RunningScreen(state: MainUiState.Running, viewModel: MainViewModel) {
     val selectedTabId by viewModel.selectedTabId.collectAsStateWithLifecycle()
     val displayState by viewModel.displayState.collectAsStateWithLifecycle()
     val isFullscreen by viewModel.isFullscreen.collectAsStateWithLifecycle()
+    val showSettings by viewModel.showSettings.collectAsStateWithLifecycle()
+    val settingsOpen by viewModel.settingsTabOpen.collectAsStateWithLifecycle()
+    var menuOpen by remember { mutableStateOf(false) }
 
     Column {
         if (!isFullscreen) {
             androidx.compose.material3.Surface(
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surfaceContainer,
                 contentColor = MaterialTheme.colorScheme.onSurface,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainer).padding(horizontal = 4.dp),
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
                         TerminalTabBar(
                             tabs = tabs,
                             selectedTabId =
-                                if (displayState == DisplayState.Normal) null else selectedTabId,
+                                if (displayState == DisplayState.Normal || showSettings) null else selectedTabId,
                             onTabSelected = { viewModel.selectTab(it) },
                             onTabClosed = { viewModel.closeTab(it) },
                             onAddTab = { viewModel.addTab() },
+                            settingsOpen = settingsOpen,
+                            settingsSelected = showSettings,
+                            onSettingsSelected = { viewModel.setShowSettings(true) },
+                            onSettingsClosed = viewModel::closeSettingsTab,
                         )
                     }
                     run {
@@ -197,18 +216,25 @@ fun RunningScreen(state: MainUiState.Running, viewModel: MainViewModel) {
                         }
                     }
                     DisplayController(viewModel = viewModel)
-                    IconButton(
-                        onClick = {
-                            viewModel.setShowSettings(true)
-                            viewModel.setIsImeVisible(false)
+                    Box {
+                        IconButton(onClick = { menuOpen = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.plus_more_options))
                         }
-                    ) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(text = { androidx.compose.material3.Text(stringResource(R.string.settings_title)) },
+                                leadingIcon = { Icon(Icons.Default.Settings, null) },
+                                onClick = { menuOpen = false; viewModel.setShowSettings(true) })
+                            DropdownMenuItem(text = { androidx.compose.material3.Text(stringResource(R.string.plus_virtual_machines)) },
+                                leadingIcon = { Icon(Icons.Default.Memory, null) },
+                                onClick = { menuOpen = false; viewModel.openVmSettings() })
+                        }
                     }
                 }
             }
         }
-        if (displayState == DisplayState.Normal) {
+        if (showSettings) {
+            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface))
+        } else if (displayState == DisplayState.Normal) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // Wrap with key(isFullscreen) to force recreation of DisplayScreen (and its
                 // internal SurfaceView and DisplayProvider) when toggling fullscreen.
@@ -217,6 +243,12 @@ fun RunningScreen(state: MainUiState.Running, viewModel: MainViewModel) {
                 key(isFullscreen) { DisplayScreen(viewModel = viewModel) }
             }
         } else {
+            val terminalBackground = androidx.compose.ui.graphics.Color(0xff282a36)
+            MaterialTheme(colorScheme = androidx.compose.material3.darkColorScheme(
+                background = terminalBackground, surface = terminalBackground,
+                onBackground = androidx.compose.ui.graphics.Color(0xfff8f8f2), onSurface = androidx.compose.ui.graphics.Color(0xfff8f8f2),
+            )) {
+                androidx.compose.material3.Surface(Modifier.fillMaxSize(), color = terminalBackground) {
             val connection = state.terminalConnection
             if (tabs.isEmpty()) {
                 Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -228,6 +260,8 @@ fun RunningScreen(state: MainUiState.Running, viewModel: MainViewModel) {
                 TerminalScreen(connection.address, selectedTabId, viewModel)
             } else {
                 TerminalServiceNotice(onRetry = { com.android.virtualization.terminal.new2.core.VmController.retryTerminalConnection() })
+            }
+                }
             }
         }
     }

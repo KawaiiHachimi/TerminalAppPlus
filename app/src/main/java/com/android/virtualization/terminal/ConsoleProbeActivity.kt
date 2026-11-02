@@ -3,9 +3,6 @@ package com.android.virtualization.terminal
 
 import com.android.virtualization.terminal.AppStrings
 import com.android.virtualization.terminal.R
-import com.android.virtualization.terminal.appearance.AppearanceRepository
-import com.android.virtualization.terminal.appearance.AppearanceState
-import kotlinx.coroutines.*
 import android.app.Activity
 import android.os.Bundle
 import java.util.concurrent.Executors
@@ -16,10 +13,6 @@ class ConsoleProbeActivity : Activity() {
     private lateinit var client: ProbeTerminalClient
     private lateinit var session: com.termux.terminal.AvfTerminalSession
     private val writer = Executors.newSingleThreadExecutor()
-    private val appearanceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var appearanceJob: Job? = null
-    private var lastTheme: com.android.virtualization.terminal.appearance.TerminalTheme? = null
-    private var lastTypeface: android.graphics.Typeface? = null
     private var replayingConsole = false
     private val repeatButtons = mutableListOf<RepeatingArrowButton>()
     private val consoleListener: (ByteArray) -> Unit = { bytes ->
@@ -118,39 +111,7 @@ class ConsoleProbeActivity : Activity() {
             session.append(AppStrings.get(R.string.plus_console_not_running).toByteArray())
         }
     }
-    override fun onResume() {
-        super.onResume()
-        appearanceJob = appearanceScope.launch {
-            AppearanceRepository.get(this@ConsoleProbeActivity).state.collect { applyAppearance(it) }
-        }
-    }
-
-    private fun applyAppearance(state: AppearanceState) {
-        val dark = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES
-        val theme = state.theme(dark)
-        if (theme != lastTheme) {
-            val properties = java.util.Properties()
-            com.android.virtualization.terminal.appearance.TerminalTheme.ansi.forEachIndexed { i, key -> properties.setProperty("color$i", theme.colors.getValue(key)) }
-            properties.setProperty("background", theme.background)
-            properties.setProperty("foreground", theme.foreground)
-            properties.setProperty("cursor", theme.colors.getValue("cursor"))
-            com.termux.terminal.TerminalColors.COLOR_SCHEME.updateWith(properties)
-            session.emulator.mColors.reset()
-            terminal.setBackgroundColor(android.graphics.Color.parseColor(theme.background))
-            lastTheme = theme
-        }
-        val typeface = AppearanceRepository.get(this).typeface
-        if (typeface !== lastTypeface) { terminal.setTypeface(typeface); lastTypeface = typeface }
-        terminal.onScreenUpdated()
-    }
-
-    override fun onConfigurationChanged(config: android.content.res.Configuration) {
-        super.onConfigurationChanged(config)
-        applyAppearance(AppearanceRepository.get(this).state.value)
-    }
-
     override fun onPause() {
-        appearanceJob?.cancel()
         repeatButtons.forEach { it.stopRepeating() }
         super.onPause()
     }
@@ -158,7 +119,6 @@ class ConsoleProbeActivity : Activity() {
     override fun onDestroy() {
         VmConsole.unsubscribe(consoleListener)
         writer.shutdownNow()
-        appearanceScope.cancel()
         super.onDestroy()
     }
 }

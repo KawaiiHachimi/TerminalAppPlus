@@ -221,24 +221,5 @@
     <string name="plus_display_transport">Передача изображения</string>
     <string name="plus_display_lossless">Без потерь (по умолчанию)</string>
     <string name="plus_display_h264_hint">Сжатие с потерями. Требуются обновлённые Guest Tools и ffmpeg с libx264 в гостевой системе.</string>
-    <string name="plus_appearance_title">Внешний вид</string>
-    <string name="plus_appearance_colors">Цветовая тема</string>
-    <string name="plus_appearance_auto">Переключать цветовые темы в зависимости от темы системы</string>
-    <string name="plus_appearance_light_theme">Светлая тема</string>
-    <string name="plus_appearance_dark_theme">Тёмная тема</string>
-    <string name="plus_appearance_import_theme">Импортировать свою тему</string>
-    <string name="plus_appearance_font">Семейство шрифтов</string>
-    <string name="plus_appearance_import_font">Импортировать свой шрифт…</string>
-    <string name="plus_appearance_reset_font">Удалить пользовательский шрифт</string>
-    <string name="plus_appearance_font_size">Размер шрифта</string>
-    <string name="plus_appearance_font_smaller">Уменьшить размер шрифта</string>
-    <string name="plus_appearance_font_larger">Увеличить размер шрифта</string>
-    <string name="plus_appearance_mode">Оформление приложения</string>
-    <string name="plus_appearance_system">Системная</string>
-    <string name="plus_appearance_light">Светлая</string>
-    <string name="plus_appearance_dark">Тёмная</string>
-    <string name="plus_appearance_import_error">Не удалось импортировать файл</string>
-    <string name="plus_appearance_default_dark">Стандартная тёмная (предустановленная)</string>
-    <string name="plus_appearance_default_light">Стандартная светлая (предустановленная)</string>
-    <string name="plus_appearance_default_font">По умолчанию в системе</string>
+    <string name="plus_more_options">Дополнительные параметры</string>
 </resources>

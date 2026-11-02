@@ -43,14 +43,17 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.DisplaySettings
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Power
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -111,7 +114,6 @@ import kotlinx.coroutines.launch
 enum class SettingsDestination(val title: Int, val icon: ImageVector) {
     VirtualMachines(R.string.plus_virtual_machines, Icons.Default.Memory),
     PortControl(R.string.settings_port_title, Icons.Default.Security),
-    Appearance(R.string.plus_appearance_title, Icons.Default.Palette),
     Advanced(R.string.settings_advanced_title, Icons.Default.Tune),
     Recovery(R.string.settings_recovery_title, Icons.Default.Restore),
 }
@@ -136,7 +138,7 @@ enum class KeepAwakeDuration(val minutes: Int, val stringRes: Int) {
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, viewModel: MainViewModel = viewModel()) {
+fun SettingsScreen(onBack: () -> Unit, embedded: Boolean = false, viewModel: MainViewModel = viewModel()) {
     val navigator = rememberListDetailPaneScaffoldNavigator<SettingsDestination>()
     val scope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
@@ -186,6 +188,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: MainViewModel = viewModel()) {
                                 navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item)
                             }
                         },
+                        embedded = embedded,
                         selectedItem =
                             navigator.currentDestination?.contentKey as? SettingsDestination,
                         onBack = onBack,
@@ -201,6 +204,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: MainViewModel = viewModel()) {
                         SettingsDetailPane(
                             destination = destination,
                             isMobileMode = isMobileMode,
+                            embedded = embedded,
                             onBack = { scope.launch { navigator.navigateBack() } },
                             onCloseSettings = onBack,
                         )
@@ -214,51 +218,39 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: MainViewModel = viewModel()) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsListPane(
-    destinations: List<SettingsDestination>,
-    onItemClick: (SettingsDestination) -> Unit,
-    selectedItem: SettingsDestination?,
-    onBack: () -> Unit,
+    destinations: List<SettingsDestination>, onItemClick: (SettingsDestination) -> Unit,
+    selectedItem: SettingsDestination?, onBack: () -> Unit, embedded: Boolean = false,
 ) {
     val uriHandler = LocalUriHandler.current
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.settings_btn_back_desc),
-                        )
+    Scaffold(contentWindowInsets = if (embedded) androidx.compose.foundation.layout.WindowInsets(0,0,0,0) else androidx.compose.material3.ScaffoldDefaults.contentWindowInsets, topBar = {
+        if (!embedded) TopAppBar(title = { Text(stringResource(R.string.settings_title)) },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.settings_btn_back_desc)) } })
+    }) { padding ->
+        LazyColumn(Modifier.padding(padding), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            if (embedded) item { Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)) }
+            item {
+                Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+                    Column {
+                        destinations.forEachIndexed { index, item ->
+                            ListItem(headlineContent = { Text(stringResource(item.title)) },
+                                leadingContent = { Icon(item.icon, null) },
+                                trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                                modifier = Modifier.clickable { onItemClick(item) },
+                                colors = ListItemDefaults.colors(containerColor = if (selectedItem == item) MaterialTheme.colorScheme.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent))
+                            if (index < destinations.lastIndex) HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
+                        }
                     }
-                },
-            )
-        }
-    ) { innerPadding ->
-        LazyColumn(modifier = Modifier.padding(innerPadding)) {
-            items(destinations) { item ->
-                val isSelected = selectedItem == item
-                ListItem(
-                    headlineContent = { Text(stringResource(item.title)) },
-                    leadingContent = { Icon(imageVector = item.icon, contentDescription = null) },
-                    modifier = Modifier.clickable { onItemClick(item) },
-                    colors =
-                        ListItemDefaults.colors(
-                            containerColor =
-                                if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                                else MaterialTheme.colorScheme.surface
-                        ),
-                )
-                HorizontalDivider()
+                }
             }
             item {
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.plus_about)) },
-                    leadingContent = { Icon(Icons.Default.Info, contentDescription = null) },
-                    modifier = Modifier.clickable {
-                        uriHandler.openUri("https://github.com/KawaiiHachimi/TerminalAppPlus")
-                    },
-                )
+                Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+                    ListItem(headlineContent = { Text(stringResource(R.string.plus_about)) },
+                        leadingContent = { Icon(Icons.Default.Info, null) },
+                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                        modifier = Modifier.clickable { uriHandler.openUri("https://github.com/KawaiiHachimi/TerminalAppPlus") })
+                }
             }
         }
     }
@@ -271,10 +263,13 @@ fun SettingsDetailPane(
     isMobileMode: Boolean,
     onBack: () -> Unit,
     onCloseSettings: () -> Unit,
+    embedded: Boolean = false,
 ) {
     Scaffold(
+        contentWindowInsets = if (embedded) androidx.compose.foundation.layout.WindowInsets(0,0,0,0) else androidx.compose.material3.ScaffoldDefaults.contentWindowInsets,
         topBar = {
             TopAppBar(
+                windowInsets = if (embedded) androidx.compose.foundation.layout.WindowInsets(0,0,0,0) else TopAppBarDefaults.windowInsets,
                 title = { Text(stringResource(destination.title)) },
                 navigationIcon = {
                     if (isMobileMode) {
@@ -293,7 +288,6 @@ fun SettingsDetailPane(
             when (destination) {
                 SettingsDestination.PortControl -> PortControlPage()
                 SettingsDestination.Advanced -> AdvancedPage()
-                SettingsDestination.Appearance -> AppearancePage()
                 SettingsDestination.VirtualMachines -> VmManagementPage()
                 SettingsDestination.Recovery -> RecoveryPage()
             }
