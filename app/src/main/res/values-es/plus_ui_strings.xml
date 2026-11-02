@@ -218,4 +218,7 @@
     <string name="plus_touchpad_speed">Velocidad del panel táctil</string>
     <string name="plus_touchpad_speed_description">Ajusta la velocidad del puntero en modo panel táctil. 1.0× es la velocidad original.</string>
     <string name="plus_touchpad_speed_reset">Restablecer a 1.0×</string>
+    <string name="plus_display_transport">Transmisión de imagen</string>
+    <string name="plus_display_lossless">Sin pérdidas (predeterminado)</string>
+    <string name="plus_display_h264_hint">Compresión con pérdidas. Requiere Guest Tools actualizados y ffmpeg con libx264 en el sistema invitado.</string>
 </resources>

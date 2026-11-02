@@ -218,4 +218,7 @@
     <string name="plus_touchpad_speed">Touchpad speed</string>
     <string name="plus_touchpad_speed_description">Adjust pointer movement in touchpad mode. 1.0× uses the original speed.</string>
     <string name="plus_touchpad_speed_reset">Reset to 1.0×</string>
+    <string name="plus_display_transport">Display transport</string>
+    <string name="plus_display_lossless">Lossless (default)</string>
+    <string name="plus_display_h264_hint">Lossy compression. Requires updated Guest Tools and ffmpeg with libx264 in the Guest.</string>
 </resources>

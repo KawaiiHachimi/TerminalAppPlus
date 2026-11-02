@@ -218,4 +218,7 @@
     <string name="plus_touchpad_speed">觸控板速度</string>
     <string name="plus_touchpad_speed_description">調整觸控板模式下的指標移動速度，1.0× 為原始速度。</string>
     <string name="plus_touchpad_speed_reset">恢復為 1.0×</string>
+    <string name="plus_display_transport">顯示傳輸</string>
+    <string name="plus_display_lossless">無損（預設）</string>
+    <string name="plus_display_h264_hint">有損壓縮；需更新 Guest Tools，並在 Guest 中安裝支援 libx264 的 ffmpeg。</string>
 </resources>

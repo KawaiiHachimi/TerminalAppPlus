@@ -218,4 +218,7 @@
     <string name="plus_touchpad_speed">Скорость тачпада</string>
     <string name="plus_touchpad_speed_description">Скорость перемещения указателя в режиме тачпада. 1.0× — исходная скорость.</string>
     <string name="plus_touchpad_speed_reset">Сбросить до 1.0×</string>
+    <string name="plus_display_transport">Передача изображения</string>
+    <string name="plus_display_lossless">Без потерь (по умолчанию)</string>
+    <string name="plus_display_h264_hint">Сжатие с потерями. Требуются обновлённые Guest Tools и ffmpeg с libx264 в гостевой системе.</string>
 </resources>

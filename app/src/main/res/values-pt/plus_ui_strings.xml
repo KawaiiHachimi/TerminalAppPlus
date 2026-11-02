@@ -218,4 +218,7 @@
     <string name="plus_touchpad_speed">Velocidade do touchpad</string>
     <string name="plus_touchpad_speed_description">Ajuste a velocidade do ponteiro no modo touchpad. 1.0× é a velocidade original.</string>
     <string name="plus_touchpad_speed_reset">Restaurar para 1.0×</string>
+    <string name="plus_display_transport">Transmissão de imagem</string>
+    <string name="plus_display_lossless">Sem perdas (padrão)</string>
+    <string name="plus_display_h264_hint">Compressão com perdas. Requer Guest Tools atualizados e ffmpeg com libx264 no sistema convidado.</string>
 </resources>

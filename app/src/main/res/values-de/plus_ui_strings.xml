@@ -218,4 +218,7 @@
     <string name="plus_touchpad_speed">Touchpad-Geschwindigkeit</string>
     <string name="plus_touchpad_speed_description">Zeigergeschwindigkeit im Touchpad-Modus anpassen. 1.0× entspricht der ursprünglichen Geschwindigkeit.</string>
     <string name="plus_touchpad_speed_reset">Auf 1.0× zurücksetzen</string>
+    <string name="plus_display_transport">Bildübertragung</string>
+    <string name="plus_display_lossless">Verlustfrei (Standard)</string>
+    <string name="plus_display_h264_hint">Verlustbehaftete Komprimierung. Erfordert aktuelle Guest Tools und ffmpeg mit libx264 im Gast.</string>
 </resources>

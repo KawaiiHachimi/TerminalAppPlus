@@ -218,4 +218,7 @@
     <string name="plus_touchpad_speed">سرعة لوحة اللمس</string>
     <string name="plus_touchpad_speed_description">اضبط سرعة حركة المؤشر في وضع لوحة اللمس. 1.0× هي السرعة الأصلية.</string>
     <string name="plus_touchpad_speed_reset">إعادة الضبط إلى 1.0×</string>
+    <string name="plus_display_transport">نقل الصورة</string>
+    <string name="plus_display_lossless">دون فقدان (افتراضي)</string>
+    <string name="plus_display_h264_hint">ضغط مع فقدان. يتطلب تحديث Guest Tools وتثبيت ffmpeg مع دعم libx264 في النظام الضيف.</string>
 </resources>

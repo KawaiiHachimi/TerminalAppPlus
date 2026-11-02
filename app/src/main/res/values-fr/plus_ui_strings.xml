@@ -218,4 +218,7 @@
     <string name="plus_touchpad_speed">Vitesse du pavé tactile</string>
     <string name="plus_touchpad_speed_description">Régler la vitesse du pointeur en mode pavé tactile. 1.0× correspond à la vitesse initiale.</string>
     <string name="plus_touchpad_speed_reset">Rétablir 1.0×</string>
+    <string name="plus_display_transport">Transmission de l’image</string>
+    <string name="plus_display_lossless">Sans perte (par défaut)</string>
+    <string name="plus_display_h264_hint">Compression avec perte. Nécessite des Guest Tools à jour et ffmpeg avec libx264 dans le système invité.</string>
 </resources>

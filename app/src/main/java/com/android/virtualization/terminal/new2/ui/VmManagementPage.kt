@@ -274,6 +274,18 @@ private fun VmConfigurationDialog(model: VmManagementViewModel) {
                     }
                     Text(stringResource(R.string.plus_console_device_hint), style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.plus_display_transport), style = MaterialTheme.typography.titleSmall)
+                    val transport = json.get("display_transport")?.takeIf { it.isJsonPrimitive }?.asString ?: "raw"
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("raw" to stringResource(R.string.plus_display_lossless), "h264" to "H.264").forEach { (key, label) ->
+                            FilterChip(selected = transport == key,
+                                onClick = { model.property("display_transport", key) }, label = { Text(label) })
+                        }
+                    }
+                    if (transport == "h264") {
+                        Text(stringResource(R.string.plus_display_h264_hint), style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
                 if (model.editTarget?.isManaged == false) {
                     HorizontalDivider(Modifier.padding(vertical = 4.dp))

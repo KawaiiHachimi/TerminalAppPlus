@@ -218,4 +218,7 @@
     <string name="plus_touchpad_speed">タッチパッドの速度</string>
     <string name="plus_touchpad_speed_description">タッチパッドモードでのポインターの移動速度を調整します。1.0× は元の速度です。</string>
     <string name="plus_touchpad_speed_reset">1.0× に戻す</string>
+    <string name="plus_display_transport">画面転送</string>
+    <string name="plus_display_lossless">可逆（デフォルト）</string>
+    <string name="plus_display_h264_hint">非可逆圧縮。Guest Tools の更新と、Guest に libx264 対応の ffmpeg が必要です。</string>
 </resources>

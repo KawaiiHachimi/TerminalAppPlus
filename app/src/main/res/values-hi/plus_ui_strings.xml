@@ -218,4 +218,7 @@
     <string name="plus_touchpad_speed">टचपैड की गति</string>
     <string name="plus_touchpad_speed_description">टचपैड मोड में पॉइंटर की गति बदलें। 1.0× मूल गति है।</string>
     <string name="plus_touchpad_speed_reset">1.0× पर रीसेट करें</string>
+    <string name="plus_display_transport">चित्र संचार</string>
+    <string name="plus_display_lossless">दोषरहित (डिफ़ॉल्ट)</string>
+    <string name="plus_display_h264_hint">हानिपूर्ण संपीड़न। अपडेट किए गए Guest Tools और अतिथि सिस्टम में libx264 वाला ffmpeg आवश्यक है।</string>
 </resources>

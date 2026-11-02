@@ -218,4 +218,7 @@
     <string name="plus_touchpad_speed">터치패드 속도</string>
     <string name="plus_touchpad_speed_description">터치패드 모드의 포인터 이동 속도를 조절합니다. 1.0×는 기존 속도입니다.</string>
     <string name="plus_touchpad_speed_reset">1.0×로 초기화</string>
+    <string name="plus_display_transport">화면 전송</string>
+    <string name="plus_display_lossless">무손실(기본값)</string>
+    <string name="plus_display_h264_hint">손실 압축입니다. Guest Tools를 업데이트하고 Guest에 libx264를 지원하는 ffmpeg를 설치해야 합니다.</string>
 </resources>
