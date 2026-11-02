@@ -383,7 +383,7 @@ public class MainActivity :
                 stopIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
-        val icon = Icon.createWithResource(this, R.drawable.ic_launcher_foreground)
+        val icon = Icon.createWithResource(this, R.drawable.ic_launcher_monochrome)
         val notification: Notification =
             Notification.Builder(this, Application.CHANNEL_LONG_RUNNING_ID)
                 .setOnlyAlertOnce(true)

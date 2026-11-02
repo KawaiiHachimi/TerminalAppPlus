@@ -131,7 +131,7 @@ private fun InstallScreenHeader(
         shadowElevation = 2.dp,
     ) {
         Image(
-            painter = painterResource(R.drawable.ic_launcher_foreground),
+            painter = painterResource(R.mipmap.ic_launcher_foreground),
             contentDescription = null,
             modifier = Modifier.padding(16.dp).size(96.dp),
         )

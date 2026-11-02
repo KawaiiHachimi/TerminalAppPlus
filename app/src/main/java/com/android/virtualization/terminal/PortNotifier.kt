@@ -87,7 +87,7 @@ internal class PortNotifier(val context: Context) {
             )
         val acceptText = getString(R.string.notif_port_action_accept)
         val denyText = getString(R.string.notif_port_action_deny)
-        val icon = Icon.createWithResource(context, R.drawable.ic_launcher_foreground)
+        val icon = Icon.createWithResource(context, R.drawable.ic_launcher_monochrome)
 
         val acceptAction: Notification.Action =
             Notification.Action.Builder(

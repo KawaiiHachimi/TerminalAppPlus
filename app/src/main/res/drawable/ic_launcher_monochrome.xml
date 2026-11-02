@@ -1,33 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--  Copyright 2024 The Android Open Source Project
-
-     Licensed under the Apache License, Version 2.0 (the "License");
-     you may not use this file except in compliance with the License.
-     You may obtain a copy of the License at
-
-          http://www.apache.org/licenses/LICENSE-2.0
-
-     Unless required by applicable law or agreed to in writing, software
-     distributed under the License is distributed on an "AS IS" BASIS,
-     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     See the License for the specific language governing permissions and
-     limitations under the License.
- -->
-
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="142"
-    android:viewportHeight="168.75">
-  <group android:scaleX="0.37325713"
-      android:scaleY="0.44357142"
-      android:translateX="43.332314"
-      android:translateY="39.324776">
-    <group android:translateY="133.59375">
-      <path android:pathData="M9.078125,-77.484375L69.75,-51.40625L69.75,-37.765625L9.078125,-11.609375L9.078125,-28.40625L52.53125,-44.71875L9.078125,-60.75L9.078125,-77.484375Z"
-          android:fillColor="#000000"/>
-      <path android:pathData="M139.76562,0L139.76562,13.5L75.21875,13.5L75.21875,0L139.76562,0Z"
-          android:fillColor="#000000"/>
-    </group>
-  </group>
+<vector android:height="108.0dip" android:width="108.0dip" android:viewportWidth="108.0" android:viewportHeight="108.0"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="#ff000000" android:pathData="M44.26,76.79c-1.1,0.17 -2.22,0.13 -3.3,-0.11 -1.08,-0.24 -2.1,-0.68 -3,-1.29 -0.34,-0.23 -0.66,-0.48 -0.96,-0.76h21.23l-13.98,2.16ZM63.74,31.1c1.1,-0.17 2.22,-0.13 3.3,0.11 1.08,0.24 2.1,0.68 3,1.3 0.3,0.21 0.58,0.43 0.85,0.67h-20.61l13.46,-2.08Z" />
+    <path android:fillColor="#ff000000" android:pathData="M30,41.18c0,-3.04 2.46,-5.5 5.5,-5.5h37c3.04,0 5.5,2.46 5.5,5.5v25c0,3.04 -2.46,5.5 -5.5,5.5h-37c-3.04,0 -5.5,-2.46 -5.5,-5.5v-25Z M38.28,42.89c0.39,-0.73 1.3,-1 2.03,-0.61l7.8,4.2c0.49,0.27 0.8,0.78 0.79,1.34 0,0.56 -0.33,1.07 -0.83,1.32l-7.8,3.9c-0.74,0.37 -1.64,0.07 -2.01,-0.67 -0.37,-0.74 -0.07,-1.64 0.67,-2.01l5.22,-2.61 -5.26,-2.83c-0.73,-0.39 -1,-1.3 -0.61,-2.03Z M60.9,54.1c0.83,0 1.5,0.67 1.5,1.5s-0.67,1.5 -1.5,1.5h-9.6c-0.83,0 -1.5,-0.67 -1.5,-1.5s0.67,-1.5 1.5,-1.5h9.6Z" android:fillType="evenOdd" />
 </vector>
