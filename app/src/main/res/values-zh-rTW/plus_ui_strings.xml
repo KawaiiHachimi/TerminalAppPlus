@@ -215,4 +215,7 @@
     <string name="plus_cloud_sudo">sudo 規則</string>
     <string name="plus_cloud_sudo_hint">每行一條；false 不新增 sudo 規則，留空使用映像預設值。免密碼：ALL=(ALL) NOPASSWD:ALL</string>
     <string name="plus_cloud_lock_password">鎖定密碼登入</string>
+    <string name="plus_touchpad_speed">觸控板速度</string>
+    <string name="plus_touchpad_speed_description">調整觸控板模式下的指標移動速度，1.0× 為原始速度。</string>
+    <string name="plus_touchpad_speed_reset">恢復為 1.0×</string>
 </resources>

@@ -215,4 +215,7 @@
     <string name="plus_cloud_sudo">Règles sudo</string>
     <string name="plus_cloud_sudo_hint">Une règle par ligne ; false n’ajoute aucune règle sudo. Vide : valeur par défaut de l’image. Sans mot de passe : ALL=(ALL) NOPASSWD:ALL</string>
     <string name="plus_cloud_lock_password">Verrouiller la connexion par mot de passe</string>
+    <string name="plus_touchpad_speed">Vitesse du pavé tactile</string>
+    <string name="plus_touchpad_speed_description">Régler la vitesse du pointeur en mode pavé tactile. 1.0× correspond à la vitesse initiale.</string>
+    <string name="plus_touchpad_speed_reset">Rétablir 1.0×</string>
 </resources>

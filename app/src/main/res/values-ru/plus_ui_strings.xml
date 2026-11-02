@@ -215,4 +215,7 @@
     <string name="plus_cloud_sudo">Правила sudo</string>
     <string name="plus_cloud_sudo_hint">По одному правилу на строку; false не добавляет правила sudo. Пустое поле — настройка образа. Без пароля: ALL=(ALL) NOPASSWD:ALL</string>
     <string name="plus_cloud_lock_password">Заблокировать вход по паролю</string>
+    <string name="plus_touchpad_speed">Скорость тачпада</string>
+    <string name="plus_touchpad_speed_description">Скорость перемещения указателя в режиме тачпада. 1.0× — исходная скорость.</string>
+    <string name="plus_touchpad_speed_reset">Сбросить до 1.0×</string>
 </resources>

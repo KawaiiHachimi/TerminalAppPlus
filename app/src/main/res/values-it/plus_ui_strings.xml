@@ -215,4 +215,7 @@
     <string name="plus_cloud_sudo">Regole sudo</string>
     <string name="plus_cloud_sudo_hint">Una regola per riga; false non aggiunge regole sudo. Vuoto: valore predefinito dell’immagine. Senza password: ALL=(ALL) NOPASSWD:ALL</string>
     <string name="plus_cloud_lock_password">Blocca accesso con password</string>
+    <string name="plus_touchpad_speed">Velocità del touchpad</string>
+    <string name="plus_touchpad_speed_description">Regola la velocità del puntatore in modalità touchpad. 1.0× è la velocità originale.</string>
+    <string name="plus_touchpad_speed_reset">Ripristina 1.0×</string>
 </resources>

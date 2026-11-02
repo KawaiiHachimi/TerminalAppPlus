@@ -215,4 +215,7 @@
     <string name="plus_cloud_sudo">sudo-Regeln</string>
     <string name="plus_cloud_sudo_hint">Eine Regel pro Zeile; false fügt keine sudo-Regeln hinzu. Leer: Vorgabe des Images. Ohne Passwort: ALL=(ALL) NOPASSWD:ALL</string>
     <string name="plus_cloud_lock_password">Passwortanmeldung sperren</string>
+    <string name="plus_touchpad_speed">Touchpad-Geschwindigkeit</string>
+    <string name="plus_touchpad_speed_description">Zeigergeschwindigkeit im Touchpad-Modus anpassen. 1.0× entspricht der ursprünglichen Geschwindigkeit.</string>
+    <string name="plus_touchpad_speed_reset">Auf 1.0× zurücksetzen</string>
 </resources>

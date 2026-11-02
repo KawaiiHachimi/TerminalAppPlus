@@ -45,7 +45,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Monitor
@@ -58,7 +57,6 @@ import androidx.compose.material.icons.outlined.Mouse
 import androidx.compose.material.icons.outlined.PanTool
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
@@ -113,6 +111,7 @@ import kotlinx.coroutines.launch
 fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
     val settingsViewModel: SettingsViewModel = viewModel()
     val resolution by settingsViewModel.displayResolution.collectAsStateWithLifecycle()
+    val touchpadSpeed by settingsViewModel.touchpadSpeed.collectAsStateWithLifecycle()
     val vm = VmController.virtualMachine ?: return
     val inputConfig = VmController.displayConfigurationFor(vm) ?: return
     val touchWidth = inputConfig.displayConfig!!.width
@@ -192,6 +191,11 @@ fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                 onTouchEvent = { event, contentSize ->
                     displaySurfaceView?.requestFocus()
                     if (useDisplayAsTouchpad) {
+                        // Guest libinput derives pointer movement from the AVF contact coordinates.
+                        // Apply the same gain to every contact; leave direct touch and physical mice alone.
+                        if (touchpadSpeed != 1f && event.isFromSource(InputDevice.SOURCE_TOUCHSCREEN)) {
+                            event.transform(Matrix().apply { setScale(touchpadSpeed, touchpadSpeed) })
+                        }
                         vm.sendTrackpadEvent(event)
                     } else {
                         val matrix = Matrix()
@@ -296,35 +300,17 @@ fun DisplayScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                     )
                 }
             }
-            FullscreenToggleButton(
+            DraggableDisplayControls(
                 viewModel = viewModel,
-                modifier =
-                    Modifier.align(Alignment.BottomEnd)
-                        .padding(16.dp)
-                        .padding(bottom = stablePadding),
+                settingsViewModel = settingsViewModel,
+                modifier = Modifier.fillMaxSize().padding(16.dp).padding(bottom = stablePadding),
             )
         }
     }
 }
 
 @Composable
-fun FullscreenToggleButton(viewModel: MainViewModel, modifier: Modifier = Modifier) {
-    val isFullscreen by viewModel.isFullscreen.collectAsStateWithLifecycle()
-    if (isFullscreen) {
-        Box(modifier = modifier) { DisplayController(viewModel = viewModel) }
-    } else {
-        IconButton(onClick = { viewModel.setIsFullscreen(true) }, modifier = modifier) {
-            Icon(
-                imageVector = Icons.Default.Fullscreen,
-                contentDescription = stringResource(R.string.fullscreen_enter),
-                tint = Color.White.copy(alpha = 0.5f),
-            )
-        }
-    }
-}
-
-@Composable
-fun DisplayController(viewModel: MainViewModel) {
+fun DisplayController(viewModel: MainViewModel, isDragging: Boolean = false) {
     val displayState by viewModel.displayState.collectAsStateWithLifecycle()
     val isFullscreen by viewModel.isFullscreen.collectAsStateWithLifecycle()
 
@@ -332,8 +318,8 @@ fun DisplayController(viewModel: MainViewModel) {
     var isInteracting by remember { mutableStateOf(false) }
     val isExpanded = if (isFullscreen) isExpandedLocally else (displayState == DisplayState.Normal)
 
-    LaunchedEffect(isFullscreen, isExpandedLocally, isInteracting) {
-        if (isFullscreen && isExpandedLocally && !isInteracting) {
+    LaunchedEffect(isFullscreen, isExpandedLocally, isInteracting, isDragging) {
+        if (isFullscreen && isExpandedLocally && !isInteracting && !isDragging) {
             delay(2000)
             isExpandedLocally = false
         }

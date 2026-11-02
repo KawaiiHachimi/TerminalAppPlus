@@ -304,6 +304,8 @@ fun AdvancedPage(
 ) {
     val displayResolution by settingsViewModel.displayResolution.collectAsStateWithLifecycle()
     var showResolutionDialog by remember { mutableStateOf(false) }
+    val touchpadSpeed by settingsViewModel.touchpadSpeed.collectAsStateWithLifecycle()
+    var showTouchpadSpeedDialog by remember { mutableStateOf(false) }
     val keepAwakeMinutes by settingsViewModel.keepAwakeMinutes.collectAsStateWithLifecycle()
     val showKeepAwakeDialog by settingsViewModel.showKeepAwakeDialog.collectAsStateWithLifecycle()
     if (showKeepAwakeDialog) KeepAwakeDialog(keepAwakeMinutes,
@@ -311,6 +313,9 @@ fun AdvancedPage(
         { settingsViewModel.setKeepAwakeMinutes(it); settingsViewModel.setShowKeepAwakeDialog(false) })
     if (showResolutionDialog) DisplayResolutionDialog(displayResolution,
         { showResolutionDialog = false }, { settingsViewModel.setDisplayResolution(it); showResolutionDialog = false })
+    if (showTouchpadSpeedDialog) TouchpadSpeedDialog(touchpadSpeed,
+        { showTouchpadSpeedDialog = false },
+        { settingsViewModel.setTouchpadSpeed(it); showTouchpadSpeedDialog = false })
     LazyColumn(Modifier.fillMaxSize()) {
         item {
             ListItem(headlineContent = { Text(stringResource(R.string.settings_display_resolution_title)) },
@@ -320,12 +325,52 @@ fun AdvancedPage(
             HorizontalDivider()
         }
         item {
+            ListItem(headlineContent = { Text(stringResource(R.string.plus_touchpad_speed)) },
+                supportingContent = { Text(formatTouchpadSpeed(touchpadSpeed)) },
+                leadingContent = { Icon(Icons.Default.Speed, null) },
+                modifier = Modifier.clickable { showTouchpadSpeedDialog = true })
+            HorizontalDivider()
+        }
+        item {
             ListItem(headlineContent = { Text(stringResource(R.string.settings_keep_awake_title)) },
                 supportingContent = { Text(formatKeepAwakeTime(keepAwakeMinutes)) },
                 leadingContent = { Icon(Icons.Default.Power, null) },
                 modifier = Modifier.clickable { settingsViewModel.setShowKeepAwakeDialog(true) })
         }
     }
+}
+
+private fun formatTouchpadSpeed(speed: Float): String =
+    String.format(Locale.getDefault(), "%.1f×", speed)
+
+@Composable
+private fun TouchpadSpeedDialog(speed: Float, onDismiss: () -> Unit, onConfirm: (Float) -> Unit) {
+    var value by remember(speed) { mutableFloatStateOf(speed) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.plus_touchpad_speed)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.plus_touchpad_speed_description))
+                Text(formatTouchpadSpeed(value), modifier = Modifier.padding(top = 16.dp))
+                Slider(
+                    value = value,
+                    onValueChange = { value = (it * 10).roundToInt() / 10f },
+                    valueRange = SettingsViewModel.MIN_TOUCHPAD_SPEED..SettingsViewModel.MAX_TOUCHPAD_SPEED,
+                    steps = 14,
+                )
+                TextButton(onClick = { value = 1f }) {
+                    Text(stringResource(R.string.plus_touchpad_speed_reset))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(value) }) { Text(stringResource(android.R.string.ok)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) }
+        },
+    )
 }
 
 @Composable

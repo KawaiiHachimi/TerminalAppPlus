@@ -215,4 +215,7 @@
     <string name="plus_cloud_sudo">sudo rules</string>
     <string name="plus_cloud_sudo_hint">One rule per line; false adds no sudo rules. Leave blank for the image default. Passwordless: ALL=(ALL) NOPASSWD:ALL</string>
     <string name="plus_cloud_lock_password">Lock password login</string>
+    <string name="plus_touchpad_speed">Touchpad speed</string>
+    <string name="plus_touchpad_speed_description">Adjust pointer movement in touchpad mode. 1.0× uses the original speed.</string>
+    <string name="plus_touchpad_speed_reset">Reset to 1.0×</string>
 </resources>

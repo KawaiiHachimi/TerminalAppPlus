@@ -215,4 +215,7 @@
     <string name="plus_cloud_sudo">sudo 规则</string>
     <string name="plus_cloud_sudo_hint">每行一条；false 不添加 sudo 规则，留空使用镜像默认值。免密码：ALL=(ALL) NOPASSWD:ALL</string>
     <string name="plus_cloud_lock_password">锁定密码登录</string>
+    <string name="plus_touchpad_speed">触摸板速度</string>
+    <string name="plus_touchpad_speed_description">调整触摸板模式下的指针移动速度，1.0× 为原始速度。</string>
+    <string name="plus_touchpad_speed_reset">恢复为 1.0×</string>
 </resources>

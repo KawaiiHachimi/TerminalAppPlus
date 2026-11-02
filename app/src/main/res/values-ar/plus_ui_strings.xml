@@ -215,4 +215,7 @@
     <string name="plus_cloud_sudo">قواعد sudo</string>
     <string name="plus_cloud_sudo_hint">قاعدة في كل سطر؛ false لا يضيف قواعد sudo. اتركه فارغًا لاستخدام إعداد الصورة الافتراضي. دون كلمة مرور: ALL=(ALL) NOPASSWD:ALL</string>
     <string name="plus_cloud_lock_password">قفل تسجيل الدخول بكلمة مرور</string>
+    <string name="plus_touchpad_speed">سرعة لوحة اللمس</string>
+    <string name="plus_touchpad_speed_description">اضبط سرعة حركة المؤشر في وضع لوحة اللمس. 1.0× هي السرعة الأصلية.</string>
+    <string name="plus_touchpad_speed_reset">إعادة الضبط إلى 1.0×</string>
 </resources>

@@ -215,4 +215,7 @@
     <string name="plus_cloud_sudo">sudo 규칙</string>
     <string name="plus_cloud_sudo_hint">한 줄에 하나. false는 sudo 규칙을 추가하지 않음, 빈 값은 이미지 기본값입니다. 암호 없이: ALL=(ALL) NOPASSWD:ALL</string>
     <string name="plus_cloud_lock_password">암호 로그인 잠금</string>
+    <string name="plus_touchpad_speed">터치패드 속도</string>
+    <string name="plus_touchpad_speed_description">터치패드 모드의 포인터 이동 속도를 조절합니다. 1.0×는 기존 속도입니다.</string>
+    <string name="plus_touchpad_speed_reset">1.0×로 초기화</string>
 </resources>

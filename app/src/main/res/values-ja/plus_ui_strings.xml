@@ -215,4 +215,7 @@
     <string name="plus_cloud_sudo">sudo ルール</string>
     <string name="plus_cloud_sudo_hint">1 行に 1 つ。false は sudo ルールを追加しません、空欄はイメージの既定値。パスワード不要：ALL=(ALL) NOPASSWD:ALL</string>
     <string name="plus_cloud_lock_password">パスワードログインをロック</string>
+    <string name="plus_touchpad_speed">タッチパッドの速度</string>
+    <string name="plus_touchpad_speed_description">タッチパッドモードでのポインターの移動速度を調整します。1.0× は元の速度です。</string>
+    <string name="plus_touchpad_speed_reset">1.0× に戻す</string>
 </resources>

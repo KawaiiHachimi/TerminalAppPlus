@@ -215,4 +215,7 @@
     <string name="plus_cloud_sudo">Reglas sudo</string>
     <string name="plus_cloud_sudo_hint">Una regla por línea; false no añade reglas sudo. Vacío: valor predeterminado de la imagen. Sin contraseña: ALL=(ALL) NOPASSWD:ALL</string>
     <string name="plus_cloud_lock_password">Bloquear acceso con contraseña</string>
+    <string name="plus_touchpad_speed">Velocidad del panel táctil</string>
+    <string name="plus_touchpad_speed_description">Ajusta la velocidad del puntero en modo panel táctil. 1.0× es la velocidad original.</string>
+    <string name="plus_touchpad_speed_reset">Restablecer a 1.0×</string>
 </resources>
