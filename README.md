@@ -4,6 +4,26 @@
 应用包名：`com.android.virtualization.terminal.plus`；源码 namespace 保持 AOSP 原名。
 无需 AOSP/Soong、平台签名或宿主 root，以普通 APK 安装，与原版终端并存。
 
+## 截图
+
+<table>
+  <tr>
+    <td><img src="images/01.jpg" width="240"></td>
+    <td><img src="images/02.jpg" width="240"></td>
+    <td><img src="images/03.jpg" width="240"></td>
+  </tr>
+  <tr>
+    <td><img src="images/04.jpg" width="240"></td>
+    <td><img src="images/05.jpg" width="240"></td>
+    <td><img src="images/06.jpg" width="240"></td>
+  </tr>
+  <tr>
+    <td><img src="images/07.jpg" width="240"></td>
+    <td><img src="images/08.jpg" width="240"></td>
+    <td><img src="images/09.jpg" width="240"></td>
+  </tr>
+</table>
+
 ## 构建
 
 Android Studio 打开本目录，使用其内置 JDK 21，同步 Gradle 后运行 `app`。
@@ -133,7 +153,8 @@ AOSP 来源、参考项目及移植边界见 [docs/UPSTREAM.md](docs/UPSTREAM.md
 串口不再自动同步 Guest TTY 尺寸，需要窗口尺寸协商的 TUI 可使用 ttyd 或 SSH。
 
 图形页面复用 AOSP 显示操作和输入逻辑，通过 Guest KMS 采集传输现有画面。
-支持重连、主平面和标准光标合成；使用 LZ4 优先的无损传输及最新帧队列。
+支持重连、主平面和标准光标合成；默认使用 LZ4 优先的无损传输及最新帧队列。
+可选 H.264 传输和 safe-JIT 兼容工具的配置、依赖与限制见 [图形传输与兼容性](docs/GRAPHICS-DEV.md)。
 默认目标 30 fps，实际帧率受分辨率、Guest 渲染和设备负载影响。
 历史实机采样与限制见 [KMS 实验记录](docs/experiments/KMS-CAPTURE.md)。
 
@@ -173,6 +194,7 @@ Plus 新增界面支持简体中文、繁体中文、英语、日语、韩语、
 - [Podroid](https://github.com/ExTV/Podroid)：AVF 控制台流连接方案参考；
   本项目直接使用 Termux 官方组件，没有复制 Podroid 的 UI 或桥接实现。
 - [MTDataFilesProvider](https://github.com/L-JINBIN/MTDataFilesProvider)（[L-JINBIN](https://github.com/L-JINBIN)）：应用数据文件提供器的实现思路参考；本项目基于 Android 标准 `DocumentsProvider` 独立实现，未复制其代码。
+- [U-AVF](https://github.com/dt0-imsyu/U-AVF)：H.264 显示传输与 safe-JIT 兼容方案的实现思路参考，详见 [图形传输与兼容性说明](docs/GRAPHICS-DEV.md)。
 - [PocketVM](https://github.com/okhsunrog/pocketvm)：AVF Guest 镜像兼容性与 cloud-init 网络配置排查参考。
 - [Codex](https://openai.com/codex/)
 
