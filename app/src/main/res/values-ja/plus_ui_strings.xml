@@ -221,4 +221,24 @@
     <string name="plus_display_transport">画面転送</string>
     <string name="plus_display_lossless">可逆（デフォルト）</string>
     <string name="plus_display_h264_hint">非可逆圧縮。Guest Tools の更新と、Guest に libx264 対応の ffmpeg が必要です。</string>
+    <string name="plus_appearance_title">デザイン</string>
+    <string name="plus_appearance_colors">カラーテーマ</string>
+    <string name="plus_appearance_auto">システムのテーマに基づいてカラーテーマを切り替える</string>
+    <string name="plus_appearance_light_theme">ライトモード</string>
+    <string name="plus_appearance_dark_theme">ダークモード</string>
+    <string name="plus_appearance_import_theme">カスタムテーマをインポート</string>
+    <string name="plus_appearance_font">フォント ファミリー</string>
+    <string name="plus_appearance_import_font">カスタム フォントをインポート...</string>
+    <string name="plus_appearance_reset_font">カスタム フォントを削除</string>
+    <string name="plus_appearance_font_size">フォントサイズ</string>
+    <string name="plus_appearance_font_smaller">フォントサイズを縮小</string>
+    <string name="plus_appearance_font_larger">フォントサイズを拡大</string>
+    <string name="plus_appearance_mode">アプリの外観</string>
+    <string name="plus_appearance_system">システム</string>
+    <string name="plus_appearance_light">ライト</string>
+    <string name="plus_appearance_dark">ダーク</string>
+    <string name="plus_appearance_import_error">ファイルをインポートできません</string>
+    <string name="plus_appearance_default_dark">標準ダーク（プリセット）</string>
+    <string name="plus_appearance_default_light">標準ライト（プリセット）</string>
+    <string name="plus_appearance_default_font">システムのデフォルト</string>
 </resources>

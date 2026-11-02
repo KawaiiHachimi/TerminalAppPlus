@@ -221,4 +221,24 @@
     <string name="plus_display_transport">نقل الصورة</string>
     <string name="plus_display_lossless">دون فقدان (افتراضي)</string>
     <string name="plus_display_h264_hint">ضغط مع فقدان. يتطلب تحديث Guest Tools وتثبيت ffmpeg مع دعم libx264 في النظام الضيف.</string>
+    <string name="plus_appearance_title">المظهر</string>
+    <string name="plus_appearance_colors">نسق الألوان</string>
+    <string name="plus_appearance_auto">التبديل بين نُسق الألوان استنادًا إلى مظهر النظام</string>
+    <string name="plus_appearance_light_theme">في الوضع الفاتح</string>
+    <string name="plus_appearance_dark_theme">في الوضع الداكن</string>
+    <string name="plus_appearance_import_theme">استيراد مظهر مخصّص</string>
+    <string name="plus_appearance_font">مجموعة الخطوط</string>
+    <string name="plus_appearance_import_font">استيراد خط مخصّص...</string>
+    <string name="plus_appearance_reset_font">حذف الخط المخصّص</string>
+    <string name="plus_appearance_font_size">حجم الخط</string>
+    <string name="plus_appearance_font_smaller">تقليل حجم الخط</string>
+    <string name="plus_appearance_font_larger">زيادة حجم الخط</string>
+    <string name="plus_appearance_mode">مظهر التطبيق</string>
+    <string name="plus_appearance_system">النظام</string>
+    <string name="plus_appearance_light">فاتح</string>
+    <string name="plus_appearance_dark">داكن</string>
+    <string name="plus_appearance_import_error">تعذر استيراد الملف</string>
+    <string name="plus_appearance_default_dark">المظهر الداكن العادي (مُعد مسبقًا)</string>
+    <string name="plus_appearance_default_light">المظهر الفاتح العادي (مُعدّ مسبقًا)</string>
+    <string name="plus_appearance_default_font">الإعداد التلقائي للنظام</string>
 </resources>

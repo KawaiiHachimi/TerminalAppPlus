@@ -252,6 +252,11 @@ fun TerminalScreen(terminalAddress: TerminalAddress, tabId: String, mainViewMode
             terminalViewModel.getOrCreateTtydView(tabId, terminalAddress)
         }
 
+    val appearanceRepository = remember { com.android.virtualization.terminal.appearance.AppearanceRepository.get(ttydView.context) }
+    val appearance by appearanceRepository.state.collectAsStateWithLifecycle()
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    LaunchedEffect(ttydView, appearance, configuration.uiMode) { ttydView.applyAppearance(appearance) }
+
     LaunchedEffect(ttydView, terminalUiState, retryGeneration) {
         connectionTimedOut = false
         if (terminalUiState is TerminalUiState.Connecting || terminalUiState is TerminalUiState.Initializing) {

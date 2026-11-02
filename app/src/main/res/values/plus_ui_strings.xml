@@ -221,4 +221,24 @@
     <string name="plus_display_transport">Display transport</string>
     <string name="plus_display_lossless">Lossless (default)</string>
     <string name="plus_display_h264_hint">Lossy compression. Requires updated Guest Tools and ffmpeg with libx264 in the Guest.</string>
+    <string name="plus_appearance_title">Appearance</string>
+    <string name="plus_appearance_colors">Color theme</string>
+    <string name="plus_appearance_auto">Switch color themes based on system theme</string>
+    <string name="plus_appearance_light_theme">In light mode</string>
+    <string name="plus_appearance_dark_theme">In dark mode</string>
+    <string name="plus_appearance_import_theme">Import custom theme</string>
+    <string name="plus_appearance_font">Font family</string>
+    <string name="plus_appearance_import_font">Import custom font...</string>
+    <string name="plus_appearance_reset_font">Delete custom font</string>
+    <string name="plus_appearance_font_size">Font size</string>
+    <string name="plus_appearance_font_smaller">Decrease font size</string>
+    <string name="plus_appearance_font_larger">Increase font size</string>
+    <string name="plus_appearance_mode">App appearance</string>
+    <string name="plus_appearance_system">System</string>
+    <string name="plus_appearance_light">Light</string>
+    <string name="plus_appearance_dark">Dark</string>
+    <string name="plus_appearance_import_error">Unable to import file</string>
+    <string name="plus_appearance_default_dark">Standard Dark (preset)</string>
+    <string name="plus_appearance_default_light">Standard Light (preset)</string>
+    <string name="plus_appearance_default_font">System default</string>
 </resources>

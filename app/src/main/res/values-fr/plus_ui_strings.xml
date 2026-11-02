@@ -221,4 +221,24 @@
     <string name="plus_display_transport">Transmission de l’image</string>
     <string name="plus_display_lossless">Sans perte (par défaut)</string>
     <string name="plus_display_h264_hint">Compression avec perte. Nécessite des Guest Tools à jour et ffmpeg avec libx264 dans le système invité.</string>
+    <string name="plus_appearance_title">Apparence</string>
+    <string name="plus_appearance_colors">Thème de couleurs</string>
+    <string name="plus_appearance_auto">Changer de thème de couleur en fonction du thème système</string>
+    <string name="plus_appearance_light_theme">En mode clair</string>
+    <string name="plus_appearance_dark_theme">En mode sombre</string>
+    <string name="plus_appearance_import_theme">Importer un thème personnalisé</string>
+    <string name="plus_appearance_font">Famille de polices</string>
+    <string name="plus_appearance_import_font">Importer une police personnalisée...</string>
+    <string name="plus_appearance_reset_font">Supprimer la police personnalisée</string>
+    <string name="plus_appearance_font_size">Taille de la police</string>
+    <string name="plus_appearance_font_smaller">Diminuer la taille de la police</string>
+    <string name="plus_appearance_font_larger">Augmenter la taille de la police</string>
+    <string name="plus_appearance_mode">Apparence de l’application</string>
+    <string name="plus_appearance_system">Système</string>
+    <string name="plus_appearance_light">Clair</string>
+    <string name="plus_appearance_dark">Sombre</string>
+    <string name="plus_appearance_import_error">Impossible d’importer le fichier</string>
+    <string name="plus_appearance_default_dark">Sombre standard (prédéfini)</string>
+    <string name="plus_appearance_default_light">Clair standard (prédéfini)</string>
+    <string name="plus_appearance_default_font">Paramètre système par défaut</string>
 </resources>

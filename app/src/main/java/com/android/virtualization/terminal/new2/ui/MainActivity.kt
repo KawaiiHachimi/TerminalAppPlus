@@ -27,6 +27,8 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import com.android.virtualization.terminal.appearance.AppearanceRepository
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -45,8 +47,9 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
-            val darkTheme = isSystemInDarkTheme()
             val context = LocalContext.current
+            val appearance by remember { AppearanceRepository.get(context) }.state.collectAsStateWithLifecycle()
+            val darkTheme = appearance.isDark(isSystemInDarkTheme())
             val colorScheme =
                 if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
 
@@ -80,7 +83,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                viewModel.handleIntent(intent)
+                LaunchedEffect(viewModel) { viewModel.handleIntent(intent) }
                 MainScreen(viewModel)
             }
         }

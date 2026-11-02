@@ -221,4 +221,24 @@
     <string name="plus_display_transport">चित्र संचार</string>
     <string name="plus_display_lossless">दोषरहित (डिफ़ॉल्ट)</string>
     <string name="plus_display_h264_hint">हानिपूर्ण संपीड़न। अपडेट किए गए Guest Tools और अतिथि सिस्टम में libx264 वाला ffmpeg आवश्यक है।</string>
+    <string name="plus_appearance_title">थीम</string>
+    <string name="plus_appearance_colors">रंग वाली थीम</string>
+    <string name="plus_appearance_auto">सिस्टम की थीम के आधार पर, रंग वाली थीम बदलें</string>
+    <string name="plus_appearance_light_theme">हल्के रंग वाले मोड में</string>
+    <string name="plus_appearance_dark_theme">गहरे रंग वाले मोड में</string>
+    <string name="plus_appearance_import_theme">अपनी पसंद की थीम इंपोर्ट करें</string>
+    <string name="plus_appearance_font">फ़ॉन्ट फ़ैमिली</string>
+    <string name="plus_appearance_import_font">पसंद के मुताबिक फ़ॉन्ट इंपोर्ट करें...</string>
+    <string name="plus_appearance_reset_font">कस्टम फ़ॉन्ट मिटाएं</string>
+    <string name="plus_appearance_font_size">फ़ॉन्ट का साइज़</string>
+    <string name="plus_appearance_font_smaller">फ़ॉन्ट का साइज़ घटाएं</string>
+    <string name="plus_appearance_font_larger">फ़ॉन्ट का साइज़ बढ़ाएं</string>
+    <string name="plus_appearance_mode">ऐप का रूप</string>
+    <string name="plus_appearance_system">सिस्टम</string>
+    <string name="plus_appearance_light">हल्का</string>
+    <string name="plus_appearance_dark">गहरा</string>
+    <string name="plus_appearance_import_error">फ़ाइल आयात नहीं हो सकी</string>
+    <string name="plus_appearance_default_dark">गहरे रंग वाली स्टैंडर्ड थीम (प्रीसेट)</string>
+    <string name="plus_appearance_default_light">हल्के रंग वाली स्टैंडर्ड थीम (प्रीसेट)</string>
+    <string name="plus_appearance_default_font">सिस्टम डिफ़ॉल्ट</string>
 </resources>

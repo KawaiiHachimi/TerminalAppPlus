@@ -221,4 +221,24 @@
     <string name="plus_display_transport">Transmisión de imagen</string>
     <string name="plus_display_lossless">Sin pérdidas (predeterminado)</string>
     <string name="plus_display_h264_hint">Compresión con pérdidas. Requiere Guest Tools actualizados y ffmpeg con libx264 en el sistema invitado.</string>
+    <string name="plus_appearance_title">Aspecto</string>
+    <string name="plus_appearance_colors">Tema de color</string>
+    <string name="plus_appearance_auto">Cambia el tema de color según el tema del sistema</string>
+    <string name="plus_appearance_light_theme">En modo Claro</string>
+    <string name="plus_appearance_dark_theme">En modo Oscuro</string>
+    <string name="plus_appearance_import_theme">Importar tema personalizado</string>
+    <string name="plus_appearance_font">Conjunto de fuentes</string>
+    <string name="plus_appearance_import_font">Importar fuente personalizada…</string>
+    <string name="plus_appearance_reset_font">Eliminar fuente personalizada</string>
+    <string name="plus_appearance_font_size">Tamaño de fuente</string>
+    <string name="plus_appearance_font_smaller">Reducir tamaño de fuente</string>
+    <string name="plus_appearance_font_larger">Aumentar tamaño de fuente</string>
+    <string name="plus_appearance_mode">Apariencia de la aplicación</string>
+    <string name="plus_appearance_system">Sistema</string>
+    <string name="plus_appearance_light">Claro</string>
+    <string name="plus_appearance_dark">Oscuro</string>
+    <string name="plus_appearance_import_error">No se pudo importar el archivo</string>
+    <string name="plus_appearance_default_dark">Oscuro estándar (preajuste)</string>
+    <string name="plus_appearance_default_light">Claro estándar (preajuste)</string>
+    <string name="plus_appearance_default_font">Predeterminado del sistema</string>
 </resources>

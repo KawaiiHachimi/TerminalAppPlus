@@ -15,6 +15,10 @@
  */
 package com.android.virtualization.terminal.new2.core
 
+import com.android.virtualization.terminal.appearance.AppearanceRepository
+import com.android.virtualization.terminal.appearance.AppearanceState
+import com.google.gson.Gson
+import kotlin.math.roundToInt
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -50,7 +54,10 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
     var onTerminalDisconnected: (() -> Unit)? = null
     var onSessionDiscard: (() -> Unit)? = null
     var onTitleChanged: ((String) -> Unit)? = null
-    private var fontSize = (context.resources.configuration.fontScale * DEFAULT_FONT_SIZE).toInt()
+    private var appearance = AppearanceRepository.get(context).state.value
+    private var fontSize = appearance.fontSize
+    private var terminalReady = false
+    private var appliedFontData: String? = null
 
     private val scaleGestureDetector =
         ScaleGestureDetector(
@@ -86,7 +93,11 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
             object {
                 @android.webkit.JavascriptInterface
                 fun onTerminalReady() {
-                    post { this@TtydView.onTerminalReady?.invoke() }
+                    post {
+                        terminalReady = true
+                        applyAppearance(appearance)
+                        this@TtydView.onTerminalReady?.invoke()
+                    }
                 }
 
                 @android.webkit.JavascriptInterface
@@ -126,11 +137,7 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        val newFontSize = (newConfig.fontScale * DEFAULT_FONT_SIZE).toInt()
-        if (fontSize != newFontSize) {
-            fontSize = newFontSize
-            updateFontSize()
-        }
+        applyAppearance(appearance)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -152,8 +159,7 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
                     return true
                 }
                 KeyEvent.KEYCODE_0 -> {
-                    val defaultFontSize =
-                        (context.resources.configuration.fontScale * DEFAULT_FONT_SIZE).toInt()
+                    val defaultFontSize = DEFAULT_FONT_SIZE
                     if (fontSize != defaultFontSize) {
                         fontSize = defaultFontSize
                         updateFontSize()
@@ -166,10 +172,51 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
     }
 
     private fun updateFontSize() {
-        evaluateJavascript(
-            "term.options.fontSize = $fontSize; window.dispatchEvent(new Event('resize'));",
-            null,
-        )
+        AppearanceRepository.get(context).setFontSize(fontSize)
+        applyAppearance(appearance.copy(fontSize = fontSize))
+    }
+
+    fun applyAppearance(value: AppearanceState) {
+        appearance = value
+        fontSize = value.fontSize
+        val dark = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+        val theme = value.theme(dark)
+        setBackgroundColor(android.graphics.Color.parseColor(theme.background))
+        if (!terminalReady) return
+        val gson = Gson()
+        val pixels = (fontSize * resources.configuration.fontScale).roundToInt()
+        evaluateJavascript("""
+            (function() {
+                if (!window.term) return;
+                term.options.theme = ${gson.toJson(theme.colors)};
+                term.options.fontSize = $pixels;
+                term.refresh(0, Math.max(0, term.rows - 1));
+                window.dispatchEvent(new Event('resize'));
+            })();
+        """.trimIndent(), null)
+        if (value.fontData == null) {
+            appliedFontData = null
+            evaluateJavascript("window.TerminalPlusFont=null; if(window.term){term.options.fontFamily='monospace'; window.dispatchEvent(new Event('resize'));}", null)
+        }
+        if (value.fontData != null && appliedFontData !== value.fontData) {
+            appliedFontData = value.fontData
+            val family = "TerminalPlus" + value.fontData.hashCode().toUInt().toString(16)
+            evaluateJavascript("""
+                (function() {
+                    const family = ${gson.toJson(family)};
+                    window.TerminalPlusFont = family;
+                    let style = document.getElementById('terminal-plus-font');
+                    if (!style) { style = document.createElement('style'); style.id = 'terminal-plus-font'; document.head.appendChild(style); }
+                    style.textContent = "@font-face{font-family:'"+family+"';src:url('data:font/ttf;base64,${value.fontData}');}";
+                    document.fonts.load('13px '+family).then(function() {
+                        if (window.term && window.TerminalPlusFont === family) {
+                            term.options.fontFamily = "'"+family+"', monospace";
+                            window.dispatchEvent(new Event('resize'));
+                        }
+                    }).catch(function() {});
+                })();
+            """.trimIndent(), null)
+        }
     }
 
     fun load(terminalAddress: TerminalAddress) {
@@ -205,7 +252,7 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
         // TODO: Always enable screenReaderMode (b/395845063)
         val query =
             ("?fontSize=" +
-                (config.fontScale * DEFAULT_FONT_SIZE).toInt() +
+                (config.fontScale * fontSize).toInt() +
                 "&fontWeight=" +
                 (FontStyle.FONT_WEIGHT_NORMAL + config.fontWeightAdjustment) +
                 "&fontWeightBold=" +
@@ -260,6 +307,8 @@ class TtydView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
             favicon: android.graphics.Bitmap?,
         ) {
             super.onPageStarted(view, url, favicon)
+            terminalReady = false
+            appliedFontData = null
             injectWebSocketInterceptor()
         }
 

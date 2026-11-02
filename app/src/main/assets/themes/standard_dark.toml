@@ -1,0 +1,13 @@
+name = "Standard Dark"
+
+[colors.primary]
+background = "#000000"
+foreground = "#ffffff"
+
+[colors.cursor]
+cursor = "#ffffff"
+text = "#000000"
+
+[colors.selection]
+background = "#333333"
+text = "#ffffff"

@@ -34,3 +34,10 @@ Permission onboarding uses the official [Shizuku API](https://github.com/RikkaAp
 and provider 13.1.5. A wrapped permission-manager Binder grants only the two fixed
 AVF permissions to this app in its own Android user; no shell-command interface
 or persistent privileged user service is exposed.
+
+Pixel QPR3 appearance work restores the theme/font behavior and uses launcher/theme resources
+from the locally extracted TerminalApp APK, SHA-256
+`a2ed91f6ae903e9fef3f8cc550e9baca4b5dc8fdcaa213558f5396f94867c033`.
+The Compose UI is implemented in Kotlin against this project's dependencies; no decompiled
+Compose/R8 Java is included. Icon edits only recolor green pixels to blue while preserving alpha.
+See [QPR3 appearance](QPR3-APPEARANCE.md) for scope and resource provenance.

@@ -4,6 +4,7 @@
 
 | 文档 | 内容 |
 | --- | --- |
+| [QPR3 外观移植](QPR3-APPEARANCE.md) | 开发分支中的主题、字体、图标与适配范围 |
 | [dev 图形加速与传输实验](GRAPHICS-DEV.md) | Android 17 VirGL2 构建边界、H.264 与 safe-JIT |
 | [应用文件访问](APP-FILES.md) | 在 MT 等文件管理器中通过 SAF 管理应用数据 |
 | [项目 README](../README.md) | 构建、授权和功能入口 |

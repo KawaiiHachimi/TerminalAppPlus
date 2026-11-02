@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.Power
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -110,6 +111,7 @@ import kotlinx.coroutines.launch
 enum class SettingsDestination(val title: Int, val icon: ImageVector) {
     VirtualMachines(R.string.plus_virtual_machines, Icons.Default.Memory),
     PortControl(R.string.settings_port_title, Icons.Default.Security),
+    Appearance(R.string.plus_appearance_title, Icons.Default.Palette),
     Advanced(R.string.settings_advanced_title, Icons.Default.Tune),
     Recovery(R.string.settings_recovery_title, Icons.Default.Restore),
 }
@@ -291,6 +293,7 @@ fun SettingsDetailPane(
             when (destination) {
                 SettingsDestination.PortControl -> PortControlPage()
                 SettingsDestination.Advanced -> AdvancedPage()
+                SettingsDestination.Appearance -> AppearancePage()
                 SettingsDestination.VirtualMachines -> VmManagementPage()
                 SettingsDestination.Recovery -> RecoveryPage()
             }
