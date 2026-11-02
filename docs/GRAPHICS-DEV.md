@@ -59,7 +59,7 @@ SPS/PPS 在首个 AU，x264 显式输出 AUD、无 B 帧并周期性重复头部
 
 ## safe-JIT
 
-Guest Tools 同时安装 `/usr/local/bin/terminal-plus-safe-jit.py`，按需运行，不写全局环境、不修改桌面入口：
+Guest Tools 同时安装 `/usr/local/bin/terminal-plus-safe-jit.py`。默认按进程运行，不修改系统配置：
 
 ```sh
 terminal-plus-safe-jit.py --probe
@@ -77,7 +77,7 @@ terminal-plus-safe-jit.py weston-simple-egl
 ```
 
 实机 Debian 的 LLVM 19.1.7 并不读取 `LLVM_CPUINFO`，因此只提供简化 cpuinfo 无法修复。
-当前 wrapper 同时为目标进程设置 LD_PRELOAD，覆盖 LLVM 的 CPU 名称查询为 generic；
+当前 wrapper 为目标进程设置 LD_PRELOAD；在检测命中的 Guest 中，兼容库对无 SVE 环境统一返回 generic，避免大小核迁移时再次选中 SVE CPU 目标；
 不改变内核公布的特性、不修改 LLVM/Mesa 二进制或全局环境。保留原有 LD_PRELOAD，
 使用独立版本化 shader cache，保留旧缓存。LLVM C++ StringRef 返回 ABI 的适配只面向当前 Linux ARM64；
 LLVM 自身内部直接调用的 CPU 查询可能仍显示 X925，应核对真正的 Mesa 调用绑定和负载。
@@ -86,6 +86,39 @@ LLVM 自身内部直接调用的 CPU 查询可能仍显示 X925，应核对真�
 这是 JIT workaround，不能修复已编译程序中的 SVE 指令，也不能添加宿主未编译的 GPU 后端。
 Snap/Flatpak、自带 LLVM、静态链接或有不同符号可见性的程序需分别验证；沙箱也可能无法读取
 用户缓存的 preload/fixture，不宣称已经自动适配。
+
+### Guest 全局模式（可选）
+
+对于使用 glibc 的 ARM64 Linux Guest，可以一次启用全局兼容，覆盖使用相应动态加载器的新进程，
+无需按 GNOME、设置、文件管理器等进程名称逐一配置。默认安装 Guest Tools 不会自动启用。
+
+先更新 Guest Tools。编译器只在首次生成或更新兼容库时使用：
+
+```sh
+# Debian/Ubuntu
+sudo apt install gcc libc6-dev
+# Fedora/RHEL 系：sudo dnf install gcc glibc-devel
+sudo terminal-plus-safe-jit.py --install-global
+terminal-plus-safe-jit.py --status
+```
+
+安装器要求 root、Linux/glibc，以及检测到的 ARM64 / 无 SVE / LLVM X925 组合。
+在 root 所有且其他用户不可写的目录编译兼容库，先在独立子进程中验证，再将其路径追加到
+`/etc/ld.so.preload`。保留已有条目和注释，重复执行不重复添加，不增加常驻服务。
+检测会遍历允许的 vCPU，避免只在小核上运行时漏判。库在无 SVE 时对所有核心统一使用 generic，SVE 可用时转发原查询。新进程生效，完整刷新桌面需注销后重新登录或重启 Guest。
+
+撤销：
+
+```sh
+sudo terminal-plus-safe-jit.py --remove-global
+```
+
+只移除 Plus 管理的路径行，保留库文件供仍在运行的进程使用；旧进程要退出并重新启动才会解除加载。
+`--status` 的 `enabled` 表示已配置，`loaded` 表示当前命令进程实际加载。`--probe` 绕过本库的 CPU 名称修正，仍检测原始环境。
+
+目前全局模式只支持 glibc；musl/Alpine 不自动配置。静态链接、不可拦截的 LLVM 调用、
+部分沙箱或已经编译进程序的 SVE 指令不保证覆盖。它不会向 Guest 添加 SVE 支持。
+当前 Ubuntu 26.10 / LLVM 22 已进行实机验证；其他发行版需要分别验证，不能仅凭名称认定兼容。
 
 ## 验证范围与来源
 

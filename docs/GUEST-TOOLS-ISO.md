@@ -26,6 +26,13 @@ sudo sh -c 'mkdir -p /mnt/plus && mount -o ro LABEL=PLUS_TOOLS /mnt/plus && sh /
 
 脚本配置 ttyd 和图形采集/端口代理服务并启用开机启动。缺少通用依赖时仍需联网。原有 ttyd 服务保留；检测到活动服务冲突时提示使用 `--skip-ttyd`。脚本不创建账户或修改密码；恢复 SELinux 文件标签，不关闭 SELinux，也不修改防火墙。
 
+## 可选的全局 LLVM 兼容
+
+Guest Tools 更新后，可通过 `sudo terminal-plus-safe-jit.py --install-global` 启用 Guest 全局兼容，
+`terminal-plus-safe-jit.py --status` 查看状态，`sudo terminal-plus-safe-jit.py --remove-global` 撤销。
+仅检测命中的 ARM64 / 无 SVE / LLVM X925、glibc 环境启用，需要 Guest 的 C 编译器和开发头文件。
+默认安装不修改全局 preload。依赖安装、作用范围及限制见 [全局模式说明](GRAPHICS-DEV.md#guest-全局模式可选)。
+
 ## 网络与内核要求
 
 安装器不配置或接管 Guest 网络。支持 cloud-init 的新导入云镜像由 CIDATA 的独立 `network-config` 设置 IPv4 DHCP，见 [初始配置](CLOUD-INIT.md)。其他镜像使用其原有网络配置；缺少依赖时需先保证网络正常。
